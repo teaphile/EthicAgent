@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ethicagent"
+version = "1.0.0"
+description = "A Context-Aware Neuro-Symbolic Framework for Ethical Autonomous Decision-Making"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "radhahai"},
+]
+keywords = ["ethics", "AI", "neuro-symbolic", "autonomous-agents", "decision-making"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "networkx>=3.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "scikit-learn>=1.2",
+    "pandas>=2.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+llm = [
+    "langchain>=0.1",
+    "openai>=1.0",
+]
+dashboard = [
+    "streamlit>=1.30",
+    "plotly>=5.18",
+]
+vector = [
+    "chromadb>=0.4",
+]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.3",
+]
+charts = [
+    "matplotlib>=3.7",
+]
+all = [
+    "ethicagent[llm,dashboard,vector,dev,charts]",
+]
+
+[project.urls]
+Homepage = "https://github.com/radhahai/agent"
+Repository = "https://github.com/radhahai/agent"
+Issues = "https://github.com/radhahai/agent/issues"
+Documentation = "https://github.com/radhahai/agent/tree/main/docs"
+
+[tool.setuptools.packages.find]
+include = ["ethicagent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short -ra --strict-markers"
+markers = [
+    "unit: marks unit tests",
+    "integration: marks integration tests",
+    "slow: marks slow tests",
+    "llm: marks tests requiring LLM access",
+    "external: marks external benchmark tests (may need internet)",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["ethicagent"]
+omit = ["*/tests/*", "*/dashboard/*"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 70

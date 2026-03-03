@@ -1,0 +1,80 @@
+# EthicAgent - Domain Weight Configuration
+# Weights for the Ethical Decision Score (EDS) formula:
+#   EDS(a) = w1·D(a) + w2·C(a) + w3·V(a) + w4·Ctx(a)
+#
+# Where:
+#   w1 = Deontological weight (duty-based ethics)
+#   w2 = Consequentialist weight (outcome-based ethics)
+#   w3 = Virtue Ethics weight (fairness & justice)
+#   w4 = Contextual weight (domain-specific, cultural, legal)
+#
+# All weights MUST sum to 1.0 for each domain.
+
+domains:
+  healthcare:
+    # Healthcare prioritizes deontological ethics (do no harm, patient rights)
+    # and consequentialism (patient outcomes). Fairness is important but
+    # clinical urgency may override equal treatment in triage.
+    w1: 0.35  # Deontological — duty of care, informed consent, do no harm
+    w2: 0.25  # Consequentialist — patient outcomes, survival rates
+    w3: 0.20  # Virtue Ethics — equitable access to care
+    w4: 0.20  # Contextual — medical protocols, HIPAA, cultural sensitivity
+    description: "Medical decisions prioritize patient safety and clinical duty."
+
+  finance:
+    # Finance prioritizes fairness (preventing discriminatory lending)
+    # and consequentialism (financial outcomes). Deontological considerations
+    # like privacy are still important but fairness is paramount.
+    w1: 0.20  # Deontological — privacy, transparency, honest disclosure
+    w2: 0.25  # Consequentialist — financial risk, repayment probability
+    w3: 0.35  # Virtue Ethics — anti-discrimination, equal opportunity
+    w4: 0.20  # Contextual — regulatory compliance, ECOA, market conditions
+    description: "Financial decisions prioritize fairness and non-discrimination."
+
+  hiring:
+    # Hiring has the HIGHEST fairness weight because employment decisions
+    # are a primary locus of systemic discrimination. Contextual weight
+    # is also elevated for legal compliance (EEOC, Title VII).
+    w1: 0.15  # Deontological — honesty, transparency in process
+    w2: 0.20  # Consequentialist — organizational benefit, candidate fit
+    w3: 0.40  # Virtue Ethics — anti-bias, equal opportunity, diversity
+    w4: 0.25  # Contextual — EEOC compliance, organizational culture, role fit
+    description: "Hiring decisions prioritize fairness and bias prevention."
+
+  disaster:
+    # Disaster response prioritizes consequentialism (saving the most lives)
+    # and contextual awareness (urgency, resource constraints). Deontological
+    # principles still apply but utilitarian calculus is more prominent.
+    w1: 0.20  # Deontological — duty to protect, non-abandonment
+    w2: 0.35  # Consequentialist — maximize lives saved, minimize suffering
+    w3: 0.15  # Virtue Ethics — equitable resource distribution
+    w4: 0.30  # Contextual — urgency level, resource availability, geography
+    description: "Disaster response prioritizes outcomes and contextual urgency."
+
+  general:
+    # Default equal weighting when no specific domain applies.
+    # Provides a balanced ethical assessment.
+    w1: 0.25  # Deontological
+    w2: 0.25  # Consequentialist
+    w3: 0.25  # Virtue Ethics
+    w4: 0.25  # Contextual
+    description: "General domain uses balanced equal weighting across all philosophies."
+
+# =============================================================================
+# DECISION THRESHOLDS
+# =============================================================================
+thresholds:
+  auto_approve: 0.8    # EDS >= 0.8 → Automatically approve the action
+  escalate: 0.5        # 0.5 <= EDS < 0.8 → Escalate to human reviewer
+  auto_reject: 0.5     # EDS < 0.5 → Automatically reject the action
+  hard_block: 0.0      # Deontological score == 0 → Hard block regardless of EDS
+
+# =============================================================================
+# CONFLICT DETECTION
+# =============================================================================
+conflict:
+  # If the difference between the highest and lowest philosophy scores
+  # exceeds this threshold, a conflict is flagged.
+  severe_threshold: 0.4
+  # Moderate conflict threshold for logging purposes.
+  moderate_threshold: 0.25

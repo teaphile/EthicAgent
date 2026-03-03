@@ -1,0 +1,462 @@
+{
+  "domain": "healthcare",
+  "description": "Knowledge graph for healthcare ethical decision-making",
+  "entities": [
+    {
+      "id": "E-HC-001",
+      "type": "condition",
+      "name": "diabetes",
+      "severity": "chronic",
+      "related": [
+        "insulin",
+        "glucose_monitoring",
+        "dietary_management"
+      ]
+    },
+    {
+      "id": "E-HC-002",
+      "type": "condition",
+      "name": "cardiac_arrest",
+      "severity": "critical",
+      "related": [
+        "defibrillation",
+        "cpr",
+        "epinephrine"
+      ]
+    },
+    {
+      "id": "E-HC-003",
+      "type": "condition",
+      "name": "stroke",
+      "severity": "critical",
+      "related": [
+        "tpa",
+        "thrombectomy",
+        "imaging"
+      ]
+    },
+    {
+      "id": "E-HC-004",
+      "type": "condition",
+      "name": "pneumonia",
+      "severity": "moderate",
+      "related": [
+        "antibiotics",
+        "oxygen_therapy",
+        "ventilator"
+      ]
+    },
+    {
+      "id": "E-HC-005",
+      "type": "condition",
+      "name": "depression",
+      "severity": "chronic",
+      "related": [
+        "therapy",
+        "medication",
+        "social_support"
+      ]
+    },
+    {
+      "id": "E-HC-006",
+      "type": "condition",
+      "name": "cancer",
+      "severity": "critical",
+      "related": [
+        "chemotherapy",
+        "radiation",
+        "surgery",
+        "palliative_care"
+      ]
+    },
+    {
+      "id": "E-HC-007",
+      "type": "condition",
+      "name": "renal_failure",
+      "severity": "critical",
+      "related": [
+        "dialysis",
+        "transplant",
+        "fluid_management"
+      ]
+    },
+    {
+      "id": "E-HC-008",
+      "type": "condition",
+      "name": "sepsis",
+      "severity": "critical",
+      "related": [
+        "iv_antibiotics",
+        "vasopressors",
+        "fluid_resus"
+      ]
+    },
+    {
+      "id": "E-HC-009",
+      "type": "treatment",
+      "name": "ventilator",
+      "category": "life_support",
+      "scarcity": "high"
+    },
+    {
+      "id": "E-HC-010",
+      "type": "treatment",
+      "name": "icu_bed",
+      "category": "critical_care",
+      "scarcity": "high"
+    },
+    {
+      "id": "E-HC-011",
+      "type": "treatment",
+      "name": "dialysis_machine",
+      "category": "renal_support",
+      "scarcity": "medium"
+    },
+    {
+      "id": "E-HC-012",
+      "type": "treatment",
+      "name": "blood_transfusion",
+      "category": "transfusion",
+      "scarcity": "medium"
+    },
+    {
+      "id": "E-HC-013",
+      "type": "treatment",
+      "name": "organ_transplant",
+      "category": "transplant",
+      "scarcity": "very_high"
+    },
+    {
+      "id": "E-HC-014",
+      "type": "stakeholder",
+      "name": "patient",
+      "role": "care_recipient"
+    },
+    {
+      "id": "E-HC-015",
+      "type": "stakeholder",
+      "name": "family_member",
+      "role": "surrogate_decision_maker"
+    },
+    {
+      "id": "E-HC-016",
+      "type": "stakeholder",
+      "name": "attending_physician",
+      "role": "primary_clinician"
+    },
+    {
+      "id": "E-HC-017",
+      "type": "stakeholder",
+      "name": "ethics_committee",
+      "role": "advisory_body"
+    },
+    {
+      "id": "E-HC-018",
+      "type": "principle",
+      "name": "beneficence",
+      "description": "Obligation to act in patient's best interest"
+    },
+    {
+      "id": "E-HC-019",
+      "type": "principle",
+      "name": "non_maleficence",
+      "description": "First, do no harm"
+    },
+    {
+      "id": "E-HC-020",
+      "type": "principle",
+      "name": "patient_autonomy",
+      "description": "Respect patient's right to make decisions"
+    },
+    {
+      "id": "E-HC-021",
+      "type": "principle",
+      "name": "distributive_justice",
+      "description": "Fair allocation of scarce resources"
+    },
+    {
+      "id": "E-HC-022",
+      "type": "regulation",
+      "name": "hipaa",
+      "description": "Health Insurance Portability and Accountability Act"
+    },
+    {
+      "id": "E-HC-023",
+      "type": "regulation",
+      "name": "emtala",
+      "description": "Emergency Medical Treatment and Labor Act"
+    },
+    {
+      "id": "E-HC-024",
+      "type": "concept",
+      "name": "medical_futility",
+      "description": "Treatment unlikely to produce meaningful benefit"
+    },
+    {
+      "id": "E-HC-025",
+      "type": "concept",
+      "name": "informed_consent",
+      "description": "Patient understands and agrees to treatment"
+    }
+  ],
+  "rules": [
+    {
+      "id": "HR001",
+      "type": "hard_rule",
+      "description": "Never withhold emergency life-saving treatment",
+      "source": "Hippocratic Oath / EMTALA",
+      "severity": "critical"
+    },
+    {
+      "id": "HR002",
+      "type": "hard_rule",
+      "description": "Never discriminate based on disability status in treatment allocation",
+      "source": "ADA Section 504",
+      "severity": "critical"
+    },
+    {
+      "id": "HR003",
+      "type": "hard_rule",
+      "description": "Always obtain informed consent before elective procedures",
+      "source": "Medical Ethics Canon",
+      "severity": "high"
+    },
+    {
+      "id": "HR004",
+      "type": "hard_rule",
+      "description": "Never disclose patient information without authorization",
+      "source": "HIPAA",
+      "severity": "critical"
+    },
+    {
+      "id": "HR005",
+      "type": "hard_rule",
+      "description": "Honor valid Do Not Resuscitate (DNR) orders",
+      "source": "Patient Self-Determination Act",
+      "severity": "high"
+    },
+    {
+      "id": "HR006",
+      "type": "soft_rule",
+      "description": "Prioritize medical urgency over social value judgments",
+      "source": "AMA Code of Ethics",
+      "severity": "medium"
+    },
+    {
+      "id": "HR007",
+      "type": "soft_rule",
+      "description": "Consider quality-adjusted life years (QALY) in resource allocation",
+      "source": "Utilitarian ethics",
+      "severity": "medium"
+    },
+    {
+      "id": "HR008",
+      "type": "soft_rule",
+      "description": "Escalate to ethics committee when competing patient needs arise",
+      "source": "Hospital Policy",
+      "severity": "medium"
+    },
+    {
+      "id": "HR009",
+      "type": "hard_rule",
+      "description": "Never allocate resources based on patient's ability to pay",
+      "source": "EMTALA / Medical Ethics",
+      "severity": "critical"
+    },
+    {
+      "id": "HR010",
+      "type": "soft_rule",
+      "description": "Consider patient's expressed wishes and advance directives",
+      "source": "Autonomy principle",
+      "severity": "high"
+    },
+    {
+      "id": "HR011",
+      "type": "hard_rule",
+      "description": "Never use race as a factor in clinical decision algorithms",
+      "source": "Anti-discrimination law",
+      "severity": "critical"
+    },
+    {
+      "id": "HR012",
+      "type": "soft_rule",
+      "description": "Involve palliative care early for terminal diagnoses",
+      "source": "WHO Guidelines",
+      "severity": "medium"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "E-HC-002",
+      "to": "E-HC-009",
+      "type": "may_require",
+      "weight": 0.8
+    },
+    {
+      "from": "E-HC-002",
+      "to": "E-HC-010",
+      "type": "requires",
+      "weight": 0.95
+    },
+    {
+      "from": "E-HC-001",
+      "to": "E-HC-011",
+      "type": "may_require",
+      "weight": 0.3
+    },
+    {
+      "from": "E-HC-003",
+      "to": "E-HC-010",
+      "type": "requires",
+      "weight": 0.9
+    },
+    {
+      "from": "E-HC-006",
+      "to": "E-HC-013",
+      "type": "may_require",
+      "weight": 0.2
+    },
+    {
+      "from": "E-HC-007",
+      "to": "E-HC-011",
+      "type": "requires",
+      "weight": 0.85
+    },
+    {
+      "from": "E-HC-008",
+      "to": "E-HC-009",
+      "type": "may_require",
+      "weight": 0.7
+    },
+    {
+      "from": "E-HC-008",
+      "to": "E-HC-010",
+      "type": "requires",
+      "weight": 0.9
+    },
+    {
+      "from": "E-HC-014",
+      "to": "E-HC-020",
+      "type": "has_right_to",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HC-016",
+      "to": "E-HC-018",
+      "type": "duty_of",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HC-016",
+      "to": "E-HC-019",
+      "type": "duty_of",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HC-017",
+      "to": "E-HC-021",
+      "type": "oversees",
+      "weight": 0.9
+    },
+    {
+      "from": "E-HC-022",
+      "to": "E-HC-014",
+      "type": "protects",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HC-023",
+      "to": "E-HC-014",
+      "type": "protects",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HC-024",
+      "to": "E-HC-006",
+      "type": "applies_to",
+      "weight": 0.6
+    },
+    {
+      "from": "E-HC-018",
+      "to": "E-HC-019",
+      "type": "may_conflict_with",
+      "weight": 0.4
+    },
+    {
+      "from": "E-HC-020",
+      "to": "E-HC-018",
+      "type": "may_conflict_with",
+      "weight": 0.5
+    },
+    {
+      "from": "E-HC-021",
+      "to": "E-HC-020",
+      "type": "may_conflict_with",
+      "weight": 0.3
+    }
+  ],
+  "nodes": [
+    {
+      "id": "hc_emergency_triage",
+      "type": "decision_domain",
+      "label": "Emergency Triage"
+    },
+    {
+      "id": "hc_resource_allocation",
+      "type": "decision_domain",
+      "label": "Resource Allocation"
+    },
+    {
+      "id": "hc_end_of_life",
+      "type": "decision_domain",
+      "label": "End-of-Life Care"
+    },
+    {
+      "id": "hc_patient_privacy",
+      "type": "ethical_principle",
+      "label": "Patient Privacy"
+    },
+    {
+      "id": "hc_medical_necessity",
+      "type": "concept",
+      "label": "Medical Necessity"
+    },
+    {
+      "id": "hc_surrogate_consent",
+      "type": "concept",
+      "label": "Surrogate Consent"
+    }
+  ],
+  "edges": [
+    {
+      "source": "hc_emergency_triage",
+      "target": "do_no_harm",
+      "relation": "requires"
+    },
+    {
+      "source": "hc_resource_allocation",
+      "target": "fairness",
+      "relation": "requires"
+    },
+    {
+      "source": "hc_end_of_life",
+      "target": "hc_surrogate_consent",
+      "relation": "may_require"
+    },
+    {
+      "source": "hc_patient_privacy",
+      "target": "patient_consent",
+      "relation": "requires"
+    },
+    {
+      "source": "disability",
+      "target": "hc_resource_allocation",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "race",
+      "target": "hc_resource_allocation",
+      "relation": "must_not_influence"
+    }
+  ]
+}

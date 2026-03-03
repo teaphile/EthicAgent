@@ -1,0 +1,375 @@
+{
+  "domain": "hiring",
+  "description": "Knowledge graph for employment and hiring ethical decision-making",
+  "entities": [
+    {
+      "id": "E-HR-001",
+      "type": "process",
+      "name": "resume_screening",
+      "stage": "initial",
+      "automation_level": "high"
+    },
+    {
+      "id": "E-HR-002",
+      "type": "process",
+      "name": "skills_assessment",
+      "stage": "evaluation",
+      "automation_level": "medium"
+    },
+    {
+      "id": "E-HR-003",
+      "type": "process",
+      "name": "interview",
+      "stage": "evaluation",
+      "automation_level": "low"
+    },
+    {
+      "id": "E-HR-004",
+      "type": "process",
+      "name": "background_check",
+      "stage": "verification",
+      "automation_level": "medium"
+    },
+    {
+      "id": "E-HR-005",
+      "type": "process",
+      "name": "offer_negotiation",
+      "stage": "final",
+      "automation_level": "low"
+    },
+    {
+      "id": "E-HR-006",
+      "type": "factor",
+      "name": "education_level",
+      "category": "qualification",
+      "legality": "permitted_with_justification"
+    },
+    {
+      "id": "E-HR-007",
+      "type": "factor",
+      "name": "years_of_experience",
+      "category": "qualification",
+      "legality": "permitted"
+    },
+    {
+      "id": "E-HR-008",
+      "type": "factor",
+      "name": "name_ethnicity_signal",
+      "category": "demographic",
+      "legality": "prohibited"
+    },
+    {
+      "id": "E-HR-009",
+      "type": "factor",
+      "name": "university_prestige",
+      "category": "qualification",
+      "legality": "scrutinized_proxy"
+    },
+    {
+      "id": "E-HR-010",
+      "type": "factor",
+      "name": "employment_gap",
+      "category": "history",
+      "legality": "scrutinized"
+    },
+    {
+      "id": "E-HR-011",
+      "type": "factor",
+      "name": "salary_history",
+      "category": "compensation",
+      "legality": "prohibited_in_many_jurisdictions"
+    },
+    {
+      "id": "E-HR-012",
+      "type": "stakeholder",
+      "name": "job_applicant",
+      "role": "candidate"
+    },
+    {
+      "id": "E-HR-013",
+      "type": "stakeholder",
+      "name": "hiring_manager",
+      "role": "decision_maker"
+    },
+    {
+      "id": "E-HR-014",
+      "type": "stakeholder",
+      "name": "hr_department",
+      "role": "process_owner"
+    },
+    {
+      "id": "E-HR-015",
+      "type": "stakeholder",
+      "name": "dei_officer",
+      "role": "equity_oversight"
+    },
+    {
+      "id": "E-HR-016",
+      "type": "regulation",
+      "name": "title_vii",
+      "description": "Title VII Civil Rights Act of 1964"
+    },
+    {
+      "id": "E-HR-017",
+      "type": "regulation",
+      "name": "ada",
+      "description": "Americans with Disabilities Act"
+    },
+    {
+      "id": "E-HR-018",
+      "type": "regulation",
+      "name": "adea",
+      "description": "Age Discrimination in Employment Act"
+    },
+    {
+      "id": "E-HR-019",
+      "type": "regulation",
+      "name": "gina",
+      "description": "Genetic Information Nondiscrimination Act"
+    },
+    {
+      "id": "E-HR-020",
+      "type": "concept",
+      "name": "bona_fide_occupational_qualification",
+      "description": "Legitimate job requirement exemption"
+    },
+    {
+      "id": "E-HR-021",
+      "type": "concept",
+      "name": "reasonable_accommodation",
+      "description": "Adjustments for disabilities unless undue hardship"
+    },
+    {
+      "id": "E-HR-022",
+      "type": "principle",
+      "name": "merit_based_selection",
+      "description": "Select based on qualifications and job fit"
+    },
+    {
+      "id": "E-HR-023",
+      "type": "principle",
+      "name": "equal_opportunity",
+      "description": "All qualified candidates receive fair consideration"
+    }
+  ],
+  "rules": [
+    {
+      "id": "HRR001",
+      "type": "hard_rule",
+      "description": "Never use race, gender, or ethnicity in hiring decisions",
+      "source": "Title VII",
+      "severity": "critical"
+    },
+    {
+      "id": "HRR002",
+      "type": "hard_rule",
+      "description": "Never discriminate based on age for workers 40+",
+      "source": "ADEA",
+      "severity": "critical"
+    },
+    {
+      "id": "HRR003",
+      "type": "hard_rule",
+      "description": "Provide reasonable accommodation for qualified disabled candidates",
+      "source": "ADA",
+      "severity": "high"
+    },
+    {
+      "id": "HRR004",
+      "type": "hard_rule",
+      "description": "Never require genetic testing or use genetic information",
+      "source": "GINA",
+      "severity": "critical"
+    },
+    {
+      "id": "HRR005",
+      "type": "soft_rule",
+      "description": "Use structured interviews with standardized questions",
+      "source": "I/O Psychology best practice",
+      "severity": "medium"
+    },
+    {
+      "id": "HRR006",
+      "type": "soft_rule",
+      "description": "Blind resume screening to remove name/photo bias",
+      "source": "DEI best practice",
+      "severity": "medium"
+    },
+    {
+      "id": "HRR007",
+      "type": "hard_rule",
+      "description": "Never penalize candidates for pregnancy or parental status",
+      "source": "Pregnancy Discrimination Act",
+      "severity": "critical"
+    },
+    {
+      "id": "HRR008",
+      "type": "soft_rule",
+      "description": "Validate assessment tools for adverse impact",
+      "source": "EEOC Uniform Guidelines",
+      "severity": "high"
+    },
+    {
+      "id": "HRR009",
+      "type": "soft_rule",
+      "description": "Document legitimate business reasons for hiring criteria",
+      "source": "Legal best practice",
+      "severity": "medium"
+    },
+    {
+      "id": "HRR010",
+      "type": "hard_rule",
+      "description": "Never use employment gap as proxy for protected status",
+      "source": "Anti-discrimination principle",
+      "severity": "high"
+    },
+    {
+      "id": "HRR011",
+      "type": "soft_rule",
+      "description": "Ensure diverse interview panels when possible",
+      "source": "DEI best practice",
+      "severity": "medium"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "E-HR-008",
+      "to": "E-HR-001",
+      "type": "must_not_influence",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HR-009",
+      "to": "E-HR-008",
+      "type": "proxy_for",
+      "weight": 0.4
+    },
+    {
+      "from": "E-HR-006",
+      "to": "E-HR-002",
+      "type": "input_to",
+      "weight": 0.7
+    },
+    {
+      "from": "E-HR-007",
+      "to": "E-HR-002",
+      "type": "input_to",
+      "weight": 0.8
+    },
+    {
+      "from": "E-HR-016",
+      "to": "E-HR-001",
+      "type": "governs",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HR-017",
+      "to": "E-HR-003",
+      "type": "governs",
+      "weight": 0.9
+    },
+    {
+      "from": "E-HR-018",
+      "to": "E-HR-001",
+      "type": "governs",
+      "weight": 0.9
+    },
+    {
+      "from": "E-HR-012",
+      "to": "E-HR-023",
+      "type": "has_right_to",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HR-013",
+      "to": "E-HR-022",
+      "type": "duty_of",
+      "weight": 0.85
+    },
+    {
+      "from": "E-HR-015",
+      "to": "E-HR-023",
+      "type": "oversees",
+      "weight": 0.9
+    },
+    {
+      "from": "E-HR-020",
+      "to": "E-HR-001",
+      "type": "exempts",
+      "weight": 0.3
+    },
+    {
+      "from": "E-HR-021",
+      "to": "E-HR-017",
+      "type": "mandated_by",
+      "weight": 1.0
+    },
+    {
+      "from": "E-HR-010",
+      "to": "E-HR-012",
+      "type": "may_disadvantage",
+      "weight": 0.5
+    },
+    {
+      "from": "E-HR-011",
+      "to": "E-HR-012",
+      "type": "may_disadvantage",
+      "weight": 0.6
+    },
+    {
+      "from": "E-HR-022",
+      "to": "E-HR-023",
+      "type": "supports",
+      "weight": 0.8
+    }
+  ],
+  "nodes": [
+    {
+      "id": "hr_resume_screen",
+      "type": "decision_domain",
+      "label": "Resume Screening"
+    },
+    {
+      "id": "hr_skill_eval",
+      "type": "decision_domain",
+      "label": "Skill Evaluation"
+    },
+    {
+      "id": "hr_promotion",
+      "type": "decision_domain",
+      "label": "Promotion Decision"
+    },
+    {
+      "id": "hr_dei",
+      "type": "ethical_principle",
+      "label": "Diversity & Inclusion"
+    }
+  ],
+  "edges": [
+    {
+      "source": "hr_resume_screen",
+      "target": "fairness",
+      "relation": "requires"
+    },
+    {
+      "source": "hr_skill_eval",
+      "target": "transparency",
+      "relation": "requires"
+    },
+    {
+      "source": "age",
+      "target": "hr_promotion",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "gender",
+      "target": "hr_resume_screen",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "race",
+      "target": "hr_resume_screen",
+      "relation": "must_not_influence"
+    }
+  ]
+}

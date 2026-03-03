@@ -1,0 +1,385 @@
+{
+  "domain": "finance",
+  "description": "Knowledge graph for financial ethical decision-making",
+  "entities": [
+    {
+      "id": "E-FN-001",
+      "type": "product",
+      "name": "mortgage",
+      "category": "secured_lending",
+      "risk_level": "medium"
+    },
+    {
+      "id": "E-FN-002",
+      "type": "product",
+      "name": "personal_loan",
+      "category": "unsecured_lending",
+      "risk_level": "high"
+    },
+    {
+      "id": "E-FN-003",
+      "type": "product",
+      "name": "credit_card",
+      "category": "revolving_credit",
+      "risk_level": "medium"
+    },
+    {
+      "id": "E-FN-004",
+      "type": "product",
+      "name": "auto_loan",
+      "category": "secured_lending",
+      "risk_level": "low"
+    },
+    {
+      "id": "E-FN-005",
+      "type": "product",
+      "name": "student_loan",
+      "category": "education_lending",
+      "risk_level": "medium"
+    },
+    {
+      "id": "E-FN-006",
+      "type": "product",
+      "name": "insurance_policy",
+      "category": "risk_transfer",
+      "risk_level": "variable"
+    },
+    {
+      "id": "E-FN-007",
+      "type": "factor",
+      "name": "credit_score",
+      "category": "creditworthiness",
+      "legal_status": "permitted"
+    },
+    {
+      "id": "E-FN-008",
+      "type": "factor",
+      "name": "income",
+      "category": "ability_to_repay",
+      "legal_status": "permitted"
+    },
+    {
+      "id": "E-FN-009",
+      "type": "factor",
+      "name": "debt_to_income_ratio",
+      "category": "risk_assessment",
+      "legal_status": "permitted"
+    },
+    {
+      "id": "E-FN-010",
+      "type": "factor",
+      "name": "zip_code",
+      "category": "geographic",
+      "legal_status": "scrutinized_proxy"
+    },
+    {
+      "id": "E-FN-011",
+      "type": "factor",
+      "name": "employment_history",
+      "category": "stability",
+      "legal_status": "permitted"
+    },
+    {
+      "id": "E-FN-012",
+      "type": "stakeholder",
+      "name": "applicant",
+      "role": "borrower"
+    },
+    {
+      "id": "E-FN-013",
+      "type": "stakeholder",
+      "name": "loan_officer",
+      "role": "decision_maker"
+    },
+    {
+      "id": "E-FN-014",
+      "type": "stakeholder",
+      "name": "compliance_officer",
+      "role": "regulatory_oversight"
+    },
+    {
+      "id": "E-FN-015",
+      "type": "regulation",
+      "name": "ecoa",
+      "description": "Equal Credit Opportunity Act"
+    },
+    {
+      "id": "E-FN-016",
+      "type": "regulation",
+      "name": "fair_housing_act",
+      "description": "Fair Housing Act anti-discrimination provisions"
+    },
+    {
+      "id": "E-FN-017",
+      "type": "regulation",
+      "name": "tila",
+      "description": "Truth in Lending Act"
+    },
+    {
+      "id": "E-FN-018",
+      "type": "regulation",
+      "name": "cfpb_guidelines",
+      "description": "Consumer Financial Protection Bureau guidelines"
+    },
+    {
+      "id": "E-FN-019",
+      "type": "concept",
+      "name": "predatory_lending",
+      "description": "Unfair or abusive lending practices"
+    },
+    {
+      "id": "E-FN-020",
+      "type": "concept",
+      "name": "redlining",
+      "description": "Discriminatory denial of services by geography"
+    },
+    {
+      "id": "E-FN-021",
+      "type": "concept",
+      "name": "adverse_action",
+      "description": "Denial of credit requiring explanation"
+    },
+    {
+      "id": "E-FN-022",
+      "type": "principle",
+      "name": "financial_inclusion",
+      "description": "Ensuring access to fair financial services"
+    },
+    {
+      "id": "E-FN-023",
+      "type": "principle",
+      "name": "responsible_lending",
+      "description": "Ensuring borrower can repay without undue hardship"
+    }
+  ],
+  "rules": [
+    {
+      "id": "FR001",
+      "type": "hard_rule",
+      "description": "Never use race, ethnicity, or national origin in credit decisions",
+      "source": "ECOA / Fair Housing Act",
+      "severity": "critical"
+    },
+    {
+      "id": "FR002",
+      "type": "hard_rule",
+      "description": "Never use religion or marital status in credit decisions",
+      "source": "ECOA",
+      "severity": "critical"
+    },
+    {
+      "id": "FR003",
+      "type": "hard_rule",
+      "description": "Provide adverse action notice when denying credit",
+      "source": "ECOA / FCRA",
+      "severity": "high"
+    },
+    {
+      "id": "FR004",
+      "type": "hard_rule",
+      "description": "Never engage in predatory lending practices",
+      "source": "Dodd-Frank Act",
+      "severity": "critical"
+    },
+    {
+      "id": "FR005",
+      "type": "soft_rule",
+      "description": "Monitor models for disparate impact on protected groups",
+      "source": "CFPB Guidelines",
+      "severity": "high"
+    },
+    {
+      "id": "FR006",
+      "type": "soft_rule",
+      "description": "Consider alternative data sources that improve inclusion",
+      "source": "Industry best practice",
+      "severity": "medium"
+    },
+    {
+      "id": "FR007",
+      "type": "hard_rule",
+      "description": "Never use zip code as sole proxy for creditworthiness",
+      "source": "Fair lending law",
+      "severity": "high"
+    },
+    {
+      "id": "FR008",
+      "type": "soft_rule",
+      "description": "Explain model decisions in plain language to applicants",
+      "source": "TILA / transparency principle",
+      "severity": "medium"
+    },
+    {
+      "id": "FR009",
+      "type": "hard_rule",
+      "description": "Never charge higher rates based on gender or age alone",
+      "source": "ECOA",
+      "severity": "critical"
+    },
+    {
+      "id": "FR010",
+      "type": "soft_rule",
+      "description": "Ensure APR is clearly disclosed before agreement",
+      "source": "TILA",
+      "severity": "high"
+    },
+    {
+      "id": "FR011",
+      "type": "hard_rule",
+      "description": "Never deny insurance claims based on pre-existing conditions when prohibited",
+      "source": "ACA",
+      "severity": "critical"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "E-FN-010",
+      "to": "E-FN-020",
+      "type": "proxy_for",
+      "weight": 0.7
+    },
+    {
+      "from": "E-FN-007",
+      "to": "E-FN-001",
+      "type": "input_to",
+      "weight": 0.9
+    },
+    {
+      "from": "E-FN-008",
+      "to": "E-FN-001",
+      "type": "input_to",
+      "weight": 0.85
+    },
+    {
+      "from": "E-FN-009",
+      "to": "E-FN-001",
+      "type": "input_to",
+      "weight": 0.8
+    },
+    {
+      "from": "E-FN-015",
+      "to": "E-FN-001",
+      "type": "governs",
+      "weight": 1.0
+    },
+    {
+      "from": "E-FN-016",
+      "to": "E-FN-001",
+      "type": "governs",
+      "weight": 0.9
+    },
+    {
+      "from": "E-FN-017",
+      "to": "E-FN-012",
+      "type": "protects",
+      "weight": 1.0
+    },
+    {
+      "from": "E-FN-019",
+      "to": "E-FN-012",
+      "type": "harms",
+      "weight": 1.0
+    },
+    {
+      "from": "E-FN-022",
+      "to": "E-FN-019",
+      "type": "opposes",
+      "weight": 0.9
+    },
+    {
+      "from": "E-FN-023",
+      "to": "E-FN-019",
+      "type": "opposes",
+      "weight": 0.95
+    },
+    {
+      "from": "E-FN-013",
+      "to": "E-FN-023",
+      "type": "duty_of",
+      "weight": 0.85
+    },
+    {
+      "from": "E-FN-014",
+      "to": "E-FN-005",
+      "type": "monitors",
+      "weight": 0.8
+    },
+    {
+      "from": "E-FN-021",
+      "to": "E-FN-003",
+      "type": "applies_to",
+      "weight": 0.7
+    },
+    {
+      "from": "E-FN-011",
+      "to": "E-FN-002",
+      "type": "input_to",
+      "weight": 0.75
+    },
+    {
+      "from": "E-FN-018",
+      "to": "E-FN-001",
+      "type": "regulates",
+      "weight": 0.9
+    }
+  ],
+  "nodes": [
+    {
+      "id": "fn_credit_scoring",
+      "type": "decision_domain",
+      "label": "Credit Scoring"
+    },
+    {
+      "id": "fn_loan_pricing",
+      "type": "decision_domain",
+      "label": "Loan Pricing"
+    },
+    {
+      "id": "fn_collections",
+      "type": "decision_domain",
+      "label": "Collections"
+    },
+    {
+      "id": "fn_model_fairness",
+      "type": "concept",
+      "label": "Model Fairness"
+    },
+    {
+      "id": "fn_explainability",
+      "type": "ethical_principle",
+      "label": "Algorithmic Explainability"
+    }
+  ],
+  "edges": [
+    {
+      "source": "fn_credit_scoring",
+      "target": "fairness",
+      "relation": "requires"
+    },
+    {
+      "source": "fn_loan_pricing",
+      "target": "transparency",
+      "relation": "requires"
+    },
+    {
+      "source": "race",
+      "target": "fn_credit_scoring",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "gender",
+      "target": "fn_credit_scoring",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "religion",
+      "target": "fn_credit_scoring",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "fn_collections",
+      "target": "fairness",
+      "relation": "requires"
+    }
+  ]
+}

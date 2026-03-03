@@ -1,0 +1,318 @@
+{
+  "name": "EthicAgent Ethical Ontology",
+  "version": "1.0",
+  "description": "Universal ethical concepts and their relationships",
+  "concepts": [
+    {
+      "id": "autonomy",
+      "type": "principle",
+      "definition": "Right of individuals to make their own informed decisions",
+      "tradition": "deontological",
+      "related": [
+        "informed_consent",
+        "self_determination",
+        "privacy"
+      ]
+    },
+    {
+      "id": "beneficence",
+      "type": "principle",
+      "definition": "Obligation to act in ways that promote others' well-being",
+      "tradition": "consequentialist",
+      "related": [
+        "utility",
+        "welfare",
+        "care"
+      ]
+    },
+    {
+      "id": "non_maleficence",
+      "type": "principle",
+      "definition": "Obligation to avoid causing harm",
+      "tradition": "deontological",
+      "related": [
+        "safety",
+        "precaution",
+        "risk_mitigation"
+      ]
+    },
+    {
+      "id": "justice",
+      "type": "principle",
+      "definition": "Fair, equitable, and appropriate treatment and distribution",
+      "tradition": "virtue_ethics",
+      "related": [
+        "fairness",
+        "equality",
+        "equity"
+      ]
+    },
+    {
+      "id": "dignity",
+      "type": "principle",
+      "definition": "Inherent worth of every human being",
+      "tradition": "deontological",
+      "related": [
+        "respect",
+        "human_rights",
+        "personhood"
+      ]
+    },
+    {
+      "id": "privacy",
+      "type": "right",
+      "definition": "Right to control personal information and space",
+      "tradition": "deontological",
+      "related": [
+        "data_protection",
+        "confidentiality",
+        "autonomy"
+      ]
+    },
+    {
+      "id": "consent",
+      "type": "process",
+      "definition": "Voluntary agreement based on adequate information",
+      "tradition": "deontological",
+      "related": [
+        "informed_consent",
+        "autonomy",
+        "transparency"
+      ]
+    },
+    {
+      "id": "fairness",
+      "type": "principle",
+      "definition": "Impartial and just treatment without favoritism",
+      "tradition": "virtue_ethics",
+      "related": [
+        "justice",
+        "equity",
+        "non_discrimination"
+      ]
+    },
+    {
+      "id": "transparency",
+      "type": "principle",
+      "definition": "Openness about processes and reasoning",
+      "tradition": "consequentialist",
+      "related": [
+        "explainability",
+        "accountability",
+        "trust"
+      ]
+    },
+    {
+      "id": "accountability",
+      "type": "principle",
+      "definition": "Obligation to justify actions and accept responsibility",
+      "tradition": "virtue_ethics",
+      "related": [
+        "transparency",
+        "responsibility",
+        "oversight"
+      ]
+    },
+    {
+      "id": "utility",
+      "type": "principle",
+      "definition": "Maximizing overall well-being or happiness",
+      "tradition": "consequentialist",
+      "related": [
+        "beneficence",
+        "welfare",
+        "greatest_good"
+      ]
+    },
+    {
+      "id": "care",
+      "type": "principle",
+      "definition": "Attentiveness to relationships and vulnerability",
+      "tradition": "care_ethics",
+      "related": [
+        "compassion",
+        "empathy",
+        "responsibility"
+      ]
+    },
+    {
+      "id": "trust",
+      "type": "value",
+      "definition": "Confidence in reliability, truth, and ability",
+      "tradition": "virtue_ethics",
+      "related": [
+        "transparency",
+        "integrity",
+        "consistency"
+      ]
+    },
+    {
+      "id": "equity",
+      "type": "principle",
+      "definition": "Allocating resources based on need to achieve equal outcomes",
+      "tradition": "virtue_ethics",
+      "related": [
+        "justice",
+        "fairness",
+        "inclusion"
+      ]
+    },
+    {
+      "id": "proportionality",
+      "type": "principle",
+      "definition": "Response should be proportional to the situation",
+      "tradition": "contextual",
+      "related": [
+        "necessity",
+        "appropriateness",
+        "balance"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "autonomy",
+      "to": "beneficence",
+      "type": "conflicts_with",
+      "description": "Patient autonomy may conflict with medical best interest"
+    },
+    {
+      "from": "autonomy",
+      "to": "consent",
+      "type": "requires",
+      "description": "Autonomy presupposes informed consent"
+    },
+    {
+      "from": "privacy",
+      "to": "transparency",
+      "type": "conflicts_with",
+      "description": "Privacy limits how transparent processes can be"
+    },
+    {
+      "from": "beneficence",
+      "to": "non_maleficence",
+      "type": "complements",
+      "description": "Doing good and avoiding harm are complementary duties"
+    },
+    {
+      "from": "justice",
+      "to": "fairness",
+      "type": "subsumes",
+      "description": "Fairness is a component of justice"
+    },
+    {
+      "from": "justice",
+      "to": "equity",
+      "type": "supports",
+      "description": "Justice aims for equitable outcomes"
+    },
+    {
+      "from": "transparency",
+      "to": "accountability",
+      "type": "enables",
+      "description": "Transparency is prerequisite for accountability"
+    },
+    {
+      "from": "transparency",
+      "to": "trust",
+      "type": "promotes",
+      "description": "Transparency builds trust"
+    },
+    {
+      "from": "consent",
+      "to": "autonomy",
+      "type": "implements",
+      "description": "Consent is the practical expression of autonomy"
+    },
+    {
+      "from": "dignity",
+      "to": "non_maleficence",
+      "type": "supports",
+      "description": "Respecting dignity requires avoiding harm"
+    },
+    {
+      "from": "care",
+      "to": "beneficence",
+      "type": "motivates",
+      "description": "Care ethic motivates beneficent action"
+    },
+    {
+      "from": "utility",
+      "to": "justice",
+      "type": "may_conflict_with",
+      "description": "Maximizing utility may produce unjust distributions"
+    },
+    {
+      "from": "accountability",
+      "to": "trust",
+      "type": "builds",
+      "description": "Being accountable builds institutional trust"
+    },
+    {
+      "from": "fairness",
+      "to": "equity",
+      "type": "supports",
+      "description": "Fairness considerations include equity concerns"
+    },
+    {
+      "from": "proportionality",
+      "to": "justice",
+      "type": "constrains",
+      "description": "Justice must be proportional to the situation"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ont_autonomy",
+      "type": "ethical_principle",
+      "label": "Autonomy"
+    },
+    {
+      "id": "ont_beneficence",
+      "type": "ethical_principle",
+      "label": "Beneficence"
+    },
+    {
+      "id": "ont_non_maleficence",
+      "type": "ethical_principle",
+      "label": "Non-maleficence"
+    },
+    {
+      "id": "ont_justice",
+      "type": "ethical_principle",
+      "label": "Justice"
+    },
+    {
+      "id": "ont_dignity",
+      "type": "ethical_principle",
+      "label": "Dignity"
+    },
+    {
+      "id": "ont_proportionality",
+      "type": "ethical_principle",
+      "label": "Proportionality"
+    }
+  ],
+  "edges": [
+    {
+      "source": "ont_autonomy",
+      "target": "ont_beneficence",
+      "relation": "may_conflict_with"
+    },
+    {
+      "source": "ont_non_maleficence",
+      "target": "ont_beneficence",
+      "relation": "complements"
+    },
+    {
+      "source": "ont_justice",
+      "target": "fairness",
+      "relation": "requires"
+    },
+    {
+      "source": "ont_dignity",
+      "target": "ont_non_maleficence",
+      "relation": "supports"
+    }
+  ]
+}

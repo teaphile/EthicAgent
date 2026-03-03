@@ -1,0 +1,109 @@
+# EthicAgent - LLM Configuration
+# Configure neural reasoning backends (OpenAI, Ollama/local).
+
+# =============================================================================
+# PRIMARY BACKEND: OpenAI
+# =============================================================================
+openai:
+  model: "gpt-4"
+  temperature: 0.3          # Low temperature for more deterministic reasoning
+  max_tokens: 2048
+  top_p: 0.95
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+  timeout: 60               # Seconds before timeout
+  max_retries: 3
+  retry_delay: 2            # Seconds between retries
+  api_key_env: "OPENAI_API_KEY"
+
+# =============================================================================
+# FALLBACK BACKEND: Ollama (Local)
+# =============================================================================
+ollama:
+  model: "llama3"
+  base_url: "http://localhost:11434"
+  temperature: 0.3
+  max_tokens: 2048
+  timeout: 120               # Local models may be slower
+  max_retries: 2
+  retry_delay: 1
+
+# =============================================================================
+# BACKEND SELECTION
+# =============================================================================
+backend:
+  primary: "openai"          # "openai" or "ollama"
+  fallback: "ollama"         # Fallback if primary fails
+  enable_fallback: true      # Automatically fall back on failure
+  enable_caching: true       # Cache LLM responses for identical inputs
+  cache_ttl: 3600            # Cache TTL in seconds (1 hour)
+
+# =============================================================================
+# RATE LIMITING
+# =============================================================================
+rate_limiting:
+  requests_per_minute: 30
+  tokens_per_minute: 60000
+  enable: true
+
+# =============================================================================
+# PROMPT TEMPLATES
+# =============================================================================
+prompts:
+  system_message: |
+    You are an ethical AI reasoning agent. Your role is to analyze actions
+    and decisions through an ethical lens, providing structured reasoning
+    about potential benefits, harms, and ethical considerations.
+
+    You must:
+    1. Consider all stakeholders affected by the decision
+    2. Identify potential harms and benefits
+    3. Flag any ethical concerns or red flags
+    4. Provide step-by-step reasoning (Chain of Thought)
+    5. Give a confidence score for your analysis
+
+    Be thorough, balanced, and err on the side of caution when safety
+    is involved.
+
+  analysis_template: |
+    ## Task Analysis Request
+
+    **Action:** {action}
+    **Domain:** {domain}
+    **Context:** {context}
+
+    **Relevant Precedents:**
+    {precedents}
+
+    **Applicable Rules:**
+    {rules}
+
+    Please analyze this action and provide:
+    1. **Recommended Decision:** APPROVE, REJECT, or ESCALATE
+    2. **Confidence:** 0.0 to 1.0
+    3. **Benefits:** List specific benefits
+    4. **Harms:** List potential harms
+    5. **Ethical Concerns:** Any ethical red flags
+    6. **Reasoning Steps:** Step-by-step analysis
+    7. **Stakeholder Impact:** How each stakeholder is affected
+    8. **Risk Assessment:** Overall risk level (LOW/MEDIUM/HIGH/CRITICAL)
+
+    Respond in structured format.
+
+  react_template: |
+    ## ReAct Reasoning
+
+    **Task:** {task}
+
+    Think step by step:
+
+    Thought 1: What is the core ethical question?
+    Action 1: Identify stakeholders.
+    Observation 1: {observation}
+
+    Thought 2: What are the potential consequences?
+    Action 2: Evaluate benefits and harms.
+
+    Continue until you reach a well-reasoned conclusion.
+
+    Final Answer: Provide your structured analysis.

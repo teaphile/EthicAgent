@@ -1,0 +1,384 @@
+# EthicAgent - Ethical Rules Configuration
+# These rules drive the deontological and symbolic reasoning engines.
+# Rules are categorized by type and severity.
+
+# =============================================================================
+# HARD RULES — Absolute violations that trigger HARD_BLOCK (EDS=0)
+# If ANY hard rule is violated, the action is immediately blocked.
+# =============================================================================
+hard_rules:
+  - id: HR001
+    name: "never_kill"
+    description: "An autonomous system must never take an action that directly causes death."
+    keywords: ["kill", "terminate life", "lethal", "cause death"]
+    domains: ["all"]
+
+  - id: HR002
+    name: "never_discriminate_by_race"
+    description: "Decisions must never be based on racial identity or ethnicity."
+    keywords: ["race", "racial", "ethnicity", "ethnic discrimination"]
+    protected_attributes: ["race", "ethnicity"]
+    domains: ["all"]
+
+  - id: HR003
+    name: "never_discriminate_by_gender"
+    description: "Decisions must never be based on gender identity."
+    keywords: ["gender", "sex", "gender discrimination"]
+    protected_attributes: ["gender", "sex"]
+    domains: ["all"]
+
+  - id: HR004
+    name: "never_discriminate_by_religion"
+    description: "Decisions must never be based on religious belief."
+    keywords: ["religion", "religious", "faith", "belief"]
+    protected_attributes: ["religion"]
+    domains: ["all"]
+
+  - id: HR005
+    name: "never_deny_emergency_care"
+    description: "Emergency medical care must never be denied to any individual."
+    keywords: ["deny emergency", "refuse emergency care", "withhold emergency"]
+    domains: ["healthcare"]
+
+  - id: HR006
+    name: "never_hide_critical_info_from_patient"
+    description: "Critical medical information must never be hidden from a patient."
+    keywords: ["hide diagnosis", "withhold information", "conceal prognosis"]
+    domains: ["healthcare"]
+
+  - id: HR007
+    name: "never_exploit_children"
+    description: "No action may exploit or endanger children."
+    keywords: ["exploit child", "endanger child", "child labor"]
+    domains: ["all"]
+
+  - id: HR008
+    name: "never_violate_bodily_autonomy"
+    description: "Forcing medical procedures without consent is forbidden."
+    keywords: ["force treatment", "compulsory procedure", "non-consensual"]
+    domains: ["healthcare"]
+
+  - id: HR009
+    name: "never_falsify_records"
+    description: "Fabrication or falsification of records is absolutely prohibited."
+    keywords: ["falsify", "fabricate", "forge records"]
+    domains: ["all"]
+
+  - id: HR010
+    name: "never_engage_in_slavery"
+    description: "Any form of forced labor or slavery is forbidden."
+    keywords: ["forced labor", "slavery", "human trafficking"]
+    domains: ["all"]
+
+  - id: HR011
+    name: "never_discriminate_by_disability"
+    description: "Decisions must never discriminate based on disability status."
+    keywords: ["disability", "disabled", "handicap"]
+    protected_attributes: ["disability"]
+    domains: ["all"]
+
+  - id: HR012
+    name: "never_discriminate_by_age"
+    description: "Decisions must not unfairly discriminate based on age."
+    keywords: ["age discrimination", "ageism"]
+    protected_attributes: ["age"]
+    domains: ["hiring", "finance"]
+
+# =============================================================================
+# DUTY RULES — Violations incur a penalty (subtracted from deontological score)
+# Each rule has a penalty between 0.1 and 0.5.
+# =============================================================================
+duty_rules:
+  - id: DR001
+    name: "informed_consent_required"
+    description: "Informed consent must be obtained before any medical procedure."
+    penalty: 0.30
+    keywords: ["no consent", "without consent", "consent missing"]
+    domains: ["healthcare"]
+
+  - id: DR002
+    name: "safety_protocols_must_be_followed"
+    description: "All applicable safety protocols must be adhered to."
+    penalty: 0.40
+    keywords: ["skip safety", "bypass protocol", "ignore safety"]
+    domains: ["all"]
+
+  - id: DR003
+    name: "privacy_must_be_protected"
+    description: "Personal data and private information must be protected."
+    penalty: 0.35
+    keywords: ["expose data", "leak information", "privacy breach", "share personal"]
+    domains: ["all"]
+    legal_references: ["GDPR Art. 5", "HIPAA §164.502"]
+
+  - id: DR004
+    name: "transparency_in_decision"
+    description: "Decisions must be transparent and explainable to stakeholders."
+    penalty: 0.20
+    keywords: ["opaque decision", "unexplained", "black box"]
+    domains: ["all"]
+    legal_references: ["EU AI Act Art. 13"]
+
+  - id: DR005
+    name: "equal_consideration"
+    description: "All individuals must be given equal consideration regardless of background."
+    penalty: 0.35
+    keywords: ["favor", "preferential treatment", "unequal consideration"]
+    domains: ["hiring", "finance"]
+
+  - id: DR006
+    name: "do_no_harm"
+    description: "Actions should minimize harm to all parties involved."
+    penalty: 0.30
+    keywords: ["cause harm", "harmful", "damage"]
+    domains: ["all"]
+
+  - id: DR007
+    name: "professional_competence"
+    description: "Actions must be performed within professional competence boundaries."
+    penalty: 0.25
+    keywords: ["outside expertise", "unqualified", "incompetent"]
+    domains: ["healthcare"]
+
+  - id: DR008
+    name: "conflict_of_interest_disclosure"
+    description: "Any conflict of interest must be disclosed."
+    penalty: 0.25
+    keywords: ["conflict of interest", "undisclosed relationship", "hidden stake"]
+    domains: ["all"]
+
+  - id: DR009
+    name: "data_minimization"
+    description: "Only necessary data should be collected and used for decisions."
+    penalty: 0.20
+    keywords: ["excessive data", "unnecessary collection", "over-collection"]
+    domains: ["all"]
+    legal_references: ["GDPR Art. 5(1)(c)"]
+
+  - id: DR010
+    name: "right_to_explanation"
+    description: "Affected individuals have the right to an explanation of automated decisions."
+    penalty: 0.25
+    keywords: ["no explanation", "refuse explanation"]
+    domains: ["all"]
+    legal_references: ["GDPR Art. 22", "EU AI Act Art. 13"]
+
+  - id: DR011
+    name: "proportionality"
+    description: "Actions must be proportional to the situation's severity."
+    penalty: 0.20
+    keywords: ["disproportionate", "excessive response", "overreaction"]
+    domains: ["all"]
+
+  - id: DR012
+    name: "accountability"
+    description: "Clear accountability must exist for all automated decisions."
+    penalty: 0.25
+    keywords: ["no accountability", "unaccountable", "no responsible party"]
+    domains: ["all"]
+
+  - id: DR013
+    name: "financial_suitability"
+    description: "Financial products must be suitable for the applicant's situation."
+    penalty: 0.30
+    keywords: ["unsuitable product", "predatory lending", "excessive risk"]
+    domains: ["finance"]
+
+  - id: DR014
+    name: "fair_assessment"
+    description: "Assessments must be based on relevant, job-related criteria only."
+    penalty: 0.30
+    keywords: ["irrelevant criteria", "biased assessment", "non-job-related"]
+    domains: ["hiring"]
+
+  - id: DR015
+    name: "emergency_priority"
+    description: "Life-threatening emergencies must be prioritized regardless of other factors."
+    penalty: 0.40
+    keywords: ["ignore emergency", "delay critical", "deprioritize urgent"]
+    domains: ["healthcare", "disaster"]
+
+  - id: DR016
+    name: "vulnerable_population_protection"
+    description: "Extra care must be taken when decisions affect vulnerable populations."
+    penalty: 0.30
+    keywords: ["ignore vulnerability", "disregard special needs"]
+    domains: ["all"]
+
+  - id: DR017
+    name: "resource_stewardship"
+    description: "Resources must be allocated efficiently and equitably."
+    penalty: 0.20
+    keywords: ["waste resources", "hoard supplies", "inefficient allocation"]
+    domains: ["disaster", "healthcare"]
+
+  - id: DR018
+    name: "truthfulness"
+    description: "All communications must be truthful and not misleading."
+    penalty: 0.30
+    keywords: ["mislead", "deceive", "misrepresent"]
+    domains: ["all"]
+
+  - id: DR019
+    name: "respect_for_autonomy"
+    description: "Individual autonomy and self-determination must be respected."
+    penalty: 0.25
+    keywords: ["override choice", "deny autonomy", "force decision"]
+    domains: ["healthcare"]
+
+  - id: DR020
+    name: "continuous_monitoring"
+    description: "Automated decisions must be continuously monitored for fairness."
+    penalty: 0.15
+    keywords: ["no monitoring", "unmonitored", "unchecked"]
+    domains: ["all"]
+
+# =============================================================================
+# DOMAIN-SPECIFIC RULES
+# =============================================================================
+domain_rules:
+  healthcare:
+    - id: HC001
+      name: "triage_protocol"
+      description: "Medical triage must follow established protocols (e.g., START)."
+      type: "conditional"
+      condition: "urgency == 'emergency'"
+      effect: "apply_triage_protocol"
+      penalty: 0.35
+
+    - id: HC002
+      name: "drug_contraindication_check"
+      description: "Medications must be checked against known contraindications."
+      type: "conditional"
+      condition: "action_type == 'prescribe'"
+      effect: "check_contraindications"
+      penalty: 0.40
+
+    - id: HC003
+      name: "patient_capacity_assessment"
+      description: "Patient decision-making capacity must be assessed before treatment changes."
+      type: "duty"
+      penalty: 0.25
+
+  finance:
+    - id: FN001
+      name: "credit_score_floor"
+      description: "Credit decisions must not rely solely on credit score."
+      type: "duty"
+      penalty: 0.25
+
+    - id: FN002
+      name: "income_verification"
+      description: "Income must be verified before loan approval."
+      type: "conditional"
+      condition: "loan_amount > 10000"
+      effect: "require_income_verification"
+      penalty: 0.30
+
+    - id: FN003
+      name: "anti_predatory_lending"
+      description: "Lending terms must not be predatory."
+      type: "hard"
+      penalty: 0.50
+
+  hiring:
+    - id: HI001
+      name: "skills_based_assessment"
+      description: "Hiring decisions must prioritize skills and qualifications."
+      type: "duty"
+      penalty: 0.30
+
+    - id: HI002
+      name: "blind_screening"
+      description: "Initial screening should minimize exposure to demographic information."
+      type: "duty"
+      penalty: 0.20
+
+    - id: HI003
+      name: "reasonable_accommodation"
+      description: "Reasonable accommodations must be considered for disabled candidates."
+      type: "duty"
+      penalty: 0.30
+
+  disaster:
+    - id: DS001
+      name: "life_over_property"
+      description: "Human life must always be prioritized over property."
+      type: "hard"
+      penalty: 0.50
+
+    - id: DS002
+      name: "vulnerable_first"
+      description: "Children, elderly, and disabled should receive priority in resource allocation."
+      type: "duty"
+      penalty: 0.30
+
+    - id: DS003
+      name: "equitable_distribution"
+      description: "Resources must be distributed equitably across affected areas."
+      type: "duty"
+      penalty: 0.25
+
+# =============================================================================
+# CULTURAL SENSITIVITY RULES
+# =============================================================================
+cultural_rules:
+  - id: CR001
+    name: "language_accessibility"
+    description: "Communication must be accessible in relevant languages."
+    penalty: 0.15
+    domains: ["all"]
+
+  - id: CR002
+    name: "religious_observance"
+    description: "Religious practices and observances should be respected in scheduling."
+    penalty: 0.15
+    domains: ["healthcare", "hiring"]
+
+  - id: CR003
+    name: "cultural_dietary_needs"
+    description: "Cultural dietary requirements should be accommodated."
+    penalty: 0.10
+    domains: ["healthcare", "disaster"]
+
+# =============================================================================
+# LEGAL COMPLIANCE RULES
+# =============================================================================
+legal_rules:
+  - id: LR001
+    name: "eu_ai_act_transparency"
+    description: "High-risk AI decisions require transparency per EU AI Act."
+    regulation: "EU AI Act"
+    articles: ["Art. 13", "Art. 14"]
+    penalty: 0.30
+    domains: ["all"]
+
+  - id: LR002
+    name: "gdpr_data_protection"
+    description: "Personal data processing must comply with GDPR."
+    regulation: "GDPR"
+    articles: ["Art. 5", "Art. 6", "Art. 22"]
+    penalty: 0.35
+    domains: ["all"]
+
+  - id: LR003
+    name: "hipaa_health_information"
+    description: "Health information must be protected per HIPAA requirements."
+    regulation: "HIPAA"
+    articles: ["§164.502", "§164.514"]
+    penalty: 0.40
+    domains: ["healthcare"]
+
+  - id: LR004
+    name: "equal_credit_opportunity"
+    description: "Credit decisions must comply with Equal Credit Opportunity Act."
+    regulation: "ECOA"
+    penalty: 0.35
+    domains: ["finance"]
+
+  - id: LR005
+    name: "eeoc_compliance"
+    description: "Hiring decisions must comply with EEOC guidelines."
+    regulation: "Title VII"
+    penalty: 0.35
+    domains: ["hiring"]

@@ -1,0 +1,380 @@
+{
+  "domain": "disaster",
+  "description": "Knowledge graph for disaster response ethical decision-making",
+  "entities": [
+    {
+      "id": "E-DR-001",
+      "type": "disaster",
+      "name": "earthquake",
+      "severity": "catastrophic",
+      "onset": "sudden"
+    },
+    {
+      "id": "E-DR-002",
+      "type": "disaster",
+      "name": "hurricane",
+      "severity": "severe",
+      "onset": "gradual"
+    },
+    {
+      "id": "E-DR-003",
+      "type": "disaster",
+      "name": "flood",
+      "severity": "severe",
+      "onset": "variable"
+    },
+    {
+      "id": "E-DR-004",
+      "type": "disaster",
+      "name": "wildfire",
+      "severity": "severe",
+      "onset": "gradual"
+    },
+    {
+      "id": "E-DR-005",
+      "type": "disaster",
+      "name": "pandemic",
+      "severity": "catastrophic",
+      "onset": "gradual"
+    },
+    {
+      "id": "E-DR-006",
+      "type": "disaster",
+      "name": "industrial_accident",
+      "severity": "severe",
+      "onset": "sudden"
+    },
+    {
+      "id": "E-DR-007",
+      "type": "resource",
+      "name": "search_and_rescue_team",
+      "scarcity": "high",
+      "deployment_time": "hours"
+    },
+    {
+      "id": "E-DR-008",
+      "type": "resource",
+      "name": "medical_supplies",
+      "scarcity": "medium",
+      "deployment_time": "days"
+    },
+    {
+      "id": "E-DR-009",
+      "type": "resource",
+      "name": "shelter",
+      "scarcity": "medium",
+      "capacity": "variable"
+    },
+    {
+      "id": "E-DR-010",
+      "type": "resource",
+      "name": "clean_water",
+      "scarcity": "high",
+      "deployment_time": "hours"
+    },
+    {
+      "id": "E-DR-011",
+      "type": "resource",
+      "name": "evacuation_transport",
+      "scarcity": "high",
+      "deployment_time": "hours"
+    },
+    {
+      "id": "E-DR-012",
+      "type": "population",
+      "name": "elderly",
+      "vulnerability": "high",
+      "mobility": "low"
+    },
+    {
+      "id": "E-DR-013",
+      "type": "population",
+      "name": "children",
+      "vulnerability": "high",
+      "mobility": "dependent"
+    },
+    {
+      "id": "E-DR-014",
+      "type": "population",
+      "name": "disabled",
+      "vulnerability": "high",
+      "mobility": "variable"
+    },
+    {
+      "id": "E-DR-015",
+      "type": "population",
+      "name": "low_income",
+      "vulnerability": "high",
+      "resources": "limited"
+    },
+    {
+      "id": "E-DR-016",
+      "type": "stakeholder",
+      "name": "emergency_manager",
+      "role": "coordinator"
+    },
+    {
+      "id": "E-DR-017",
+      "type": "stakeholder",
+      "name": "first_responder",
+      "role": "field_operator"
+    },
+    {
+      "id": "E-DR-018",
+      "type": "stakeholder",
+      "name": "local_government",
+      "role": "authority"
+    },
+    {
+      "id": "E-DR-019",
+      "type": "regulation",
+      "name": "stafford_act",
+      "description": "Robert T. Stafford Disaster Relief Act"
+    },
+    {
+      "id": "E-DR-020",
+      "type": "regulation",
+      "name": "fema_guidelines",
+      "description": "FEMA Comprehensive Preparedness Guide"
+    },
+    {
+      "id": "E-DR-021",
+      "type": "principle",
+      "name": "greatest_good_principle",
+      "description": "Maximize lives saved with limited resources"
+    },
+    {
+      "id": "E-DR-022",
+      "type": "principle",
+      "name": "vulnerability_priority",
+      "description": "Prioritize most vulnerable populations"
+    },
+    {
+      "id": "E-DR-023",
+      "type": "concept",
+      "name": "triage_protocol",
+      "description": "Systematic prioritization of casualties"
+    },
+    {
+      "id": "E-DR-024",
+      "type": "concept",
+      "name": "equitable_distribution",
+      "description": "Fair allocation regardless of socioeconomic status"
+    }
+  ],
+  "rules": [
+    {
+      "id": "DRR001",
+      "type": "hard_rule",
+      "description": "Never prioritize rescue based on socioeconomic status or property value",
+      "source": "FEMA / Civil Rights",
+      "severity": "critical"
+    },
+    {
+      "id": "DRR002",
+      "type": "hard_rule",
+      "description": "Never discriminate in evacuation assistance based on immigration status",
+      "source": "Stafford Act",
+      "severity": "critical"
+    },
+    {
+      "id": "DRR003",
+      "type": "hard_rule",
+      "description": "Ensure accessible evacuation for disabled individuals",
+      "source": "ADA",
+      "severity": "critical"
+    },
+    {
+      "id": "DRR004",
+      "type": "soft_rule",
+      "description": "Prioritize areas with highest population density and vulnerability",
+      "source": "Emergency management doctrine",
+      "severity": "high"
+    },
+    {
+      "id": "DRR005",
+      "type": "soft_rule",
+      "description": "Use vulnerability indices rather than property values for resource allocation",
+      "source": "Equity framework",
+      "severity": "high"
+    },
+    {
+      "id": "DRR006",
+      "type": "hard_rule",
+      "description": "Never withhold aid as punishment for non-compliance with evacuation orders",
+      "source": "Humanitarian law",
+      "severity": "critical"
+    },
+    {
+      "id": "DRR007",
+      "type": "soft_rule",
+      "description": "Coordinate with community organizations for culturally appropriate response",
+      "source": "FEMA whole-community approach",
+      "severity": "medium"
+    },
+    {
+      "id": "DRR008",
+      "type": "soft_rule",
+      "description": "Provide multilingual emergency communications",
+      "source": "EO 13166",
+      "severity": "high"
+    },
+    {
+      "id": "DRR009",
+      "type": "hard_rule",
+      "description": "Never force separation of families during evacuation",
+      "source": "Humanitarian principles",
+      "severity": "high"
+    },
+    {
+      "id": "DRR010",
+      "type": "soft_rule",
+      "description": "Document resource allocation decisions for post-event review",
+      "source": "Accountability principle",
+      "severity": "medium"
+    },
+    {
+      "id": "DRR011",
+      "type": "hard_rule",
+      "description": "Never deny first aid to injured persons regardless of circumstances",
+      "source": "Geneva Conventions / humanitarian law",
+      "severity": "critical"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "E-DR-001",
+      "to": "E-DR-007",
+      "type": "requires",
+      "weight": 0.95
+    },
+    {
+      "from": "E-DR-002",
+      "to": "E-DR-011",
+      "type": "requires",
+      "weight": 0.9
+    },
+    {
+      "from": "E-DR-003",
+      "to": "E-DR-009",
+      "type": "requires",
+      "weight": 0.85
+    },
+    {
+      "from": "E-DR-005",
+      "to": "E-DR-008",
+      "type": "requires",
+      "weight": 0.95
+    },
+    {
+      "from": "E-DR-012",
+      "to": "E-DR-011",
+      "type": "priority_for",
+      "weight": 0.9
+    },
+    {
+      "from": "E-DR-013",
+      "to": "E-DR-011",
+      "type": "priority_for",
+      "weight": 0.95
+    },
+    {
+      "from": "E-DR-014",
+      "to": "E-DR-011",
+      "type": "priority_for",
+      "weight": 0.9
+    },
+    {
+      "from": "E-DR-015",
+      "to": "E-DR-009",
+      "type": "priority_for",
+      "weight": 0.8
+    },
+    {
+      "from": "E-DR-016",
+      "to": "E-DR-021",
+      "type": "duty_of",
+      "weight": 0.85
+    },
+    {
+      "from": "E-DR-017",
+      "to": "E-DR-023",
+      "type": "follows",
+      "weight": 0.9
+    },
+    {
+      "from": "E-DR-019",
+      "to": "E-DR-016",
+      "type": "authorizes",
+      "weight": 1.0
+    },
+    {
+      "from": "E-DR-020",
+      "to": "E-DR-017",
+      "type": "guides",
+      "weight": 0.9
+    },
+    {
+      "from": "E-DR-021",
+      "to": "E-DR-022",
+      "type": "may_conflict_with",
+      "weight": 0.5
+    },
+    {
+      "from": "E-DR-023",
+      "to": "E-DR-024",
+      "type": "supports",
+      "weight": 0.7
+    },
+    {
+      "from": "E-DR-004",
+      "to": "E-DR-011",
+      "type": "requires",
+      "weight": 0.85
+    }
+  ],
+  "nodes": [
+    {
+      "id": "dr_evacuation",
+      "type": "decision_domain",
+      "label": "Evacuation Planning"
+    },
+    {
+      "id": "dr_resource_deploy",
+      "type": "decision_domain",
+      "label": "Resource Deployment"
+    },
+    {
+      "id": "dr_search_rescue",
+      "type": "decision_domain",
+      "label": "Search and Rescue Priority"
+    },
+    {
+      "id": "dr_aid_distribution",
+      "type": "decision_domain",
+      "label": "Aid Distribution"
+    }
+  ],
+  "edges": [
+    {
+      "source": "dr_evacuation",
+      "target": "fairness",
+      "relation": "requires"
+    },
+    {
+      "source": "dr_resource_deploy",
+      "target": "accountability",
+      "relation": "requires"
+    },
+    {
+      "source": "race",
+      "target": "dr_aid_distribution",
+      "relation": "must_not_influence"
+    },
+    {
+      "source": "national_origin",
+      "target": "dr_evacuation",
+      "relation": "must_not_influence"
+    }
+  ]
+}

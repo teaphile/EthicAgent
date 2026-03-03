@@ -1,0 +1,35 @@
+services:
+  ethicagent:
+    build:
+      context: .
+      target: production
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ETHICAGENT_LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data
+      - ./data/results:/app/data/results
+
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - ./data:/app/data
+      - ./data/results:/app/data/results
+    depends_on:
+      - ethicagent
+
+  tests:
+    build:
+      context: .
+      target: test
+    profiles:
+      - test
+    volumes:
+      - ./tests:/app/tests
+      - ./ethicagent:/app/ethicagent

@@ -1,0 +1,101 @@
+# EthicAgent - Scenarios Configuration
+# Configuration for test scenario parameters and generation.
+
+scenarios:
+  healthcare:
+    name: "Healthcare Triage"
+    description: "Medical resource allocation and triage decisions."
+    num_cases: 50
+    difficulty_distribution:
+      easy: 0.20
+      medium: 0.30
+      hard: 0.30
+      dilemma: 0.20
+    urgency_levels: ["critical", "high", "moderate", "low"]
+    resource_types: ["ventilator", "icu_bed", "blood_supply", "medication", "surgical_team"]
+    dilemma_types:
+      - "resource_scarcity"
+      - "patient_autonomy"
+      - "experimental_treatment"
+      - "pandemic_allocation"
+      - "age_based_priority"
+
+  finance:
+    name: "Loan Approval"
+    description: "Financial lending decisions with fairness considerations."
+    num_cases: 50
+    difficulty_distribution:
+      easy: 0.25
+      medium: 0.25
+      hard: 0.25
+      dilemma: 0.25
+    loan_types: ["mortgage", "personal", "business", "auto", "student"]
+    bias_scenarios:
+      - "qualified_minority_rejection"
+      - "historical_data_bias"
+      - "zip_code_proxy"
+      - "name_based_bias"
+
+  hiring:
+    name: "Hiring Decision"
+    description: "Resume screening and hiring with diversity considerations."
+    num_cases: 50
+    difficulty_distribution:
+      easy: 0.20
+      medium: 0.30
+      hard: 0.30
+      dilemma: 0.20
+    job_levels: ["entry", "mid", "senior", "executive"]
+    bias_scenarios:
+      - "gender_biased_description"
+      - "name_based_bias"
+      - "age_discrimination"
+      - "disability_bias"
+      - "education_prestige_bias"
+
+  disaster:
+    name: "Disaster Response"
+    description: "Emergency resource allocation during natural disasters."
+    num_cases: 50
+    difficulty_distribution:
+      easy: 0.15
+      medium: 0.25
+      hard: 0.35
+      dilemma: 0.25
+    disaster_types: ["earthquake", "flood", "hurricane", "wildfire", "pandemic"]
+    resource_types: ["rescue_team", "medical_supplies", "food", "shelter", "water"]
+    population_groups: ["children", "elderly", "disabled", "general_adult"]
+
+# =============================================================================
+# EVALUATION SETTINGS
+# =============================================================================
+evaluation:
+  metrics:
+    - "accuracy"
+    - "ethical_alignment"
+    - "explainability"
+    - "statistical_parity"
+    - "disparate_impact"
+    - "latency"
+    - "trust_score"
+  
+  baselines:
+    - "pure_llm"
+    - "pure_rules"
+    - "vanilla_agent"
+  
+  ablation_variants:
+    - "no_ethical_reasoning"
+    - "no_context_engine"
+    - "no_symbolic_reasoner"
+    - "no_neural_reasoner"
+    - "no_reflection"
+    - "no_knowledge_graph"
+    - "full"
+
+  statistical:
+    significance_level: 0.05
+    effect_size_thresholds:
+      small: 0.2
+      medium: 0.5
+      large: 0.8
