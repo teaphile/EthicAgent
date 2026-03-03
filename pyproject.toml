@@ -87,6 +87,10 @@ line-length = 100
 select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*.ipynb" = ["E402"]
+"scripts/*.py" = ["E402"]
+
 [tool.coverage.run]
 source = ["ethicagent"]
 omit = ["*/tests/*", "*/dashboard/*"]
