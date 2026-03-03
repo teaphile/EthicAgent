@@ -13,19 +13,17 @@ License: MIT
 """
 
 # NOTE: we keep __doc__ short for tools that inspect it programmatically.
-__doc__ = (
-    "EthicAgent: neuro-symbolic ethical reasoning for autonomous agents."
-)
+__doc__ = "EthicAgent: neuro-symbolic ethical reasoning for autonomous agents."
 
 __version__ = "1.0.0"
 __author__ = "EthicAgent Research Team"
 
 # -- Public API ---------------------------------------------------------------
 # Import path is ethicagent.orchestrator (top-level), NOT ethicagent.core.*
-from ethicagent.orchestrator import EthicAgentOrchestrator
-from ethicagent.ethics.ethical_score import EthicalDecision, EthicalVerdict
-from ethicagent.core.state import PipelineState, PipelineStage, StageResult
 from ethicagent.core.logger import AuditLogger
+from ethicagent.core.state import PipelineStage, PipelineState, StageResult
+from ethicagent.ethics.ethical_score import EthicalDecision, EthicalVerdict
+from ethicagent.orchestrator import EthicAgentOrchestrator
 
 __all__ = [
     "EthicAgentOrchestrator",

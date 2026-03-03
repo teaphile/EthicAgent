@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
-from ethicagent.agents.context_agent import ContextAgent
-from ethicagent.agents.fusion_agent import FusionAgent
-from ethicagent.agents.ethical_reasoner import EthicalReasonerAgent
 from ethicagent.agents.action_executor import ActionExecutor
+from ethicagent.agents.context_agent import ContextAgent
+from ethicagent.agents.ethical_reasoner import EthicalReasonerAgent
+from ethicagent.agents.fusion_agent import FusionAgent
 from ethicagent.agents.reflection_agent import ReflectionAgent
 
 
@@ -17,30 +16,22 @@ class TestContextAgent:
 
     def test_classify_domain_healthcare(self):
         agent = ContextAgent()
-        domain = agent.classify_domain(
-            "Patient needs emergency surgery for cardiac arrest"
-        )
+        domain = agent.classify_domain("Patient needs emergency surgery for cardiac arrest")
         assert domain == "healthcare"
 
     def test_classify_domain_finance(self):
         agent = ContextAgent()
-        domain = agent.classify_domain(
-            "Approve a mortgage loan for a first-time homebuyer"
-        )
+        domain = agent.classify_domain("Approve a mortgage loan for a first-time homebuyer")
         assert domain == "finance"
 
     def test_classify_domain_hiring(self):
         agent = ContextAgent()
-        domain = agent.classify_domain(
-            "Screen candidates for a software engineering position"
-        )
+        domain = agent.classify_domain("Screen candidates for a software engineering position")
         assert domain == "hiring"
 
     def test_classify_domain_disaster(self):
         agent = ContextAgent()
-        domain = agent.classify_domain(
-            "Evacuate residents before the hurricane makes landfall"
-        )
+        domain = agent.classify_domain("Evacuate residents before the hurricane makes landfall")
         assert domain == "disaster"
 
     def test_extract_entities(self):
@@ -53,16 +44,12 @@ class TestContextAgent:
 
     def test_determine_urgency(self):
         agent = ContextAgent()
-        urgency = agent.determine_urgency(
-            "Emergency evacuation needed immediately"
-        )
+        urgency = agent.determine_urgency("Emergency evacuation needed immediately")
         assert urgency in ["low", "medium", "high", "critical"]
 
     def test_full_analysis(self):
         agent = ContextAgent()
-        result = agent.analyze(
-            "Approve a loan for an applicant with good credit"
-        )
+        result = agent.analyze("Approve a loan for an applicant with good credit")
         assert isinstance(result, dict)
         assert "domain" in result
         assert "entities" in result
@@ -286,10 +273,16 @@ class TestReflectionAgent:
     def test_learning_summary(self):
         agent = ReflectionAgent()
         agent.record_decision(
-            task="Test", domain="general", verdict="approve",
+            task="Test",
+            domain="general",
+            verdict="approve",
             eds_score=0.80,
-            philosophy_scores={"deontological": 0.9, "consequentialist": 0.7,
-                              "virtue_ethics": 0.8, "contextual": 0.8},
+            philosophy_scores={
+                "deontological": 0.9,
+                "consequentialist": 0.7,
+                "virtue_ethics": 0.8,
+                "contextual": 0.8,
+            },
         )
         summary = agent.get_learning_summary()
         assert isinstance(summary, (str, dict))

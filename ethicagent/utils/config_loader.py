@@ -20,12 +20,13 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     yaml = None  # type: ignore
@@ -127,7 +128,7 @@ class Config:
         prefix = "ETHICAGENT_"
         for key, value in os.environ.items():
             if key.startswith(prefix):
-                config_key = key[len(prefix):].lower().replace("__", ".")
+                config_key = key[len(prefix) :].lower().replace("__", ".")
                 # Try to parse as JSON for complex values
                 try:
                     parsed = json.loads(value)

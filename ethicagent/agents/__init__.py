@@ -11,19 +11,19 @@ Each agent handles one stage of the 8-step pipeline:
   ReflectionAgent    → Stage 8 (learning loop)
 """
 
+from ethicagent.agents.action_executor import ActionExecutor
 from ethicagent.agents.context_agent import ContextAgent
-from ethicagent.agents.neural_reasoner import NeuralReasoner
-from ethicagent.agents.symbolic_reasoner import SymbolicReasoner
-from ethicagent.agents.fusion_agent import FusionAgent
 from ethicagent.agents.ethical_reasoner import (
-    EthicalReasonerAgent,
     EthicalDecision,
+    EthicalReasonerAgent,
     EthicalVerdict,
     PhilosophyResult,
 )
-from ethicagent.agents.action_executor import ActionExecutor
+from ethicagent.agents.fusion_agent import FusionAgent
 from ethicagent.agents.human_gateway import HumanGateway
+from ethicagent.agents.neural_reasoner import NeuralReasoner
 from ethicagent.agents.reflection_agent import ReflectionAgent
+from ethicagent.agents.symbolic_reasoner import SymbolicReasoner
 
 __all__ = [
     "ContextAgent",

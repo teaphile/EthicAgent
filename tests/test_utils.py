@@ -4,22 +4,21 @@ from __future__ import annotations
 
 import time
 
-import pytest
 from ethicagent.utils.helpers import (
     clamp,
-    hash_dict,
-    merge_dicts,
-    truncate_text,
-    safe_divide,
     flatten_dict,
     format_score_breakdown,
-    timer,
+    hash_dict,
+    merge_dicts,
     now_iso,
+    safe_divide,
+    timer,
+    truncate_text,
 )
 from ethicagent.utils.validators import (
-    validate_task_input,
     validate_domain,
     validate_scores,
+    validate_task_input,
     validate_weights,
 )
 
@@ -112,10 +111,12 @@ class TestFlattenDict:
 
 class TestFormatScoreBreakdown:
     def test_basic(self):
-        result = format_score_breakdown({
-            "deontological": 0.85,
-            "consequentialist": 0.70,
-        })
+        result = format_score_breakdown(
+            {
+                "deontological": 0.85,
+                "consequentialist": 0.70,
+            }
+        )
         assert "deontological" in result
         assert "0.85" in result
 
@@ -139,6 +140,7 @@ class TestTimer:
 
 
 # ─── Validator Tests ─────────────────────────────────────────
+
 
 class TestValidateTaskInput:
     def test_valid_task(self):

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.utils.helpers import now_iso
 
@@ -29,17 +29,17 @@ class BenchmarkSuite:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.config = config or {}
-        self.results: Dict[str, Any] = {}
+        self.results: dict[str, Any] = {}
 
     def run_all(
         self,
-        benchmarks: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        benchmarks: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Run all (or selected) benchmarks.
 
         Args:
@@ -68,7 +68,7 @@ class BenchmarkSuite:
 
         logger.info("Starting benchmark suite: %s", ", ".join(to_run))
 
-        suite_results: Dict[str, Any] = {
+        suite_results: dict[str, Any] = {
             "suite_id": f"suite_{int(time.time())}",
             "start_time": now_iso(),
             "benchmarks": {},
@@ -134,12 +134,12 @@ class BenchmarkSuite:
             json.dump(self.results, f, indent=2, default=str)
         logger.info("Suite results exported → %s", filepath)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Get a high-level summary of suite results."""
         if not self.results:
             return {"status": "no results"}
 
-        out: Dict[str, Any] = {
+        out: dict[str, Any] = {
             "suite_id": self.results.get("suite_id", ""),
             "elapsed_seconds": self.results.get("elapsed_seconds", 0),
             "benchmarks_run": list(self.results.get("benchmarks", {}).keys()),
@@ -153,7 +153,7 @@ class BenchmarkSuite:
 
     # ── External benchmark helpers ─────────────────────────────
 
-    def _run_external_ethics(self) -> Dict[str, Any]:
+    def _run_external_ethics(self) -> dict[str, Any]:
         """Run the ETHICS dataset adapter benchmark."""
         from ethicagent.benchmarks.external.ethics_adapter import EthicsDatasetAdapter
 
@@ -168,7 +168,7 @@ class BenchmarkSuite:
             "status": "loaded",
         }
 
-    def _run_external_bbq(self) -> Dict[str, Any]:
+    def _run_external_bbq(self) -> dict[str, Any]:
         """Run the BBQ bias benchmark adapter."""
         from ethicagent.benchmarks.external.bbq_adapter import BBQAdapter
 

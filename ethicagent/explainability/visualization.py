@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 
 # We try to import plotly, but fall back gracefully if not available
 try:
-    import plotly.graph_objects as go
     import plotly.express as px
+    import plotly.graph_objects as go
+
     HAS_PLOTLY = True
 except ImportError:
     HAS_PLOTLY = False
@@ -32,10 +33,7 @@ except ImportError:
 
 def _check_plotly() -> None:
     if not HAS_PLOTLY:
-        raise ImportError(
-            "Plotly is required for visualization. "
-            "Install with: pip install plotly"
-        )
+        raise ImportError("Plotly is required for visualization. Install with: pip install plotly")
 
 
 def spider_chart(
@@ -52,13 +50,15 @@ def spider_chart(
     categories.append(categories[0])
     values.append(values[0])
 
-    fig = go.Figure(data=go.Scatterpolar(
-        r=values,
-        theta=[c.title() for c in categories],
-        fill="toself",
-        name="Scores",
-        line=dict(color="#2ecc71"),
-    ))
+    fig = go.Figure(
+        data=go.Scatterpolar(
+            r=values,
+            theta=[c.title() for c in categories],
+            fill="toself",
+            name="Scores",
+            line=dict(color="#2ecc71"),
+        )
+    )
 
     fig.update_layout(
         polar=dict(
@@ -82,18 +82,19 @@ def eds_trend(
     x = labels or list(range(1, len(scores) + 1))
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=x, y=scores,
-        mode="lines+markers",
-        name="EDS",
-        line=dict(color="#3498db", width=2),
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=scores,
+            mode="lines+markers",
+            name="EDS",
+            line=dict(color="#3498db", width=2),
+        )
+    )
 
     # Add threshold lines
-    fig.add_hline(y=0.80, line_dash="dash", line_color="green",
-                  annotation_text="Approve (0.80)")
-    fig.add_hline(y=0.50, line_dash="dash", line_color="orange",
-                  annotation_text="Escalate (0.50)")
+    fig.add_hline(y=0.80, line_dash="dash", line_color="green", annotation_text="Approve (0.80)")
+    fig.add_hline(y=0.50, line_dash="dash", line_color="orange", annotation_text="Escalate (0.50)")
 
     fig.update_layout(
         title=title,
@@ -123,12 +124,14 @@ def verdict_distribution(
         "HARD_BLOCK": "#c0392b",
     }
 
-    fig = go.Figure(data=go.Pie(
-        labels=list(counts.keys()),
-        values=list(counts.values()),
-        marker=dict(colors=[colors.get(v, "#95a5a6") for v in counts]),
-        textinfo="label+percent",
-    ))
+    fig = go.Figure(
+        data=go.Pie(
+            labels=list(counts.keys()),
+            values=list(counts.values()),
+            marker=dict(colors=[colors.get(v, "#95a5a6") for v in counts]),
+            textinfo="label+percent",
+        )
+    )
 
     fig.update_layout(title=title, template="plotly_white")
     return fig
@@ -143,15 +146,18 @@ def scenario_heatmap(
     """Heatmap comparing scenarios across philosophy scores."""
     _check_plotly()
 
-    fig = go.Figure(data=go.Heatmap(
-        z=scores,
-        x=[p.title() for p in philosophies],
-        y=scenarios,
-        colorscale="RdYlGn",
-        zmin=0, zmax=1,
-        text=[[f"{v:.2f}" for v in row] for row in scores],
-        texttemplate="%{text}",
-    ))
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=scores,
+            x=[p.title() for p in philosophies],
+            y=scenarios,
+            colorscale="RdYlGn",
+            zmin=0,
+            zmax=1,
+            text=[[f"{v:.2f}" for v in row] for row in scores],
+            texttemplate="%{text}",
+        )
+    )
 
     fig.update_layout(
         title=title,
@@ -173,12 +179,14 @@ def sensitivity_tornado(
     names = [item[0].title() for item in sorted_items]
     values = [item[1] for item in sorted_items]
 
-    fig = go.Figure(data=go.Bar(
-        y=names,
-        x=values,
-        orientation="h",
-        marker=dict(color=["#e74c3c" if v > 0.05 else "#3498db" for v in values]),
-    ))
+    fig = go.Figure(
+        data=go.Bar(
+            y=names,
+            x=values,
+            orientation="h",
+            marker=dict(color=["#e74c3c" if v > 0.05 else "#3498db" for v in values]),
+        )
+    )
 
     fig.update_layout(
         title=title,
@@ -195,24 +203,27 @@ def confidence_interval_chart(
     """Chart showing EDS scores with CI error bars."""
     _check_plotly()
 
-    labels = [d.get("label", f"Case {i+1}") for i, d in enumerate(decisions)]
+    labels = [d.get("label", f"Case {i + 1}") for i, d in enumerate(decisions)]
     eds_scores = [d["eds_score"] for d in decisions]
     ci_lower = [d.get("ci_lower", d["eds_score"] - 0.05) for d in decisions]
     ci_upper = [d.get("ci_upper", d["eds_score"] + 0.05) for d in decisions]
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=labels, y=eds_scores,
-        mode="markers",
-        marker=dict(size=10, color="#3498db"),
-        error_y=dict(
-            type="data",
-            symmetric=False,
-            array=[u - e for u, e in zip(ci_upper, eds_scores)],
-            arrayminus=[e - l for e, l in zip(eds_scores, ci_lower)],
-        ),
-        name="EDS ± CI",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=labels,
+            y=eds_scores,
+            mode="markers",
+            marker=dict(size=10, color="#3498db"),
+            error_y=dict(
+                type="data",
+                symmetric=False,
+                array=[u - e for u, e in zip(ci_upper, eds_scores)],
+                arrayminus=[e - l for e, l in zip(eds_scores, ci_lower)],
+            ),
+            name="EDS ± CI",
+        )
+    )
 
     fig.add_hline(y=0.80, line_dash="dash", line_color="green")
     fig.add_hline(y=0.50, line_dash="dash", line_color="orange")

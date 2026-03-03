@@ -22,9 +22,8 @@ import json
 import logging
 import os
 import re
-import time
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class _ResponseCache:
     """Simple LRU dict for caching LLM responses by prompt hash."""
 
     def __init__(self, maxsize: int = _CACHE_MAX) -> None:
-        self._store: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+        self._store: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._maxsize = maxsize
         self.hits = 0
         self.misses = 0
@@ -46,7 +45,7 @@ class _ResponseCache:
     def _key(self, prompt: str, model: str) -> str:
         return hashlib.sha256(f"{model}::{prompt}".encode()).hexdigest()[:16]
 
-    def get(self, prompt: str, model: str) -> Optional[Dict[str, Any]]:
+    def get(self, prompt: str, model: str) -> dict[str, Any] | None:
         k = self._key(prompt, model)
         if k in self._store:
             self._store.move_to_end(k)
@@ -55,7 +54,7 @@ class _ResponseCache:
         self.misses += 1
         return None
 
-    def put(self, prompt: str, model: str, value: Dict[str, Any]) -> None:
+    def put(self, prompt: str, model: str, value: dict[str, Any]) -> None:
         k = self._key(prompt, model)
         self._store[k] = value
         if len(self._store) > self._maxsize:
@@ -143,7 +142,7 @@ Output the same JSON format as the standard analysis.
 
     def __init__(
         self,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
         use_llm: bool = True,
         provider: str = "openai",
     ) -> None:
@@ -181,11 +180,11 @@ Output the same JSON format as the standard analysis.
 
     def reason(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         domain: str,
         *,
         strategy: str = "cot",  # "cot" or "react"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run ethical reasoning on the given context.
 
         Returns a dict with keys: recommendation, confidence, scores,
@@ -195,13 +194,9 @@ Output the same JSON format as the standard analysis.
         ctx_summary = self._summarize_context(context)
 
         if strategy == "react":
-            prompt = self.REACT_TEMPLATE.format(
-                task=task, domain=domain
-            )
+            prompt = self.REACT_TEMPLATE.format(task=task, domain=domain)
         else:
-            prompt = self.COT_TEMPLATE.format(
-                task=task, domain=domain, context_summary=ctx_summary
-            )
+            prompt = self.COT_TEMPLATE.format(task=task, domain=domain, context_summary=ctx_summary)
 
         # -- try cache first --------------------------------------------------
         cached = self._cache.get(prompt, self._oai_model)
@@ -218,10 +213,7 @@ Output the same JSON format as the standard analysis.
                 self._cache.put(prompt, self._oai_model, parsed)
                 return parsed
             except Exception as exc:
-                logger.warning(
-                    f"LLM call failed — falling back to heuristics. "
-                    f"Error: {exc}"
-                )
+                logger.warning(f"LLM call failed — falling back to heuristics. Error: {exc}")
 
         # -- heuristic fallback -----------------------------------------------
         result = self._heuristic_reasoning(context, domain)
@@ -232,7 +224,7 @@ Output the same JSON format as the standard analysis.
         self._cache = _ResponseCache()
         logger.info("Neural reasoner cache cleared")
 
-    def get_token_stats(self) -> Dict[str, Any]:
+    def get_token_stats(self) -> dict[str, Any]:
         """Token usage and estimated cost."""
         return {
             "total_tokens": self._total_tokens,
@@ -248,9 +240,7 @@ Output the same JSON format as the standard analysis.
     def _call_llm(self, prompt: str) -> str:
         """Try the configured provider, falling back to alternatives."""
         providers = (
-            [self._provider, "ollama"]
-            if self._provider == "openai"
-            else [self._provider, "openai"]
+            [self._provider, "ollama"] if self._provider == "openai" else [self._provider, "openai"]
         )
         last_err = None
         for p in providers:
@@ -292,8 +282,7 @@ Output the same JSON format as the standard analysis.
             self._total_tokens += usage.total_tokens
             # rough cost estimate (GPT-4 pricing as of 2024)
             self._total_cost += (
-                usage.prompt_tokens * 0.03 / 1000
-                + usage.completion_tokens * 0.06 / 1000
+                usage.prompt_tokens * 0.03 / 1000 + usage.completion_tokens * 0.06 / 1000
             )
 
         return resp.choices[0].message.content or ""
@@ -315,7 +304,7 @@ Output the same JSON format as the standard analysis.
     # Response parsing
     # ------------------------------------------------------------------
 
-    def _parse_response(self, raw: str) -> Dict[str, Any]:
+    def _parse_response(self, raw: str) -> dict[str, Any]:
         """Extract structured data from the LLM's text response."""
         # try to find a JSON block
         json_match = re.search(r"\{[^{}]*\}", raw, re.DOTALL)
@@ -350,9 +339,7 @@ Output the same JSON format as the standard analysis.
     # Heuristic fallback (no LLM needed)
     # ------------------------------------------------------------------
 
-    def _heuristic_reasoning(
-        self, ctx: Dict[str, Any], domain: str
-    ) -> Dict[str, Any]:
+    def _heuristic_reasoning(self, ctx: dict[str, Any], domain: str) -> dict[str, Any]:
         """Offline heuristic reasoning using keyword analysis + sentiment.
 
         This is a rough approximation — good enough for testing and
@@ -367,14 +354,35 @@ Output the same JSON format as the standard analysis.
 
         # -- simple sentiment analysis ----------------------------------------
         negative_words = {
-            "deny", "refuse", "harm", "death", "discriminate", "unfair",
-            "dangerous", "illegal", "violate", "abuse", "exploit",
-            "worsen", "neglect", "abandon",
+            "deny",
+            "refuse",
+            "harm",
+            "death",
+            "discriminate",
+            "unfair",
+            "dangerous",
+            "illegal",
+            "violate",
+            "abuse",
+            "exploit",
+            "worsen",
+            "neglect",
+            "abandon",
         }
         positive_words = {
-            "help", "save", "protect", "treat", "fair", "equitable",
-            "support", "care", "improve", "benefit", "prevent",
-            "accommodate", "assist",
+            "help",
+            "save",
+            "protect",
+            "treat",
+            "fair",
+            "equitable",
+            "support",
+            "care",
+            "improve",
+            "benefit",
+            "prevent",
+            "accommodate",
+            "assist",
         }
         neg_count = sum(1 for w in negative_words if w in task)
         pos_count = sum(1 for w in positive_words if w in task)
@@ -389,9 +397,14 @@ Output the same JSON format as the standard analysis.
 
         # hard-block detection
         hard_block_patterns = [
-            "deny life", "withhold treatment", "discriminate based on race",
-            "deny based on gender", "ignore safety", "falsify",
-            "deny insulin", "refuse emergency",
+            "deny life",
+            "withhold treatment",
+            "discriminate based on race",
+            "deny based on gender",
+            "ignore safety",
+            "falsify",
+            "deny insulin",
+            "refuse emergency",
         ]
         if any(p in task for p in hard_block_patterns):
             d_score = 0.0
@@ -439,16 +452,13 @@ Output the same JSON format as the standard analysis.
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _summarize_context(ctx: Dict[str, Any]) -> str:
+    def _summarize_context(ctx: dict[str, Any]) -> str:
         """Build a one-paragraph context summary for the prompt."""
         parts = []
         if ctx.get("urgency"):
             parts.append(f"Urgency: {ctx['urgency']}")
         if ctx.get("stakeholders"):
-            snames = [
-                s["name"] if isinstance(s, dict) else s
-                for s in ctx["stakeholders"][:5]
-            ]
+            snames = [s["name"] if isinstance(s, dict) else s for s in ctx["stakeholders"][:5]]
             parts.append(f"Stakeholders: {', '.join(snames)}")
         if ctx.get("people_affected"):
             parts.append(f"Scale: {ctx['people_affected']}")

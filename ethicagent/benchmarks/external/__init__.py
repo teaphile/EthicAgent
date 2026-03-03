@@ -14,8 +14,8 @@ need internet access — tests use pre-cached samples.
 
 from __future__ import annotations
 
-from ethicagent.benchmarks.external.ethics_adapter import EthicsDatasetAdapter
 from ethicagent.benchmarks.external.bbq_adapter import BBQAdapter
+from ethicagent.benchmarks.external.ethics_adapter import EthicsDatasetAdapter
 
 __all__ = [
     "EthicsDatasetAdapter",

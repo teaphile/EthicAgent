@@ -196,15 +196,28 @@ DOMAIN_TEMPLATES = {
 
 DOMAIN_FILL_VALUES = {
     "healthcare": {
-        "condition": ["diabetes", "hypertension", "pneumonia", "fracture", "infection", "cardiac arrest"],
+        "condition": [
+            "diabetes",
+            "hypertension",
+            "pneumonia",
+            "fracture",
+            "infection",
+            "cardiac arrest",
+        ],
         "resource": ["ventilators", "ICU beds", "blood supply", "surgical teams", "medications"],
     },
     "finance": {
         "score": ["620", "680", "720", "580", "750", "640"],
     },
     "hiring": {
-        "role": ["software engineer", "data scientist", "product manager", "marketing director",
-                 "operations lead", "HR specialist"],
+        "role": [
+            "software engineer",
+            "data scientist",
+            "product manager",
+            "marketing director",
+            "operations lead",
+            "HR specialist",
+        ],
     },
     "disaster": {
         "disaster": ["earthquake", "hurricane", "wildfire", "flood", "tornado", "tsunami"],
@@ -336,24 +349,34 @@ def parse_args() -> argparse.Namespace:
         description="Generate test data for EthicAgent evaluation.",
     )
     parser.add_argument(
-        "--cases-per-domain", type=int, default=52,
+        "--cases-per-domain",
+        type=int,
+        default=52,
         help="Number of cases per domain. Default: 52",
     )
     parser.add_argument(
-        "--output-dir", type=str, default="data/scenarios",
+        "--output-dir",
+        type=str,
+        default="data/scenarios",
         help="Output directory. Default: data/scenarios/",
     )
     parser.add_argument(
-        "--domains", nargs="+", choices=list(DOMAIN_TEMPLATES.keys()),
+        "--domains",
+        nargs="+",
+        choices=list(DOMAIN_TEMPLATES.keys()),
         default=list(DOMAIN_TEMPLATES.keys()),
         help="Domains to generate. Default: all",
     )
     parser.add_argument(
-        "--seed", type=int, default=42,
+        "--seed",
+        type=int,
+        default=42,
         help="Random seed for reproducibility. Default: 42",
     )
     parser.add_argument(
-        "--prefix", type=str, default="",
+        "--prefix",
+        type=str,
+        default="",
         help="Filename prefix for generated files",
     )
     return parser.parse_args()
@@ -376,7 +399,9 @@ def main():
     for domain in args.domains:
         data = generate_domain_data(domain, args.cases_per_domain, rng)
 
-        filename = f"{args.prefix}{domain}_generated.json" if args.prefix else f"{domain}_generated.json"
+        filename = (
+            f"{args.prefix}{domain}_generated.json" if args.prefix else f"{domain}_generated.json"
+        )
         filepath = output_dir / filename
         filepath.write_text(json.dumps(data, indent=2))
 

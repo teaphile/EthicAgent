@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import logging
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,16 +37,15 @@ class ReviewStatus(Enum):
 @dataclass
 class ReviewRequest:
     """A queued human review request."""
+
     review_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     decision: Any = None
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     priority: str = "medium"
     status: ReviewStatus = ReviewStatus.PENDING
-    created_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-    resolved_at: Optional[str] = None
-    reviewer: Optional[str] = None
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    resolved_at: str | None = None
+    reviewer: str | None = None
     reviewer_notes: str = ""
 
 
@@ -54,28 +54,26 @@ class HumanGateway:
 
     def __init__(
         self,
-        review_callback: Optional[Callable] = None,
+        review_callback: Callable | None = None,
         auto_reject_timeout_s: float = 3600.0,
     ) -> None:
         self._callback = review_callback
-        self._queue: Dict[str, ReviewRequest] = {}
-        self._resolved: List[ReviewRequest] = []
+        self._queue: dict[str, ReviewRequest] = {}
+        self._resolved: list[ReviewRequest] = []
         self._timeout = auto_reject_timeout_s
 
     def escalate(
         self,
         decision: Any,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         priority: str = "medium",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Escalate a decision for human review.
 
         If a callback is registered, process synchronously.
         Otherwise queue for later resolution.
         """
-        req = ReviewRequest(
-            decision=decision, context=context, priority=priority
-        )
+        req = ReviewRequest(decision=decision, context=context, priority=priority)
 
         if self._callback:
             return self._process_with_callback(req)
@@ -88,7 +86,7 @@ class HumanGateway:
         status: str,
         reviewer: str = "anonymous",
         notes: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Resolve a pending review."""
         req = self._queue.get(review_id)
         if not req:
@@ -109,7 +107,7 @@ class HumanGateway:
             "reviewer": reviewer,
         }
 
-    def get_pending_reviews(self) -> List[Dict[str, Any]]:
+    def get_pending_reviews(self) -> list[dict[str, Any]]:
         return [
             {
                 "review_id": r.review_id,
@@ -120,7 +118,7 @@ class HumanGateway:
             for r in self._queue.values()
         ]
 
-    def get_review_statistics(self) -> Dict[str, Any]:
+    def get_review_statistics(self) -> dict[str, Any]:
         return {
             "pending": len(self._queue),
             "resolved": len(self._resolved),
@@ -129,7 +127,7 @@ class HumanGateway:
 
     # -- internal -------------------------------------------------------------
 
-    def _process_with_callback(self, req: ReviewRequest) -> Dict[str, Any]:
+    def _process_with_callback(self, req: ReviewRequest) -> dict[str, Any]:
         try:
             result = self._callback(req.decision, req.context)
             req.status = ReviewStatus.APPROVED if result.get("approved") else ReviewStatus.REJECTED
@@ -144,12 +142,9 @@ class HumanGateway:
             logger.error(f"Review callback failed: {exc}")
             return self._queue_for_review(req)
 
-    def _queue_for_review(self, req: ReviewRequest) -> Dict[str, Any]:
+    def _queue_for_review(self, req: ReviewRequest) -> dict[str, Any]:
         self._queue[req.review_id] = req
-        logger.info(
-            f"Decision queued for human review: {req.review_id} "
-            f"(priority={req.priority})"
-        )
+        logger.info(f"Decision queued for human review: {req.review_id} (priority={req.priority})")
         return {
             "review_id": req.review_id,
             "status": "pending",

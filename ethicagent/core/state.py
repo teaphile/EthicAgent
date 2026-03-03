@@ -20,7 +20,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class PipelineStage(Enum):
@@ -28,8 +28,8 @@ class PipelineStage(Enum):
 
     INITIALIZED = "initialized"
     CONTEXT_EXTRACTION = "context_extraction"
-    CONTEXT_ANALYSIS = "context_analysis"       # backward-compat alias
-    KNOWLEDGE_QUERY = "knowledge_query"        # also referenced as "knowledge_retrieval" in logs
+    CONTEXT_ANALYSIS = "context_analysis"  # backward-compat alias
+    KNOWLEDGE_QUERY = "knowledge_query"  # also referenced as "knowledge_retrieval" in logs
     NEURAL_REASONING = "neural_reasoning"
     SYMBOLIC_REASONING = "symbolic_reasoning"
     FUSION = "fusion"
@@ -54,14 +54,12 @@ class StageResult:
     """
 
     stage: PipelineStage
-    result: Dict[str, Any] = field(default_factory=dict)
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    result: dict[str, Any] = field(default_factory=dict)
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     duration_ms: float = 0.0
     success: bool = True
-    error: Optional[str] = None
-    data: Dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+    data: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         # Sync data ↔ result so either kwarg works
@@ -95,28 +93,24 @@ class PipelineState:
 
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     task: str = ""
-    domain: Optional[str] = None
+    domain: str | None = None
     current_stage: PipelineStage = PipelineStage.INITIALIZED
 
     # Stage outputs — populated progressively
-    context: Dict[str, Any] = field(default_factory=dict)
-    knowledge: Dict[str, Any] = field(default_factory=dict)
-    neural_result: Dict[str, Any] = field(default_factory=dict)
-    symbolic_result: Dict[str, Any] = field(default_factory=dict)
-    fusion_result: Dict[str, Any] = field(default_factory=dict)
-    ethical_decision: Optional[Any] = None
+    context: dict[str, Any] = field(default_factory=dict)
+    knowledge: dict[str, Any] = field(default_factory=dict)
+    neural_result: dict[str, Any] = field(default_factory=dict)
+    symbolic_result: dict[str, Any] = field(default_factory=dict)
+    fusion_result: dict[str, Any] = field(default_factory=dict)
+    ethical_decision: Any | None = None
 
     # Trace & audit — dict keyed by PipelineStage for O(1) lookup
-    stage_results: Dict[PipelineStage, StageResult] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    stage_results: dict[PipelineStage, StageResult] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # Timestamps
-    created_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-    updated_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -125,10 +119,10 @@ class PipelineState:
     def update_stage(
         self,
         stage: PipelineStage,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         duration_ms: float = 0.0,
         success: bool = True,
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> None:
         """Record that *stage* just finished (or failed).
 
@@ -147,7 +141,7 @@ class PipelineState:
         )
         self.stage_results[stage] = sr
 
-    def get_decision_trace(self) -> List[Dict[str, Any]]:
+    def get_decision_trace(self) -> list[dict[str, Any]]:
         """Flatten stage_results into plain dicts (JSON-friendly)."""
         return [
             {
@@ -161,7 +155,7 @@ class PipelineState:
             for sr in self.stage_results.values()
         ]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize the entire state to a JSON-safe dict."""
         return {
             "run_id": self.run_id,
@@ -188,20 +182,18 @@ class StateManager:
     """
 
     def __init__(self) -> None:
-        self._states: Dict[str, PipelineState] = {}
+        self._states: dict[str, PipelineState] = {}
         self._lock = threading.Lock()
-        self._history: List[PipelineState] = []
+        self._history: list[PipelineState] = []
 
-    def create_state(
-        self, task: str = "", domain: str | None = None
-    ) -> PipelineState:
+    def create_state(self, task: str = "", domain: str | None = None) -> PipelineState:
         """Spin up a fresh PipelineState and register it."""
         state = PipelineState(task=task, domain=domain)
         with self._lock:
             self._states[state.run_id] = state
         return state
 
-    def get_state(self, run_id: str) -> Optional[PipelineState]:
+    def get_state(self, run_id: str) -> PipelineState | None:
         with self._lock:
             return self._states.get(run_id)
 
@@ -216,24 +208,20 @@ class StateManager:
     # Backward-compat helpers used by tests
     # ------------------------------------------------------------------
 
-    def update_stage(
-        self, state: PipelineState, result: StageResult
-    ) -> None:
+    def update_stage(self, state: PipelineState, result: StageResult) -> None:
         """Convenience wrapper: record *result* on *state*."""
         state.stage_results[result.stage] = result
         state.current_stage = result.stage
         state.updated_at = datetime.now(timezone.utc).isoformat()
 
-    def get_stage_result(
-        self, state: PipelineState, stage: PipelineStage
-    ) -> Optional[StageResult]:
+    def get_stage_result(self, state: PipelineState, stage: PipelineStage) -> StageResult | None:
         """Look up a completed stage result (or *None*)."""
         return state.stage_results.get(stage)
 
-    def get_history(self) -> List[PipelineState]:
+    def get_history(self) -> list[PipelineState]:
         with self._lock:
             return list(self._history)
 
-    def get_active_runs(self) -> List[str]:
+    def get_active_runs(self) -> list[str]:
         with self._lock:
             return list(self._states.keys())

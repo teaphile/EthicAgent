@@ -18,9 +18,9 @@ The trace can be serialized to JSON for storage in audit logs.
 from __future__ import annotations
 
 import json
-import time
 import logging
-from dataclasses import dataclass, field, asdict
+import time
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TraceEntry:
     """One step in the decision trace."""
+
     stage: str
     timestamp: float
     duration_ms: float
@@ -104,15 +105,17 @@ class DecisionTrace:
         warnings: list[str] | None = None,
     ) -> None:
         """Add a pre-built trace entry (for stages tracked externally)."""
-        self.entries.append(TraceEntry(
-            stage=stage,
-            timestamp=time.time(),
-            duration_ms=duration_ms,
-            input_summary=input_summary,
-            output_summary=output_summary,
-            details=details or {},
-            warnings=warnings or [],
-        ))
+        self.entries.append(
+            TraceEntry(
+                stage=stage,
+                timestamp=time.time(),
+                duration_ms=duration_ms,
+                input_summary=input_summary,
+                output_summary=output_summary,
+                details=details or {},
+                warnings=warnings or [],
+            )
+        )
 
     def finalize(self) -> None:
         """Mark the trace as complete."""
@@ -186,9 +189,11 @@ class DecisionTrace:
 # Backward-compat aliases used by tests
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TraceStep:
     """One step in a managed trace (backward-compat alias for TraceEntry)."""
+
     stage: str
     data: dict[str, Any] = field(default_factory=dict)
     duration_ms: float = 0.0
@@ -249,9 +254,13 @@ class DecisionTracer:
         if trace is None:
             logger.warning("record_step: unknown trace_id %s", trace_id)
             return
-        trace.steps.append(TraceStep(
-            stage=stage, data=data or {}, duration_ms=duration_ms,
-        ))
+        trace.steps.append(
+            TraceStep(
+                stage=stage,
+                data=data or {},
+                duration_ms=duration_ms,
+            )
+        )
 
     def finalize_trace(
         self,
@@ -278,10 +287,7 @@ class DecisionTracer:
         return trace.to_dict()
 
     def search_by_verdict(self, verdict: str) -> list[_ManagedTrace]:
-        return [
-            t for t in self._traces.values()
-            if t.verdict == verdict
-        ]
+        return [t for t in self._traces.values() if t.verdict == verdict]
 
     def get_statistics(self) -> dict[str, Any]:
         verdicts: dict[str, int] = {}

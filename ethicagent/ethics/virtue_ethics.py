@@ -25,10 +25,9 @@ text analysis — looking for signals of fairness/unfairness.
 from __future__ import annotations
 
 import logging
-import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from ethicagent.ethics.ethical_score import PhilosophyResult as _PhilosophyResult
 
@@ -39,9 +38,11 @@ logger = logging.getLogger(__name__)
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 class Virtue(Enum):
     """The core virtues we evaluate.  Based on Aristotelian ethics with
     modern additions for AI contexts."""
+
     JUSTICE = "justice"
     COMPASSION = "compassion"
     PRUDENCE = "prudence"
@@ -54,6 +55,7 @@ class Virtue(Enum):
 
 class BiasType(Enum):
     """Types of bias we can detect."""
+
     RACIAL = "racial"
     GENDER = "gender"
     AGE = "age"
@@ -66,11 +68,12 @@ class BiasType(Enum):
 @dataclass
 class FairnessMetrics:
     """Standard fairness metrics for group comparisons."""
-    spd: Optional[float] = None   # Statistical Parity Difference
-    dir_: Optional[float] = None  # Disparate Impact Ratio (dir is a builtin, hence dir_)
-    eod: Optional[float] = None   # Equal Opportunity Difference
-    ppd: Optional[float] = None   # Predictive Parity Difference
-    calibration_diff: Optional[float] = None
+
+    spd: float | None = None  # Statistical Parity Difference
+    dir_: float | None = None  # Disparate Impact Ratio (dir is a builtin, hence dir_)
+    eod: float | None = None  # Equal Opportunity Difference
+    ppd: float | None = None  # Predictive Parity Difference
+    calibration_diff: float | None = None
     groups_compared: tuple[str, str] = ("", "")
 
     @property
@@ -94,18 +97,20 @@ class FairnessMetrics:
 @dataclass
 class VulnerablePopulation:
     """Detected vulnerable group and potential impact."""
+
     group_name: str
     detected_from: str  # what text/signal triggered detection
-    risk_level: str     # "low", "medium", "high"
+    risk_level: str  # "low", "medium", "high"
     recommendation: str
 
 
 @dataclass
 class VirtueEthicsResult:
     """Output of the virtue ethics evaluator."""
+
     score: float  # V(a), 0.0 – 1.0
     virtue_scores: dict[str, float] = field(default_factory=dict)
-    fairness_metrics: Optional[FairnessMetrics] = None
+    fairness_metrics: FairnessMetrics | None = None
     bias_detected: list[BiasType] = field(default_factory=list)
     vulnerable_populations: list[VulnerablePopulation] = field(default_factory=list)
     explanation: str = ""
@@ -117,74 +122,218 @@ class VirtueEthicsResult:
 
 _VIRTUE_SIGNALS: dict[Virtue, dict[str, list[str]]] = {
     Virtue.JUSTICE: {
-        "positive": ["fair", "equitable", "impartial", "equal", "justice", "unbiased",
-                      "merit-based", "transparent", "accountable"],
-        "negative": ["unfair", "biased", "discriminat", "prejudic", "partial",
-                      "favoritism", "nepotism", "rigged"],
+        "positive": [
+            "fair",
+            "equitable",
+            "impartial",
+            "equal",
+            "justice",
+            "unbiased",
+            "merit-based",
+            "transparent",
+            "accountable",
+        ],
+        "negative": [
+            "unfair",
+            "biased",
+            "discriminat",
+            "prejudic",
+            "partial",
+            "favoritism",
+            "nepotism",
+            "rigged",
+        ],
     },
     Virtue.COMPASSION: {
-        "positive": ["compassion", "empathy", "care", "sympathy", "kindness",
-                      "humanitarian", "mercy", "understanding", "support"],
-        "negative": ["cruel", "callous", "heartless", "indifferent", "neglect",
-                      "abandon", "cold", "apathetic"],
+        "positive": [
+            "compassion",
+            "empathy",
+            "care",
+            "sympathy",
+            "kindness",
+            "humanitarian",
+            "mercy",
+            "understanding",
+            "support",
+        ],
+        "negative": [
+            "cruel",
+            "callous",
+            "heartless",
+            "indifferent",
+            "neglect",
+            "abandon",
+            "cold",
+            "apathetic",
+        ],
     },
     Virtue.PRUDENCE: {
-        "positive": ["careful", "cautious", "prudent", "measured", "thoughtful",
-                      "considered", "wise", "deliberate", "risk-aware"],
-        "negative": ["reckless", "hasty", "impulsive", "careless", "negligent",
-                      "rash", "irresponsible"],
+        "positive": [
+            "careful",
+            "cautious",
+            "prudent",
+            "measured",
+            "thoughtful",
+            "considered",
+            "wise",
+            "deliberate",
+            "risk-aware",
+        ],
+        "negative": [
+            "reckless",
+            "hasty",
+            "impulsive",
+            "careless",
+            "negligent",
+            "rash",
+            "irresponsible",
+        ],
     },
     Virtue.HONESTY: {
-        "positive": ["honest", "truthful", "transparent", "candid", "forthright",
-                      "sincere", "authentic", "disclose"],
-        "negative": ["dishonest", "deceiv", "mislead", "manipulat", "lie",
-                      "conceal", "cover-up", "fabricat"],
+        "positive": [
+            "honest",
+            "truthful",
+            "transparent",
+            "candid",
+            "forthright",
+            "sincere",
+            "authentic",
+            "disclose",
+        ],
+        "negative": [
+            "dishonest",
+            "deceiv",
+            "mislead",
+            "manipulat",
+            "lie",
+            "conceal",
+            "cover-up",
+            "fabricat",
+        ],
     },
     Virtue.COURAGE: {
-        "positive": ["courageous", "brave", "bold", "principled", "stand up",
-                      "speak out", "challenge", "confront"],
+        "positive": [
+            "courageous",
+            "brave",
+            "bold",
+            "principled",
+            "stand up",
+            "speak out",
+            "challenge",
+            "confront",
+        ],
         "negative": ["coward", "capitulat", "cave in", "abandon principle"],
     },
     Virtue.TEMPERANCE: {
-        "positive": ["moderate", "balanced", "restrained", "proportionate",
-                      "measured", "reasonable"],
-        "negative": ["extreme", "excessive", "disproportionate", "overreact",
-                      "heavy-handed"],
+        "positive": [
+            "moderate",
+            "balanced",
+            "restrained",
+            "proportionate",
+            "measured",
+            "reasonable",
+        ],
+        "negative": ["extreme", "excessive", "disproportionate", "overreact", "heavy-handed"],
     },
     Virtue.RESPECT: {
-        "positive": ["respect", "dignit", "autonom", "consent", "privacy",
-                      "rights", "agency"],
-        "negative": ["disrespect", "dehumaniz", "objectif", "degrad",
-                      "violate privacy", "strip agency"],
+        "positive": ["respect", "dignit", "autonom", "consent", "privacy", "rights", "agency"],
+        "negative": [
+            "disrespect",
+            "dehumaniz",
+            "objectif",
+            "degrad",
+            "violate privacy",
+            "strip agency",
+        ],
     },
     Virtue.RESPONSIBILITY: {
-        "positive": ["responsible", "accountable", "duty", "obligat",
-                      "stewardship", "oversight", "monitor"],
-        "negative": ["irresponsible", "unaccountable", "negligent", "evade",
-                      "pass the buck", "deflect blame"],
+        "positive": [
+            "responsible",
+            "accountable",
+            "duty",
+            "obligat",
+            "stewardship",
+            "oversight",
+            "monitor",
+        ],
+        "negative": [
+            "irresponsible",
+            "unaccountable",
+            "negligent",
+            "evade",
+            "pass the buck",
+            "deflect blame",
+        ],
     },
 }
 
 _BIAS_SIGNALS: dict[BiasType, list[str]] = {
-    BiasType.RACIAL: ["race", "racial", "ethnicity", "ethnic", "skin color",
-                       "african american", "hispanic", "caucasian", "asian"],
-    BiasType.GENDER: ["gender", "sex", "male", "female", "man", "woman",
-                       "masculine", "feminine", "non-binary"],
-    BiasType.AGE: ["age", "elderly", "senior", "young", "millennial",
-                    "boomer", "generation"],
-    BiasType.DISABILITY: ["disability", "disabled", "handicap", "impairment",
-                           "wheelchair", "blind", "deaf", "mental health"],
-    BiasType.SOCIOECONOMIC: ["income", "poverty", "wealthy", "poor", "zip code",
-                              "neighborhood", "socioeconomic", "class"],
-    BiasType.RELIGIOUS: ["religion", "religious", "muslim", "christian",
-                          "jewish", "hindu", "buddhist", "atheist"],
+    BiasType.RACIAL: [
+        "race",
+        "racial",
+        "ethnicity",
+        "ethnic",
+        "skin color",
+        "african american",
+        "hispanic",
+        "caucasian",
+        "asian",
+    ],
+    BiasType.GENDER: [
+        "gender",
+        "sex",
+        "male",
+        "female",
+        "man",
+        "woman",
+        "masculine",
+        "feminine",
+        "non-binary",
+    ],
+    BiasType.AGE: ["age", "elderly", "senior", "young", "millennial", "boomer", "generation"],
+    BiasType.DISABILITY: [
+        "disability",
+        "disabled",
+        "handicap",
+        "impairment",
+        "wheelchair",
+        "blind",
+        "deaf",
+        "mental health",
+    ],
+    BiasType.SOCIOECONOMIC: [
+        "income",
+        "poverty",
+        "wealthy",
+        "poor",
+        "zip code",
+        "neighborhood",
+        "socioeconomic",
+        "class",
+    ],
+    BiasType.RELIGIOUS: [
+        "religion",
+        "religious",
+        "muslim",
+        "christian",
+        "jewish",
+        "hindu",
+        "buddhist",
+        "atheist",
+    ],
 }
 
 _VULNERABLE_GROUPS = {
     "children": ["child", "minor", "kid", "infant", "toddler", "teen"],
     "elderly": ["elderly", "senior citizen", "aged", "geriatric"],
-    "disabled": ["disabled", "disability", "handicap", "wheelchair",
-                  "visually impaired", "hearing impaired"],
+    "disabled": [
+        "disabled",
+        "disability",
+        "handicap",
+        "wheelchair",
+        "visually impaired",
+        "hearing impaired",
+    ],
     "pregnant": ["pregnant", "expectant mother", "prenatal"],
     "refugees": ["refugee", "asylum seeker", "displaced"],
     "homeless": ["homeless", "houseless", "unhoused"],
@@ -198,6 +347,7 @@ _VULNERABLE_GROUPS = {
 # ---------------------------------------------------------------------------
 # Evaluator
 # ---------------------------------------------------------------------------
+
 
 class VirtueEthicsEvaluator:
     """Evaluates V(a) by combining virtue assessment with fairness metrics.
@@ -291,8 +441,11 @@ class VirtueEthicsEvaluator:
             bias_detected=bias_detected,
             vulnerable_populations=vulnerable,
             explanation=self._build_explanation(
-                v_score, virtue_scores, fairness_score,
-                bias_detected, vulnerable,
+                v_score,
+                virtue_scores,
+                fairness_score,
+                bias_detected,
+                vulnerable,
             ),
         )
         return self._wrap(_vr)
@@ -408,14 +561,30 @@ class VirtueEthicsEvaluator:
     ) -> FairnessMetrics:
         """Heuristic fairness estimate when no structured data available."""
         # We can't compute real metrics, but we can flag concerns
-        fairness_positive = any(w in text_lower for w in [
-            "fair", "equitable", "equal", "impartial", "unbiased",
-            "merit-based", "objective criteria",
-        ])
-        fairness_negative = any(w in text_lower for w in [
-            "discriminat", "biased", "unfair", "prejudic", "exclud",
-            "disparate", "disproportionate",
-        ])
+        fairness_positive = any(
+            w in text_lower
+            for w in [
+                "fair",
+                "equitable",
+                "equal",
+                "impartial",
+                "unbiased",
+                "merit-based",
+                "objective criteria",
+            ]
+        )
+        fairness_negative = any(
+            w in text_lower
+            for w in [
+                "discriminat",
+                "biased",
+                "unfair",
+                "prejudic",
+                "exclud",
+                "disparate",
+                "disproportionate",
+            ]
+        )
 
         # Estimate SPD from text
         if fairness_negative:
@@ -443,10 +612,19 @@ class VirtueEthicsEvaluator:
         for bias_type, signals in _BIAS_SIGNALS.items():
             if any(sig in text_lower for sig in signals):
                 # Check if it's in a discriminatory context
-                disc_context = any(w in text_lower for w in [
-                    "deny", "reject", "exclude", "filter", "discriminat",
-                    "score lower", "penalize", "disadvantage",
-                ])
+                disc_context = any(
+                    w in text_lower
+                    for w in [
+                        "deny",
+                        "reject",
+                        "exclude",
+                        "filter",
+                        "discriminat",
+                        "score lower",
+                        "penalize",
+                        "disadvantage",
+                    ]
+                )
                 if disc_context:
                     detected.append(bias_type)
                     logger.info("Bias signal detected: %s", bias_type.value)
@@ -463,14 +641,33 @@ class VirtueEthicsEvaluator:
         """Find mentions of vulnerable populations and assess risk."""
         found: list[VulnerablePopulation] = []
 
-        harm_context = any(w in text_lower for w in [
-            "deny", "reject", "exclude", "harm", "risk", "danger",
-            "reduce", "cut", "eliminate", "deprioritize",
-        ])
-        benefit_context = any(w in text_lower for w in [
-            "help", "protect", "support", "assist", "accommodate",
-            "prioritize", "serve",
-        ])
+        harm_context = any(
+            w in text_lower
+            for w in [
+                "deny",
+                "reject",
+                "exclude",
+                "harm",
+                "risk",
+                "danger",
+                "reduce",
+                "cut",
+                "eliminate",
+                "deprioritize",
+            ]
+        )
+        benefit_context = any(
+            w in text_lower
+            for w in [
+                "help",
+                "protect",
+                "support",
+                "assist",
+                "accommodate",
+                "prioritize",
+                "serve",
+            ]
+        )
 
         for group_name, keywords in _VULNERABLE_GROUPS.items():
             matches = [kw for kw in keywords if kw in text_lower]
@@ -488,12 +685,14 @@ class VirtueEthicsEvaluator:
                 risk = "low"
                 rec = f"{group_name.replace('_', ' ').title()} mentioned — no immediate concern"
 
-            found.append(VulnerablePopulation(
-                group_name=group_name,
-                detected_from=matches[0],
-                risk_level=risk,
-                recommendation=rec,
-            ))
+            found.append(
+                VulnerablePopulation(
+                    group_name=group_name,
+                    detected_from=matches[0],
+                    risk_level=risk,
+                    recommendation=rec,
+                )
+            )
 
         return found
 

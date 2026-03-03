@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 import streamlit as st
 
@@ -25,18 +25,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # ═══════════════════════════════════════════════════════════════
 
 DOMAINS = ["General", "Healthcare", "Finance", "Hiring", "Disaster"]
-DOMAIN_WEIGHTS: Dict[str, tuple] = {
+DOMAIN_WEIGHTS: dict[str, tuple] = {
     "Healthcare": (0.35, 0.25, 0.20, 0.20),
-    "Finance":    (0.20, 0.25, 0.35, 0.20),
-    "Hiring":     (0.15, 0.20, 0.40, 0.25),
-    "Disaster":   (0.20, 0.35, 0.15, 0.30),
-    "General":    (0.25, 0.25, 0.25, 0.25),
+    "Finance": (0.20, 0.25, 0.35, 0.20),
+    "Hiring": (0.15, 0.20, 0.40, 0.25),
+    "Disaster": (0.20, 0.35, 0.15, 0.30),
+    "General": (0.25, 0.25, 0.25, 0.25),
 }
 
 VERDICT_COLORS = {
-    "approve":    "🟢", "auto_approve": "🟢",
-    "escalate":   "🟡",
-    "reject":     "🔴",
+    "approve": "🟢",
+    "auto_approve": "🟢",
+    "escalate": "🟡",
+    "reject": "🔴",
     "hard_block": "⛔",
 }
 
@@ -96,12 +97,10 @@ def main() -> None:
 # Page: Overview
 # ═══════════════════════════════════════════════════════════════
 
+
 def _page_overview(domain: str) -> None:
     st.title("EthicAgent Dashboard")
-    st.markdown(
-        "A Context-Aware Neuro-Symbolic Framework for "
-        "Ethical Autonomous Decision-Making"
-    )
+    st.markdown("A Context-Aware Neuro-Symbolic Framework for Ethical Autonomous Decision-Making")
 
     # Quick Decision Input
     st.header("Quick Decision Analysis")
@@ -142,9 +141,7 @@ def _page_overview(domain: str) -> None:
 
     # EDS Formula
     st.header("EDS Formula")
-    st.latex(
-        r"EDS(a) = w_1 \cdot D(a) + w_2 \cdot C(a) + w_3 \cdot V(a) + w_4 \cdot Ctx(a)"
-    )
+    st.latex(r"EDS(a) = w_1 \cdot D(a) + w_2 \cdot C(a) + w_3 \cdot V(a) + w_4 \cdot Ctx(a)")
     st.markdown("""
     Where:
     - **D(a)**: Deontological score (rule compliance)
@@ -169,6 +166,7 @@ def _page_overview(domain: str) -> None:
 # ═══════════════════════════════════════════════════════════════
 # Page: Scenario Analysis
 # ═══════════════════════════════════════════════════════════════
+
 
 def _page_scenario_analysis(domain: str) -> None:
     st.title("🔬 Scenario Analysis")
@@ -205,26 +203,23 @@ def _page_scenario_analysis(domain: str) -> None:
 
         # Filter & display
         filtered = [
-            c for c in cases
-            if c.get("expected_verdict") in expected
-            and c.get("difficulty", "medium") in difficulty
+            c
+            for c in cases
+            if c.get("expected_verdict") in expected and c.get("difficulty", "medium") in difficulty
         ]
 
         st.markdown(f"### Test Cases ({len(filtered)} shown)")
         for i, case in enumerate(filtered[:30]):
             ev = case.get("expected_verdict", "unknown")
             icon = VERDICT_COLORS.get(ev, "⚪")
-            with st.expander(
-                f"{icon} {case.get('case_id', f'Case-{i+1}')} — "
-                f"Expected: {ev}"
-            ):
+            with st.expander(f"{icon} {case.get('case_id', f'Case-{i + 1}')} — Expected: {ev}"):
                 st.markdown(f"**Task:** {case.get('task', '')}")
                 st.markdown(f"**Domain:** {case.get('domain', domain)}")
                 st.markdown(f"**Difficulty:** {case.get('difficulty', 'medium')}")
                 eds_r = case.get("expected_eds_range", (0, 1))
                 st.markdown(f"**EDS Range:** [{eds_r[0]:.2f}, {eds_r[1]:.2f}]")
 
-                if st.button(f"Run Analysis", key=f"run_{i}"):
+                if st.button("Run Analysis", key=f"run_{i}"):
                     _run_quick_analysis(case.get("task", ""), domain)
 
     except Exception as e:
@@ -242,16 +237,18 @@ def _page_scenario_analysis(domain: str) -> None:
 # Page: Philosophy Comparison
 # ═══════════════════════════════════════════════════════════════
 
+
 def _page_philosophy_comparison(domain: str) -> None:
     st.title("📊 Philosophy Comparison")
-    st.markdown(
-        "Compare contributions from each ethical philosophy "
-        "across scenarios and domains."
-    )
+    st.markdown("Compare contributions from each ethical philosophy across scenarios and domains.")
 
     w = DOMAIN_WEIGHTS[domain]
-    labels = ["Deontological (w₁)", "Consequentialist (w₂)",
-              "Virtue Ethics (w₃)", "Contextual (w₄)"]
+    labels = [
+        "Deontological (w₁)",
+        "Consequentialist (w₂)",
+        "Virtue Ethics (w₃)",
+        "Contextual (w₄)",
+    ]
 
     st.header("Domain Weight Configuration")
     cols = st.columns(4)
@@ -263,12 +260,15 @@ def _page_philosophy_comparison(domain: str) -> None:
     st.header("Philosophy Scores Radar")
     try:
         from ethicagent.explainability.visualization import philosophy_radar_chart
-        fig = philosophy_radar_chart({
-            "deontological": w[0],
-            "consequentialist": w[1],
-            "virtue_ethics": w[2],
-            "contextual": w[3],
-        })
+
+        fig = philosophy_radar_chart(
+            {
+                "deontological": w[0],
+                "consequentialist": w[1],
+                "virtue_ethics": w[2],
+                "contextual": w[3],
+            }
+        )
         st.plotly_chart(fig, use_container_width=True)
     except Exception:
         st.info("Run an analysis to see the philosophy radar chart.")
@@ -277,13 +277,18 @@ def _page_philosophy_comparison(domain: str) -> None:
     st.header("Cross-Domain Weight Comparison")
     try:
         from ethicagent.explainability.visualization import weight_comparison_chart
-        fig = weight_comparison_chart({
-            d: dict(zip(
-                ["deontological", "consequentialist", "virtue_ethics", "contextual"],
-                DOMAIN_WEIGHTS[d],
-            ))
-            for d in DOMAINS
-        })
+
+        fig = weight_comparison_chart(
+            {
+                d: dict(
+                    zip(
+                        ["deontological", "consequentialist", "virtue_ethics", "contextual"],
+                        DOMAIN_WEIGHTS[d],
+                    )
+                )
+                for d in DOMAINS
+            }
+        )
         st.plotly_chart(fig, use_container_width=True)
     except Exception as e:
         st.info(f"Weight comparison chart unavailable: {e}")
@@ -323,12 +328,10 @@ def _page_philosophy_comparison(domain: str) -> None:
 # Page: Audit Trail
 # ═══════════════════════════════════════════════════════════════
 
+
 def _page_audit_trail() -> None:
     st.title("📋 Audit Trail")
-    st.markdown(
-        "Full decision trace and audit log for transparency "
-        "and regulatory compliance."
-    )
+    st.markdown("Full decision trace and audit log for transparency and regulatory compliance.")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -343,9 +346,7 @@ def _page_audit_trail() -> None:
 
     st.header("Decision Log")
 
-    log_path = os.path.join(
-        os.path.dirname(__file__), "..", "data", "audit_log.json"
-    )
+    log_path = os.path.join(os.path.dirname(__file__), "..", "data", "audit_log.json")
     if not os.path.exists(log_path):
         st.info(
             "No audit log found. Run some decisions through "
@@ -355,7 +356,7 @@ def _page_audit_trail() -> None:
 
     try:
         with open(log_path) as f:
-            entries: List[Dict] = json.load(f)
+            entries: list[dict] = json.load(f)
 
         if search:
             entries = [e for e in entries if search.lower() in json.dumps(e).lower()]
@@ -395,12 +396,16 @@ def _page_audit_trail() -> None:
 # Page: Benchmark Results
 # ═══════════════════════════════════════════════════════════════
 
+
 def _page_benchmark_results() -> None:
     """Show pre-generated benchmark results if available."""
     st.title("🧪 Benchmark Results")
 
     results_path = os.path.join(
-        os.path.dirname(__file__), "..", "data", "results",
+        os.path.dirname(__file__),
+        "..",
+        "data",
+        "results",
     )
 
     if not os.path.isdir(results_path):
@@ -433,6 +438,7 @@ def _page_benchmark_results() -> None:
 # Helpers
 # ═══════════════════════════════════════════════════════════════
 
+
 def _show_domain_weights(domain: str) -> None:
     w = DOMAIN_WEIGHTS.get(domain, (0.25, 0.25, 0.25, 0.25))
     st.caption(f"D: {w[0]:.2f} | C: {w[1]:.2f}")
@@ -452,9 +458,11 @@ def _run_quick_analysis(task: str, domain: str) -> None:
             eds = getattr(result, "eds_score", 0)
 
             color_fn = {
-                "approve": st.success, "auto_approve": st.success,
+                "approve": st.success,
+                "auto_approve": st.success,
                 "escalate": st.warning,
-                "reject": st.error, "hard_block": st.error,
+                "reject": st.error,
+                "hard_block": st.error,
             }.get(verdict, st.info)
             color_fn(f"**Verdict: {verdict.upper()}** | EDS: {eds:.3f}")
 
@@ -479,7 +487,7 @@ def _run_quick_analysis(task: str, domain: str) -> None:
             )
 
 
-def _load_scenario_cases(scenario_type: str) -> List[Dict[str, Any]]:
+def _load_scenario_cases(scenario_type: str) -> list[dict[str, Any]]:
     """Load scenario cases from Python modules or JSON data files."""
     type_map = {
         "Healthcare Triage": "healthcare",
@@ -497,7 +505,10 @@ def _load_scenario_cases(scenario_type: str) -> List[Dict[str, Any]]:
 
     # Try JSON data file first
     data_path = os.path.join(
-        os.path.dirname(__file__), "..", "data", "scenarios",
+        os.path.dirname(__file__),
+        "..",
+        "data",
+        "scenarios",
         f"{file_key}.json",
     )
     if os.path.exists(data_path):
@@ -507,6 +518,7 @@ def _load_scenario_cases(scenario_type: str) -> List[Dict[str, Any]]:
     # Fall back to scenario module
     try:
         from ethicagent.scenarios import SCENARIO_REGISTRY
+
         cls = SCENARIO_REGISTRY.get(key)
         if cls is None:
             return []
@@ -534,6 +546,7 @@ def _show_batch_placeholder() -> None:
     _rng.seed(42)  # reproducible placeholders
     progress = st.progress(0)
     import time as _time
+
     for i in range(100):
         progress.progress(i + 1)
         _time.sleep(0.01)  # brief pause for visual feedback

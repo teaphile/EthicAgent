@@ -6,8 +6,8 @@ it gets into the pipeline and causes confusing errors downstream.
 
 from __future__ import annotations
 
-import re
 import logging
+import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ VALID_VERDICTS = {"AUTO_APPROVE", "ESCALATE", "REJECT", "HARD_BLOCK"}
 
 class ValidationError(ValueError):
     """Raised when input validation fails."""
+
     pass
 
 

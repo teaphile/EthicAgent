@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-from ethicagent.core.state import PipelineState, PipelineStage, StageResult, StateManager
+from ethicagent.core.state import PipelineStage, PipelineState, StageResult, StateManager
 
 
 class TestPipelineStage:

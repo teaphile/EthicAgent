@@ -19,10 +19,10 @@ from __future__ import annotations
 from typing import Dict, List, Type
 
 from ethicagent.scenarios.base_scenario import BaseScenario, ScenarioCase, ScenarioResult
-from ethicagent.scenarios.healthcare_triage import HealthcareTriageScenario
-from ethicagent.scenarios.loan_approval import LoanApprovalScenario
-from ethicagent.scenarios.hiring_decision import HiringDecisionScenario
 from ethicagent.scenarios.disaster_response import DisasterResponseScenario
+from ethicagent.scenarios.healthcare_triage import HealthcareTriageScenario
+from ethicagent.scenarios.hiring_decision import HiringDecisionScenario
+from ethicagent.scenarios.loan_approval import LoanApprovalScenario
 
 __all__ = [
     "BaseScenario",
@@ -38,7 +38,7 @@ __all__ = [
 
 # Registry mapping domain names to scenario classes — handy for
 # CLI tools, benchmarks, or anything that needs to iterate domains.
-SCENARIO_REGISTRY: Dict[str, Type[BaseScenario]] = {
+SCENARIO_REGISTRY: dict[str, type[BaseScenario]] = {
     "healthcare": HealthcareTriageScenario,
     "hiring": HiringDecisionScenario,
     "finance": LoanApprovalScenario,
@@ -46,9 +46,9 @@ SCENARIO_REGISTRY: Dict[str, Type[BaseScenario]] = {
 }
 
 
-def get_all_cases() -> List[ScenarioCase]:
+def get_all_cases() -> list[ScenarioCase]:
     """Load and return every scenario case across all domains."""
-    cases: List[ScenarioCase] = []
+    cases: list[ScenarioCase] = []
     for cls in SCENARIO_REGISTRY.values():
         cases.extend(cls().get_cases())
     return cases

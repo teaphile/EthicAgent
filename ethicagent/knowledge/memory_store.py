@@ -24,7 +24,7 @@ import logging
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +32,13 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DecisionRecord:
     """A single stored decision."""
+
     decision_id: str
     timestamp: float
     task: str
     domain: str
     eds_score: float
-    verdict: str       # "AUTO_APPROVE", "ESCALATE", "REJECT", "HARD_BLOCK"
+    verdict: str  # "AUTO_APPROVE", "ESCALATE", "REJECT", "HARD_BLOCK"
     philosophy_scores: dict[str, float] = field(default_factory=dict)
     context_summary: str = ""
     reasoning: str = ""
@@ -177,9 +178,7 @@ class MemoryStore:
             "avg_eds": round(sum(scores) / len(scores), 4),
             "min_eds": round(min(scores), 4),
             "max_eds": round(max(scores), 4),
-            "verdict_distribution": {
-                v: verdicts.count(v) for v in set(verdicts)
-            },
+            "verdict_distribution": {v: verdicts.count(v) for v in set(verdicts)},
             "domains": list(set(r.domain for r in records)),
         }
 

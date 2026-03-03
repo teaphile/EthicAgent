@@ -8,9 +8,9 @@ be in a more specific module instead.
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import time
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -150,9 +150,11 @@ def now_iso() -> str:
 
 # ── Backward-compat aliases expected by tests ────────────────
 
+
 def hash_dict(d: dict) -> str:
     """Deterministic hash of a dict (order-independent)."""
     import json
+
     canonical = json.dumps(d, sort_keys=True, default=str)
     return hashlib.sha256(canonical.encode()).hexdigest()[:16]
 

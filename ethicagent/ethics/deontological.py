@@ -30,7 +30,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from ethicagent.ethics.ethical_score import PhilosophyResult as _PhilosophyResult
 
@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Enums and data classes
 # ---------------------------------------------------------------------------
+
 
 class RuleSeverity(Enum):
     CRITICAL = "critical"  # Hard-block, no override
@@ -61,12 +62,13 @@ class LegalFramework(Enum):
 @dataclass
 class RuleViolation:
     """Human-readable record of exactly which rule fired and why."""
+
     rule_id: str
     rule_name: str
     severity: RuleSeverity
     description: str
     matched_text: str  # the substring / pattern that triggered it
-    legal_ref: Optional[str] = None  # e.g. "EU AI Act Art. 5(1)(a)"
+    legal_ref: str | None = None  # e.g. "EU AI Act Art. 5(1)(a)"
 
     def explain(self) -> str:
         """One-paragraph explanation suitable for an end-user."""
@@ -74,7 +76,7 @@ class RuleViolation:
         parts.append(f"Severity: {self.severity.value}.")
         parts.append(f"Reason: {self.description}")
         if self.matched_text:
-            parts.append(f"Triggered by: \"{self.matched_text}\"")
+            parts.append(f'Triggered by: "{self.matched_text}"')
         if self.legal_ref:
             parts.append(f"Legal reference: {self.legal_ref}")
         return " ".join(parts)
@@ -83,7 +85,8 @@ class RuleViolation:
 @dataclass
 class DeontologicalResult:
     """Output of the deontological evaluator."""
-    score: float               # D(a), 0.0 – 1.0
+
+    score: float  # D(a), 0.0 – 1.0
     hard_block: bool
     violations: list[RuleViolation] = field(default_factory=list)
     duty_scores: dict[str, float] = field(default_factory=dict)
@@ -107,8 +110,7 @@ _DEFAULT_HARD_RULES: list[dict[str, Any]] = [
     {
         "id": "HR-002",
         "name": "no_child_exploitation",
-        "patterns": [r"\bchild\s*(exploit|labor|labour|traffick)\b",
-                     r"\bminor.*(exploit|abus)\b"],
+        "patterns": [r"\bchild\s*(exploit|labor|labour|traffick)\b", r"\bminor.*(exploit|abus)\b"],
         "description": "Must never facilitate child exploitation",
         "legal_ref": None,
     },
@@ -133,13 +135,11 @@ _DEFAULT_HARD_RULES: list[dict[str, Any]] = [
         "description": "Must never support genocide or ethnic cleansing",
         "legal_ref": None,
     },
-
     # ---- Discrimination hard-blocks ----
     {
         "id": "HR-010",
         "name": "no_racial_credit_scoring",
-        "patterns": [r"\brace\b.*\b(credit|loan|scor)\b",
-                     r"\b(credit|loan|scor)\b.*\brace\b"],
+        "patterns": [r"\brace\b.*\b(credit|loan|scor)\b", r"\b(credit|loan|scor)\b.*\brace\b"],
         "description": "Must not use race as a factor in credit decisions",
         "legal_ref": "ECOA § 701",
     },
@@ -153,8 +153,10 @@ _DEFAULT_HARD_RULES: list[dict[str, Any]] = [
     {
         "id": "HR-012",
         "name": "no_disability_denial",
-        "patterns": [r"\bdisabilit\w*\b.*\b(deny|reject|exclud)\b",
-                     r"\b(deny|reject|exclud)\b.*\bdisabilit\w*\b"],
+        "patterns": [
+            r"\bdisabilit\w*\b.*\b(deny|reject|exclud)\b",
+            r"\b(deny|reject|exclud)\b.*\bdisabilit\w*\b",
+        ],
         "description": "Must not deny services based on disability without accommodation",
         "legal_ref": "ADA Title III",
     },
@@ -172,12 +174,13 @@ _DEFAULT_HARD_RULES: list[dict[str, Any]] = [
         "description": "Must not use age as exclusionary hiring criterion",
         "legal_ref": "ADEA",
     },
-
     # ---- Data privacy hard-blocks ----
     {
         "id": "HR-020",
         "name": "no_phi_exposure",
-        "patterns": [r"\b(expos|leak|share|sell)\b.*\b(patient|medical|health)\s*(data|record|info)\b"],
+        "patterns": [
+            r"\b(expos|leak|share|sell)\b.*\b(patient|medical|health)\s*(data|record|info)\b"
+        ],
         "description": "Must not expose protected health information",
         "legal_ref": "HIPAA § 164.502",
     },
@@ -195,13 +198,14 @@ _DEFAULT_HARD_RULES: list[dict[str, Any]] = [
         "description": "Must not process biometric data without explicit consent",
         "legal_ref": "GDPR Art. 9",
     },
-
     # ---- Safety hard-blocks ----
     {
         "id": "HR-030",
         "name": "no_deny_emergency_care",
-        "patterns": [r"\bdeny\b.*\bemergency\b.*\b(care|treatment|medical)\b",
-                     r"\brefuse\b.*\bemergency\b.*\bpatient\b"],
+        "patterns": [
+            r"\bdeny\b.*\bemergency\b.*\b(care|treatment|medical)\b",
+            r"\brefuse\b.*\bemergency\b.*\bpatient\b",
+        ],
         "description": "Must never deny emergency medical care",
         "legal_ref": "EMTALA",
     },
@@ -242,7 +246,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "check": "data_sources_listed",
         "weight": 0.5,
     },
-
     # ---- Fairness duties ----
     {
         "id": "DT-010",
@@ -265,7 +268,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "check": "appeal_available",
         "weight": 0.6,
     },
-
     # ---- Privacy duties ----
     {
         "id": "DT-020",
@@ -288,7 +290,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "check": "erasure_possible",
         "weight": 0.5,
     },
-
     # ---- Beneficence duties ----
     {
         "id": "DT-030",
@@ -311,7 +312,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "check": "reversible_action",
         "weight": 0.6,
     },
-
     # ---- Professional duties ----
     {
         "id": "DT-040",
@@ -334,7 +334,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "check": "documented",
         "weight": 0.5,
     },
-
     # ---- Domain-specific duties ----
     # Healthcare
     {
@@ -387,7 +386,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "weight": 0.7,
         "domain": "hiring",
     },
-
     # ---- Cultural sensitivity duties ----
     {
         "id": "DT-080",
@@ -403,7 +401,6 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
         "check": "language_accessible",
         "weight": 0.4,
     },
-
     # ---- EU AI Act specific duties ----
     {
         "id": "DT-090",
@@ -426,6 +423,7 @@ _DEFAULT_DUTY_RULES: list[dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 # Evaluator class
 # ---------------------------------------------------------------------------
+
 
 class DeontologicalEvaluator:
     """Evaluates an action through the lens of duty-based ethics.
@@ -503,7 +501,9 @@ class DeontologicalEvaluator:
                     violations.append(violation)
                     logger.warning(
                         "Hard rule %s (%s) triggered: '%s'",
-                        rule["id"], rule["name"], match.group(0),
+                        rule["id"],
+                        rule["name"],
+                        match.group(0),
                     )
                     break  # one match per rule is enough
 
@@ -575,7 +575,9 @@ class DeontologicalEvaluator:
             reasoning=dr.explanation,
             key_argument=dr.explanation,
             details={
-                "violations": [v.__dict__ if hasattr(v, '__dict__') else str(v) for v in dr.violations],
+                "violations": [
+                    v.__dict__ if hasattr(v, "__dict__") else str(v) for v in dr.violations
+                ],
                 "duty_scores": dr.duty_scores,
                 "rules_checked": dr.rules_checked,
             },
@@ -632,109 +634,73 @@ class DeontologicalEvaluator:
         checks: dict[str, float] = {
             # Transparency
             "has_explanation": (
-                0.9 if any(w in text_lower for w in ["because", "reason", "explain", "due to"])
+                0.9
+                if any(w in text_lower for w in ["because", "reason", "explain", "due to"])
                 else 0.4
             ),
             "ai_disclosed": (
-                1.0 if meta.get("ai_disclosed", False)
-                else 0.6 if "ai" in text_lower or "algorithm" in text_lower
+                1.0
+                if meta.get("ai_disclosed", False)
+                else 0.6
+                if "ai" in text_lower or "algorithm" in text_lower
                 else 0.3
             ),
-            "data_sources_listed": (
-                0.8 if meta.get("data_sources")
-                else 0.5
-            ),
-
+            "data_sources_listed": (0.8 if meta.get("data_sources") else 0.5),
             # Fairness
             "no_disparate_treatment": (
-                0.3 if any(w in text_lower for w in ["only for", "except", "excluding"])
-                else 0.85
+                0.3 if any(w in text_lower for w in ["only for", "except", "excluding"]) else 0.85
             ),
             "accommodation_considered": (
-                0.9 if "accommodat" in text_lower or meta.get("accommodation_offered")
-                else 0.6
+                0.9 if "accommodat" in text_lower or meta.get("accommodation_offered") else 0.6
             ),
             "appeal_available": (
-                1.0 if meta.get("appeal_mechanism", False)
-                else 0.7 if "appeal" in text_lower
+                1.0
+                if meta.get("appeal_mechanism", False)
+                else 0.7
+                if "appeal" in text_lower
                 else 0.5
             ),
-
             # Privacy
             "minimal_data": (
-                0.4 if any(w in text_lower for w in ["all data", "everything", "comprehensive data"])
+                0.4
+                if any(w in text_lower for w in ["all data", "everything", "comprehensive data"])
                 else 0.8
             ),
-            "consent_present": (
-                1.0 if meta.get("consent_obtained", False)
-                else 0.5
-            ),
-            "erasure_possible": (
-                1.0 if meta.get("erasure_supported", False)
-                else 0.6
-            ),
-
+            "consent_present": (1.0 if meta.get("consent_obtained", False) else 0.5),
+            "erasure_possible": (1.0 if meta.get("erasure_supported", False) else 0.6),
             # Beneficence
             "no_foreseeable_harm": (
-                0.3 if any(w in text_lower for w in ["harm", "damage", "injur", "suffer"])
-                else 0.85
+                0.3 if any(w in text_lower for w in ["harm", "damage", "injur", "suffer"]) else 0.85
             ),
             "proportionate_response": 0.75,  # hard to detect from text alone
             "reversible_action": (
-                0.4 if any(w in text_lower for w in ["permanent", "irreversible", "cannot undo"])
+                0.4
+                if any(w in text_lower for w in ["permanent", "irreversible", "cannot undo"])
                 else 0.8
             ),
-
             # Professional
             "within_competence": 0.8,
-            "human_oversight_available": (
-                1.0 if meta.get("human_oversight", False)
-                else 0.6
-            ),
-            "documented": (
-                0.9 if meta.get("documented", False)
-                else 0.5
-            ),
-
+            "human_oversight_available": (1.0 if meta.get("human_oversight", False) else 0.6),
+            "documented": (0.9 if meta.get("documented", False) else 0.5),
             # Domain-specific
-            "medical_consent": (
-                1.0 if meta.get("patient_consent", False)
-                else 0.4
-            ),
+            "medical_consent": (1.0 if meta.get("patient_consent", False) else 0.4),
             "triage_protocol_followed": (
-                0.9 if "triage" in text_lower and "protocol" in text_lower
-                else 0.6
+                0.9 if "triage" in text_lower and "protocol" in text_lower else 0.6
             ),
-            "adverse_notice_provided": (
-                1.0 if meta.get("adverse_notice", False)
-                else 0.4
-            ),
+            "adverse_notice_provided": (1.0 if meta.get("adverse_notice", False) else 0.4),
             "uniform_criteria": (
-                0.3 if any(w in text_lower for w in ["special case", "exception", "override"])
+                0.3
+                if any(w in text_lower for w in ["special case", "exception", "override"])
                 else 0.8
             ),
             "criteria_job_relevant": 0.75,  # default assumption
             "consistent_process": 0.75,
-
             # Cultural
-            "cultural_context_considered": (
-                0.8 if meta.get("cultural_context")
-                else 0.6
-            ),
-            "language_accessible": (
-                1.0 if meta.get("multilingual", False)
-                else 0.5
-            ),
-
+            "cultural_context_considered": (0.8 if meta.get("cultural_context") else 0.6),
+            "language_accessible": (1.0 if meta.get("multilingual", False) else 0.5),
             # Compliance
-            "risk_assessed": (
-                1.0 if meta.get("risk_assessment_done", False)
-                else 0.4
-            ),
-            "bias_monitored": (
-                1.0 if meta.get("bias_monitoring", False)
-                else 0.5
-            ),
+            "risk_assessed": (1.0 if meta.get("risk_assessment_done", False) else 0.4),
+            "bias_monitored": (1.0 if meta.get("bias_monitoring", False) else 0.5),
         }
 
         return checks.get(check_name, 0.5)
@@ -753,23 +719,27 @@ class DeontologicalEvaluator:
         sensitive_attrs = ["race", "gender", "religion", "ethnicity", "sexuality"]
         for attr in sensitive_attrs:
             if attr in text_lower:
-                violations.append(RuleViolation(
-                    rule_id=f"SOFT-{attr.upper()}",
-                    rule_name=f"sensitive_attribute_{attr}",
-                    severity=RuleSeverity.MEDIUM,
-                    description=f"Action references '{attr}' — ensure it's justified",
-                    matched_text=attr,
-                ))
+                violations.append(
+                    RuleViolation(
+                        rule_id=f"SOFT-{attr.upper()}",
+                        rule_name=f"sensitive_attribute_{attr}",
+                        severity=RuleSeverity.MEDIUM,
+                        description=f"Action references '{attr}' — ensure it's justified",
+                        matched_text=attr,
+                    )
+                )
 
         # Warn about irreversible actions
         if any(w in text_lower for w in ["permanent", "irreversible", "delete all"]):
-            violations.append(RuleViolation(
-                rule_id="SOFT-IRREVERSIBLE",
-                rule_name="irreversible_action_warning",
-                severity=RuleSeverity.HIGH,
-                description="Action appears irreversible — extra caution advised",
-                matched_text="irreversible action detected",
-            ))
+            violations.append(
+                RuleViolation(
+                    rule_id="SOFT-IRREVERSIBLE",
+                    rule_name="irreversible_action_warning",
+                    severity=RuleSeverity.HIGH,
+                    description="Action appears irreversible — extra caution advised",
+                    matched_text="irreversible action detected",
+                )
+            )
 
         return violations
 

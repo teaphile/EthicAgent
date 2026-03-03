@@ -13,7 +13,6 @@ Tests cover:
 
 from __future__ import annotations
 
-import pytest
 from ethicagent.agents.ethical_reasoner import EthicalReasonerAgent
 
 
@@ -71,9 +70,7 @@ class TestEDSFormula:
             "virtue_ethics": 0.20,
             "contextual": 0.20,
         }
-        expected = (
-            0.35 * 0.80 + 0.25 * 0.60 + 0.20 * 0.70 + 0.20 * 0.90
-        )
+        expected = 0.35 * 0.80 + 0.25 * 0.60 + 0.20 * 0.70 + 0.20 * 0.90
         eds = self.agent.compute_eds(scores, weights)
         assert abs(eds - expected) < 0.001
 

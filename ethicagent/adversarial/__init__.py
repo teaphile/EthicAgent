@@ -19,8 +19,8 @@ Usage::
     report = evaluator.run(cases)
 """
 
-from ethicagent.adversarial.perturbation import PerturbationAttack
 from ethicagent.adversarial.jailbreak import JailbreakAttack
+from ethicagent.adversarial.perturbation import PerturbationAttack
 from ethicagent.adversarial.robustness import RobustnessEvaluator
 
 __all__ = [

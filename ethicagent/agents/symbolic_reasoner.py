@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class SymbolicReasoner:
 
     def __init__(
         self,
-        rules: Optional[Dict[str, Any]] = None,
+        rules: dict[str, Any] | None = None,
         knowledge_graph: Any = None,
     ) -> None:
         cfg = rules or {}
@@ -57,7 +57,7 @@ class SymbolicReasoner:
         # -- rule chain definitions -------------------------------------------
         # If rule X fires, also evaluate rules in its "triggers" list.
         # Built from config or hardcoded fallback.
-        self._chains: Dict[str, List[str]] = cfg.get("rule_chains", {})
+        self._chains: dict[str, list[str]] = cfg.get("rule_chains", {})
 
         logger.info(
             f"SymbolicReasoner loaded: {len(self._hard_rules)} hard rules, "
@@ -71,11 +71,11 @@ class SymbolicReasoner:
 
     def reason(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         domain: str,
         *,
         trace: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Evaluate all rules against the given context.
 
         Args:
@@ -88,45 +88,38 @@ class SymbolicReasoner:
             hard_violations, duty_scores, explanations, trace.
         """
         task = context.get("action", "")
-        matched: List[Dict[str, Any]] = []
-        explanations: List[str] = []
-        hard_violations: List[str] = []
+        matched: list[dict[str, Any]] = []
+        explanations: list[str] = []
+        hard_violations: list[str] = []
         blocked = False
-        trace_log: List[str] = []
+        trace_log: list[str] = []
 
         # -- 1. Hard rules (binary: violated or not) -------------------------
         for rule in self._hard_rules:
             hit, explanation = self._check_rule(rule, task, context, domain)
             if trace:
-                trace_log.append(
-                    f"HARD {rule.get('id','?')}: {'HIT' if hit else 'miss'}"
-                )
+                trace_log.append(f"HARD {rule.get('id', '?')}: {'HIT' if hit else 'miss'}")
             if hit:
                 matched.append({**rule, "type": "hard", "violated": True})
                 hard_violations.append(rule.get("id", "unknown"))
                 explanations.append(explanation)
                 blocked = True
                 logger.warning(
-                    f"Hard rule violated: {rule.get('id')} — "
-                    f"{rule.get('description', '')[:80]}"
+                    f"Hard rule violated: {rule.get('id')} — {rule.get('description', '')[:80]}"
                 )
 
         # -- 2. Duty rules (graduated compliance) ----------------------------
-        duty_scores: Dict[str, float] = {}
+        duty_scores: dict[str, float] = {}
         for rule in self._duty_rules:
             hit, explanation = self._check_rule(rule, task, context, domain)
             rid = rule.get("id", "duty")
             if trace:
-                trace_log.append(
-                    f"DUTY {rid}: {'HIT' if hit else 'miss'}"
-                )
+                trace_log.append(f"DUTY {rid}: {'HIT' if hit else 'miss'}")
             if hit:
                 # duty rule hit → lower compliance score
                 severity = rule.get("severity", 0.3)
                 duty_scores[rid] = 1.0 - severity
-                matched.append({
-                    **rule, "type": "duty", "compliance": 1.0 - severity
-                })
+                matched.append({**rule, "type": "duty", "compliance": 1.0 - severity})
                 explanations.append(explanation)
 
         # -- 3. Domain-specific rules ----------------------------------------
@@ -135,9 +128,7 @@ class SymbolicReasoner:
             hit, explanation = self._check_rule(rule, task, context, domain)
             rid = rule.get("id", "dom")
             if trace:
-                trace_log.append(
-                    f"DOMAIN({domain}) {rid}: {'HIT' if hit else 'miss'}"
-                )
+                trace_log.append(f"DOMAIN({domain}) {rid}: {'HIT' if hit else 'miss'}")
             if hit:
                 matched.append({**rule, "type": "domain"})
                 explanations.append(explanation)
@@ -154,7 +145,7 @@ class SymbolicReasoner:
         matched.extend(chained)
 
         # -- 6. KG constraints (if available) ---------------------------------
-        kg_issues: List[str] = []
+        kg_issues: list[str] = []
         if self._kg:
             try:
                 # Check if any protected attributes are being used in this domain
@@ -164,16 +155,14 @@ class SymbolicReasoner:
                         kg_issues.append(
                             f"Protected attribute '{attr}' must not influence {domain} decisions"
                         )
-                        explanations.append(f"Knowledge graph constraint: protected attribute '{attr}'")
+                        explanations.append(
+                            f"Knowledge graph constraint: protected attribute '{attr}'"
+                        )
             except Exception as exc:
                 logger.debug(f"KG constraint check failed: {exc}")
 
         # Sort matched rules by priority
-        matched.sort(
-            key=lambda r: self.PRIORITY_ORDER.get(
-                r.get("priority", "medium"), 2
-            )
-        )
+        matched.sort(key=lambda r: self.PRIORITY_ORDER.get(r.get("priority", "medium"), 2))
 
         # Compute overall symbolic score (0–1)
         if blocked:
@@ -183,11 +172,9 @@ class SymbolicReasoner:
         else:
             sym_score = 1.0  # no rules triggered → fully compliant
 
-        status = "blocked" if blocked else (
-            "caution" if matched else "compliant"
-        )
+        status = "blocked" if blocked else ("caution" if matched else "compliant")
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "status": status,
             "blocked": blocked,
             "symbolic_score": round(sym_score, 3),
@@ -201,8 +188,7 @@ class SymbolicReasoner:
             result["trace"] = trace_log
 
         logger.info(
-            f"Symbolic reasoning: status={status}, "
-            f"matched={len(matched)} rules, blocked={blocked}"
+            f"Symbolic reasoning: status={status}, matched={len(matched)} rules, blocked={blocked}"
         )
         return result
 
@@ -212,11 +198,11 @@ class SymbolicReasoner:
 
     def _check_rule(
         self,
-        rule: Dict[str, Any],
+        rule: dict[str, Any],
         task: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         domain: str,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Check whether a single rule matches.
 
         Returns (matched: bool, explanation: str).
@@ -239,10 +225,7 @@ class SymbolicReasoner:
         kw_hit = False
         if keywords:
             if fuzzy:
-                kw_hit = any(
-                    self._fuzzy_match(kw.lower(), task_lower)
-                    for kw in keywords
-                )
+                kw_hit = any(self._fuzzy_match(kw.lower(), task_lower) for kw in keywords)
             else:
                 kw_hit = any(kw.lower() in task_lower for kw in keywords)
 
@@ -277,9 +260,9 @@ class SymbolicReasoner:
 
     def _evaluate_conditions(
         self,
-        conditions: List[Any],
+        conditions: list[Any],
         task: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Evaluate a list of condition expressions.
 
@@ -347,18 +330,18 @@ class SymbolicReasoner:
 
     def _apply_chains(
         self,
-        already_matched: List[Dict[str, Any]],
+        already_matched: list[dict[str, Any]],
         task: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         domain: str,
-        trace_log: List[str],
-    ) -> List[Dict[str, Any]]:
+        trace_log: list[str],
+    ) -> list[dict[str, Any]]:
         """If a matched rule has dependent rules, evaluate those too.
 
         Prevents infinite loops by tracking seen rule IDs.
         """
-        extra: List[Dict[str, Any]] = []
-        seen: Set[str] = {r.get("id", "") for r in already_matched}
+        extra: list[dict[str, Any]] = []
+        seen: set[str] = {r.get("id", "") for r in already_matched}
 
         for r in already_matched:
             rid = r.get("id", "")
@@ -370,17 +353,13 @@ class SymbolicReasoner:
                 # find the target rule in all rule lists
                 target_rule = self._find_rule_by_id(target_id)
                 if target_rule:
-                    hit, expl = self._check_rule(
-                        target_rule, task, context, domain
-                    )
-                    trace_log.append(
-                        f"CHAIN {rid} → {target_id}: {'HIT' if hit else 'miss'}"
-                    )
+                    hit, expl = self._check_rule(target_rule, task, context, domain)
+                    trace_log.append(f"CHAIN {rid} → {target_id}: {'HIT' if hit else 'miss'}")
                     if hit:
                         extra.append({**target_rule, "type": "chained"})
         return extra
 
-    def _find_rule_by_id(self, rule_id: str) -> Optional[Dict[str, Any]]:
+    def _find_rule_by_id(self, rule_id: str) -> dict[str, Any] | None:
         """Search all rule lists for a rule with the given ID."""
         for pool in [
             self._hard_rules,

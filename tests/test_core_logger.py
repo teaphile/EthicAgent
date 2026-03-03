@@ -6,8 +6,7 @@ import json
 import os
 import tempfile
 
-import pytest
-from ethicagent.core.logger import AuditLogger, AuditEntry
+from ethicagent.core.logger import AuditEntry, AuditLogger
 
 
 class TestAuditEntry:
@@ -76,9 +75,7 @@ class TestAuditLogger:
         logger = AuditLogger()
         logger.log_event("test", "Export test")
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         try:
@@ -95,9 +92,7 @@ class TestAuditLogger:
         logger = AuditLogger()
         logger.log_event("test", "CSV test")
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             filepath = f.name
 
         try:

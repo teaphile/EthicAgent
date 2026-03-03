@@ -19,12 +19,11 @@ from __future__ import annotations
 import csv
 import json
 import logging
-import os
 import threading
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -39,17 +38,17 @@ class AuditEntry:
     entry_id: str = ""
     run_id: str = ""
     timestamp: str = ""
-    event_type: str = ""          # "decision" | "conflict" | "error" | "stage" …
+    event_type: str = ""  # "decision" | "conflict" | "error" | "stage" …
     stage: str = ""
     action: str = ""
     domain: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
-    ethical_scores: Optional[Dict[str, float]] = None
-    verdict: Optional[str] = None
+    details: dict[str, Any] = field(default_factory=dict)
+    ethical_scores: dict[str, float] | None = None
+    verdict: str | None = None
     user: str = "system"
     # Backward-compat fields
     message: str = ""
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if not self.timestamp:
@@ -62,7 +61,7 @@ class AuditEntry:
         if self.data is not None and not self.details:
             self.details = self.data
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -87,7 +86,7 @@ class AuditLogger:
         log_dir: str = "logs",
         log_level: int = logging.INFO,
     ) -> None:
-        self._entries: List[AuditEntry] = []
+        self._entries: list[AuditEntry] = []
         self._lock = threading.Lock()
         self._log_dir = Path(log_dir)
         self._log_dir.mkdir(parents=True, exist_ok=True)
@@ -108,9 +107,7 @@ class AuditLogger:
             ch.setFormatter(fmt)
             self._logger.addHandler(ch)
             # file — append, so nothing is lost between restarts
-            fh = logging.FileHandler(
-                str(self._log_dir / "ethicagent_audit.log")
-            )
+            fh = logging.FileHandler(str(self._log_dir / "ethicagent_audit.log"))
             fh.setLevel(logging.DEBUG)
             fh.setFormatter(fmt)
             self._logger.addHandler(fh)
@@ -122,7 +119,7 @@ class AuditLogger:
         return f"AE-{self._counter:06d}"
 
     @property
-    def entries(self) -> List[AuditEntry]:
+    def entries(self) -> list[AuditEntry]:
         """Public access to entries list (backward-compat)."""
         return self._entries
 
@@ -135,9 +132,9 @@ class AuditLogger:
         stage_or_data: Any = None,
         action: str = "",
         domain: str = "",
-        details: Dict[str, Any] | None = None,
-        ethical_scores: Optional[Dict[str, float]] = None,
-        verdict: Optional[str] = None,
+        details: dict[str, Any] | None = None,
+        ethical_scores: dict[str, float] | None = None,
+        verdict: str | None = None,
         user: str = "system",
         *,
         # Named kwargs for canonical form
@@ -153,7 +150,9 @@ class AuditLogger:
           log_event(event_type, message)                                  — minimal
         """
         # Detect simplified form: if stage_or_data is a dict or missing
-        if isinstance(stage_or_data, dict) or (stage_or_data is None and not action and not details):
+        if isinstance(stage_or_data, dict) or (
+            stage_or_data is None and not action and not details
+        ):
             # Simplified form: log_event(event_type, message, optional_data)
             _event_type = event_type or run_id_or_event_type
             _message = event_type_or_message
@@ -190,10 +189,7 @@ class AuditLogger:
             self._entries.append(entry)
 
         # route to the right log level
-        msg = (
-            f"[{_event_type}] run={_run_id} stage={_stage} "
-            f"domain={_domain} verdict={verdict}"
-        )
+        msg = f"[{_event_type}] run={_run_id} stage={_stage} domain={_domain} verdict={verdict}"
         if _event_type == "error":
             self._logger.error(msg)
         elif _event_type in ("conflict", "human_review"):
@@ -208,20 +204,20 @@ class AuditLogger:
         run_id: str = "",
         action: str = "",
         domain: str = "",
-        ethical_scores: Dict[str, float] | None = None,
+        ethical_scores: dict[str, float] | None = None,
         verdict: str = "",
         explanation: str = "",
-        decision_trace: Optional[List[Dict[str, Any]]] = None,
+        decision_trace: list[dict[str, Any]] | None = None,
         *,
         # the ActionExecutor sometimes passes these keyword args —
         # accept them gracefully even if we don't store them all
-        eds_score: Optional[float] = None,
-        rules_triggered: Optional[List[str]] = None,
-        reasoning: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        eds_score: float | None = None,
+        rules_triggered: list[str] | None = None,
+        reasoning: str | None = None,
+        metadata: dict[str, Any] | None = None,
         # backward-compat kwargs from test
         task: str = "",
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> AuditEntry:
         """Log a final ethical decision.
 
@@ -235,7 +231,7 @@ class AuditLogger:
         _verdict = verdict
         _scores = ethical_scores or {}
 
-        details: Dict[str, Any] = {
+        details: dict[str, Any] = {
             "explanation": explanation or reasoning or "",
             "decision_trace": decision_trace or [],
         }
@@ -264,12 +260,12 @@ class AuditLogger:
         run_id: str = "",
         action: str = "",
         domain: str = "",
-        scores: Dict[str, float] | None = None,
+        scores: dict[str, float] | None = None,
         conflict_description: str = "",
         resolution: str = "",
         *,
         conflict_type: str = "",
-        details: Dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
     ) -> AuditEntry:
         """Record an ethical conflict between philosophies."""
         _details = {
@@ -333,11 +329,11 @@ class AuditLogger:
 
     def get_entries(
         self,
-        run_id: Optional[str] = None,
-        event_type: Optional[str] = None,
-        domain: Optional[str] = None,
+        run_id: str | None = None,
+        event_type: str | None = None,
+        domain: str | None = None,
         limit: int = 100,
-    ) -> List[AuditEntry]:
+    ) -> list[AuditEntry]:
         """Retrieve entries with optional filters."""
         with self._lock:
             entries = list(self._entries)
@@ -353,7 +349,7 @@ class AuditLogger:
 
     # -- export ---------------------------------------------------------------
 
-    def export_to_json(self, filepath: Optional[str] = None) -> str:
+    def export_to_json(self, filepath: str | None = None) -> str:
         if filepath is None:
             filepath = str(self._log_dir / "audit_export.json")
 
@@ -366,7 +362,7 @@ class AuditLogger:
         self._logger.info(f"Exported {len(data)} audit entries → {filepath}")
         return filepath
 
-    def export_to_csv(self, filepath: Optional[str] = None) -> str:
+    def export_to_csv(self, filepath: str | None = None) -> str:
         if filepath is None:
             filepath = str(self._log_dir / "audit_export.csv")
 
@@ -374,25 +370,35 @@ class AuditLogger:
             entries = list(self._entries)
 
         cols = [
-            "entry_id", "run_id", "timestamp", "event_type", "stage",
-            "action", "domain", "verdict", "user", "details",
+            "entry_id",
+            "run_id",
+            "timestamp",
+            "event_type",
+            "stage",
+            "action",
+            "domain",
+            "verdict",
+            "user",
+            "details",
         ]
         with open(filepath, "w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=cols)
             writer.writeheader()
             for e in entries:
-                writer.writerow({
-                    "entry_id": e.entry_id,
-                    "run_id": e.run_id,
-                    "timestamp": e.timestamp,
-                    "event_type": e.event_type,
-                    "stage": e.stage,
-                    "action": e.action,
-                    "domain": e.domain,
-                    "verdict": e.verdict or "",
-                    "user": e.user,
-                    "details": json.dumps(e.details),
-                })
+                writer.writerow(
+                    {
+                        "entry_id": e.entry_id,
+                        "run_id": e.run_id,
+                        "timestamp": e.timestamp,
+                        "event_type": e.event_type,
+                        "stage": e.stage,
+                        "action": e.action,
+                        "domain": e.domain,
+                        "verdict": e.verdict or "",
+                        "user": e.user,
+                        "details": json.dumps(e.details),
+                    }
+                )
 
         self._logger.info(f"Exported {len(entries)} entries → CSV: {filepath}")
         return filepath

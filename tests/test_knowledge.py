@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import os
 import tempfile
 
-import pytest
 from ethicagent.knowledge.knowledge_graph import KnowledgeGraph
 from ethicagent.knowledge.precedent_store import PrecedentStore
 
@@ -84,20 +82,26 @@ class TestPrecedentStore:
     def test_filter_by_verdict(self):
         store = PrecedentStore()
         store.add_precedent(
-            case_id="P001", task="Approve loan", domain="finance",
-            verdict="approve", eds_score=0.85, reasoning="ok",
+            case_id="P001",
+            task="Approve loan",
+            domain="finance",
+            verdict="approve",
+            eds_score=0.85,
+            reasoning="ok",
         )
         store.add_precedent(
-            case_id="P002", task="Deny loan", domain="finance",
-            verdict="reject", eds_score=0.30, reasoning="violation",
+            case_id="P002",
+            task="Deny loan",
+            domain="finance",
+            verdict="reject",
+            eds_score=0.30,
+            reasoning="violation",
         )
         approved = store.filter_by_verdict("approve")
         assert all(p.get("verdict") == "approve" for p in approved)
 
     def test_persistence(self):
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             filepath = f.name
 
         try:

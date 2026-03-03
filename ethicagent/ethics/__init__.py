@@ -5,50 +5,68 @@ EDS formula, plus the conflict resolver and the canonical score/verdict
 definitions.
 """
 
-from ethicagent.ethics.deontological import (
-    DeontologicalEvaluator,
-    DeontologicalResult,
-    RuleViolation,
-    RuleSeverity,
+from ethicagent.ethics.conflict_resolver import (
+    ConflictRecord,
+    ConflictResolver,
+    ConflictSeverity,
+    PhilosophyPosition,
 )
 from ethicagent.ethics.consequentialist import (
     ConsequentialistEvaluator,
     ConsequentialistResult,
-    StakeholderImpact,
     ImpactType,
-)
-from ethicagent.ethics.virtue_ethics import (
-    VirtueEthicsEvaluator,
-    VirtueEthicsResult,
-    FairnessMetrics,
+    StakeholderImpact,
 )
 from ethicagent.ethics.contextual_ethics import (
     ContextualEthicsEvaluator,
     ContextualResult,
 )
-from ethicagent.ethics.conflict_resolver import (
-    ConflictResolver,
-    ConflictRecord,
-    ConflictSeverity,
-    PhilosophyPosition,
+from ethicagent.ethics.deontological import (
+    DeontologicalEvaluator,
+    DeontologicalResult,
+    RuleSeverity,
+    RuleViolation,
 )
 from ethicagent.ethics.ethical_score import (
+    DOMAIN_WEIGHTS,
     EthicalDecision,
     EthicalVerdict,
     PhilosophyResult,
-    DOMAIN_WEIGHTS,
+    compute_confidence_interval,
     compute_eds,
     determine_verdict,
-    compute_confidence_interval,
     sensitivity_analysis,
+)
+from ethicagent.ethics.virtue_ethics import (
+    FairnessMetrics,
+    VirtueEthicsEvaluator,
+    VirtueEthicsResult,
 )
 
 __all__ = [
-    "DeontologicalEvaluator", "DeontologicalResult", "RuleViolation", "RuleSeverity",
-    "ConsequentialistEvaluator", "ConsequentialistResult", "StakeholderImpact", "ImpactType",
-    "VirtueEthicsEvaluator", "VirtueEthicsResult", "FairnessMetrics",
-    "ContextualEthicsEvaluator", "ContextualResult",
-    "ConflictResolver", "ConflictRecord", "ConflictSeverity", "PhilosophyPosition",
-    "EthicalDecision", "EthicalVerdict", "PhilosophyResult", "DOMAIN_WEIGHTS",
-    "compute_eds", "determine_verdict", "compute_confidence_interval", "sensitivity_analysis",
+    "DeontologicalEvaluator",
+    "DeontologicalResult",
+    "RuleViolation",
+    "RuleSeverity",
+    "ConsequentialistEvaluator",
+    "ConsequentialistResult",
+    "StakeholderImpact",
+    "ImpactType",
+    "VirtueEthicsEvaluator",
+    "VirtueEthicsResult",
+    "FairnessMetrics",
+    "ContextualEthicsEvaluator",
+    "ContextualResult",
+    "ConflictResolver",
+    "ConflictRecord",
+    "ConflictSeverity",
+    "PhilosophyPosition",
+    "EthicalDecision",
+    "EthicalVerdict",
+    "PhilosophyResult",
+    "DOMAIN_WEIGHTS",
+    "compute_eds",
+    "determine_verdict",
+    "compute_confidence_interval",
+    "sensitivity_analysis",
 ]

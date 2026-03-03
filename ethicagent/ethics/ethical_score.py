@@ -28,7 +28,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,10 @@ logger = logging.getLogger(__name__)
 # Verdict enum — these are the pipeline's final outputs
 # ---------------------------------------------------------------------------
 
+
 class EthicalVerdict(str, Enum):
     """The four possible outcomes of the ethics pipeline."""
+
     AUTO_APPROVE = "auto_approve"
     ESCALATE = "escalate"
     REJECT = "reject"
@@ -64,15 +66,17 @@ class EthicalVerdict(str, Enum):
 # Philosophy result — standardized output from each evaluator
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class PhilosophyResult:
     """Standardized result from a philosophy evaluator."""
-    philosophy: str           # "deontological", "consequentialist", "virtue_ethics", "contextual"
-    score: float              # 0.0 – 1.0
+
+    philosophy: str  # "deontological", "consequentialist", "virtue_ethics", "contextual"
+    score: float  # 0.0 – 1.0
     hard_block: bool = False
     confidence: float = 0.7
     key_argument: str = ""
-    reasoning: str = ""       # backward-compat alias for key_argument
+    reasoning: str = ""  # backward-compat alias for key_argument
     details: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -87,6 +91,7 @@ class PhilosophyResult:
 # Ethical decision — the final pipeline output
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class EthicalDecision:
     """Complete ethical assessment produced by the pipeline.
@@ -95,6 +100,7 @@ class EthicalDecision:
     used for downstream decisions.  It's designed to be both
     machine-readable and human-explainable.
     """
+
     eds_score: float
     verdict: EthicalVerdict
     philosophy_scores: dict[str, float] = field(default_factory=dict)
@@ -200,6 +206,7 @@ ESCALATION_THRESHOLD = 0.50
 # EDS formula functions
 # ---------------------------------------------------------------------------
 
+
 def compute_eds(
     philosophy_scores: dict[str, float],
     domain: str = "general",
@@ -281,10 +288,10 @@ def compute_confidence_interval(
     """
     # Estimation of per-philosophy uncertainty
     uncertainties = {
-        "deontological": 0.05,     # rules are fairly crisp
+        "deontological": 0.05,  # rules are fairly crisp
         "consequentialist": 0.12,  # outcome estimation is uncertain
-        "virtue_ethics": 0.10,            # heuristic-based
-        "contextual": 0.08,        # context-dependent
+        "virtue_ethics": 0.10,  # heuristic-based
+        "contextual": 0.08,  # context-dependent
     }
 
     # Propagate uncertainty through weighted sum
@@ -294,6 +301,7 @@ def compute_confidence_interval(
         variance += (weight * sigma) ** 2
 
     import math
+
     std = math.sqrt(variance)
 
     # z-score for confidence level

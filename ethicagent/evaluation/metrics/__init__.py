@@ -20,9 +20,10 @@ logger = logging.getLogger(__name__)
 
 # ── Verdict Accuracy ─────────────────────────────────────────
 
+
 def verdict_accuracy(
-    results: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Compute verdict accuracy metrics.
 
     Args:
@@ -40,18 +41,29 @@ def verdict_accuracy(
         return {"overall_accuracy": 0.0, "note": "No labeled cases", "total": 0}
 
     correct = sum(
-        1 for r in labeled
-        if r.get("actual_verdict", "").lower() == r["expected_verdict"].lower()
+        1 for r in labeled if r.get("actual_verdict", "").lower() == r["expected_verdict"].lower()
     )
     total = len(labeled)
 
     verdicts = set(r["expected_verdict"].lower() for r in labeled)
-    per_verdict: Dict[str, Dict[str, float]] = {}
+    per_verdict: dict[str, dict[str, float]] = {}
 
     for v in sorted(verdicts):
-        tp = sum(1 for r in labeled if r.get("actual_verdict", "").lower() == v and r["expected_verdict"].lower() == v)
-        fp = sum(1 for r in labeled if r.get("actual_verdict", "").lower() == v and r["expected_verdict"].lower() != v)
-        fn = sum(1 for r in labeled if r.get("actual_verdict", "").lower() != v and r["expected_verdict"].lower() == v)
+        tp = sum(
+            1
+            for r in labeled
+            if r.get("actual_verdict", "").lower() == v and r["expected_verdict"].lower() == v
+        )
+        fp = sum(
+            1
+            for r in labeled
+            if r.get("actual_verdict", "").lower() == v and r["expected_verdict"].lower() != v
+        )
+        fn = sum(
+            1
+            for r in labeled
+            if r.get("actual_verdict", "").lower() != v and r["expected_verdict"].lower() == v
+        )
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
@@ -74,9 +86,10 @@ def verdict_accuracy(
 
 # ── EDS Score Distribution ───────────────────────────────────
 
+
 def eds_score_metrics(
-    results: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Compute EDS score distribution metrics.
 
     Returns mean, std, min, max, quartiles, and histogram bin
@@ -93,7 +106,7 @@ def eds_score_metrics(
 
     sorted_scores = sorted(scores)
 
-    def _percentile(data: List[float], p: float) -> float:
+    def _percentile(data: list[float], p: float) -> float:
         k = (len(data) - 1) * p
         f = int(k)
         c = f + 1 if f + 1 < len(data) else f
@@ -101,7 +114,7 @@ def eds_score_metrics(
 
     # Histogram bins for quick dashboard rendering
     bins = [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.01]
-    histogram: Dict[str, int] = {}
+    histogram: dict[str, int] = {}
     for lo, hi in zip(bins, bins[1:]):
         label = f"{lo:.1f}-{hi:.2f}"
         histogram[label] = sum(1 for s in scores if lo <= s < hi)
@@ -121,22 +134,20 @@ def eds_score_metrics(
 
 # ── EDS Range Accuracy ───────────────────────────────────────
 
+
 def eds_range_accuracy(
-    results: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
     """How often does the EDS score fall within the expected range?
 
     Also breaks results down by difficulty level.
     """
-    labeled = [
-        r for r in results
-        if r.get("expected_eds_range") and "eds_score" in r
-    ]
+    labeled = [r for r in results if r.get("expected_eds_range") and "eds_score" in r]
     if not labeled:
         return {"in_range_rate": 0.0, "note": "No range labels", "total": 0}
 
     in_range = 0
-    by_difficulty: Dict[str, Dict[str, int]] = {}
+    by_difficulty: dict[str, dict[str, int]] = {}
 
     for r in labeled:
         eds = r["eds_score"]
@@ -167,16 +178,17 @@ def eds_range_accuracy(
 
 # ── Fairness Metrics ─────────────────────────────────────────
 
+
 def fairness_metrics(
-    results: List[Dict[str, Any]],
+    results: list[dict[str, Any]],
     group_key: str = "domain",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Compute fairness metrics across groups.
 
     Calculates statistical parity difference and disparate-impact
     ratio across a grouping key.
     """
-    groups: Dict[str, List[Dict]] = {}
+    groups: dict[str, list[dict]] = {}
     for r in results:
         g = r.get(group_key, "unknown")
         groups.setdefault(g, []).append(r)
@@ -184,8 +196,8 @@ def fairness_metrics(
     approve_set = {"approve", "approved"}
     reject_set = {"reject", "rejected", "hard_block", "hard_blocked"}
 
-    group_approval: Dict[str, float] = {}
-    group_rejection: Dict[str, float] = {}
+    group_approval: dict[str, float] = {}
+    group_rejection: dict[str, float] = {}
 
     for g, g_results in groups.items():
         total = len(g_results)
@@ -214,9 +226,10 @@ def fairness_metrics(
 
 # ── Consistency Score ────────────────────────────────────────
 
+
 def consistency_score(
-    results: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Measure decision consistency for similar inputs.
 
     Groups results into EDS score bands and checks if the same
@@ -232,10 +245,7 @@ def consistency_score(
     total = 0
 
     for lo, hi in bands:
-        band_results = [
-            r for r in results
-            if lo <= r.get("eds_score", 0.0) < hi
-        ]
+        band_results = [r for r in results if lo <= r.get("eds_score", 0.0) < hi]
         if len(band_results) < 2:
             continue
 
@@ -251,7 +261,7 @@ def consistency_score(
     n = len(all_eds)
     mean_eds = sum(all_eds) / n
     variance = sum((s - mean_eds) ** 2 for s in all_eds) / max(n - 1, 1)
-    stddev = variance ** 0.5
+    stddev = variance**0.5
     spread_consistency = max(0.0, min(1.0, 1.0 - 2 * stddev))
 
     # Combine: prefer band_consistency when available, blend with spread
@@ -269,9 +279,10 @@ def consistency_score(
 
 # ── Philosophy Contribution Analysis ─────────────────────────
 
+
 def philosophy_contribution_analysis(
-    results: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Analyse each philosophy's contribution to final decisions.
 
     For each of the four lenses, reports mean / std / min / max
@@ -280,7 +291,7 @@ def philosophy_contribution_analysis(
     philosophies = ["deontological", "consequentialist", "virtue_ethics", "contextual"]
     approve_set = {"approve", "approved"}
     reject_set = {"reject", "rejected", "hard_block", "hard_blocked"}
-    analysis: Dict[str, Dict[str, Any]] = {}
+    analysis: dict[str, dict[str, Any]] = {}
 
     for phil in philosophies:
         scores = [
@@ -316,9 +327,10 @@ def philosophy_contribution_analysis(
 
 # ── Composite Metric ─────────────────────────────────────────
 
+
 def compute_all_metrics(
-    results: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Compute every metric in one call.
 
     This is the main entry point called by the benchmark runner.

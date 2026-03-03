@@ -21,7 +21,7 @@ Conflict severity classification:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,10 @@ class FusionAgent:
 
     def fuse(
         self,
-        neural: Dict[str, Any],
-        symbolic: Dict[str, Any],
+        neural: dict[str, Any],
+        symbolic: dict[str, Any],
         domain: str = "general",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Merge neural + symbolic outputs.
 
         Returns a dict with: recommendation, confidence, agreement,
@@ -83,9 +83,7 @@ class FusionAgent:
             final_conf = min((n_conf + s_score) / 2 + 0.1, 1.0)
         else:
             # disagreement — use weighted fusion
-            final_rec, final_conf = self._weighted_fusion(
-                n_rec, n_conf, s_rec, s_score, domain
-            )
+            final_rec, final_conf = self._weighted_fusion(n_rec, n_conf, s_rec, s_score, domain)
 
         # -- fuse scores (average neural + symbolic where available) ----------
         fused_scores = dict(n_scores)  # start with neural scores
@@ -99,11 +97,11 @@ class FusionAgent:
             n_reasoning, s_explanations, agreement, safety_override
         )
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "recommendation": final_rec,
             "confidence": round(final_conf, 3),
-            "score": round(final_conf, 3),          # backward-compat alias
-            "fused_score": round(final_conf, 3),     # backward-compat alias
+            "score": round(final_conf, 3),  # backward-compat alias
+            "fused_score": round(final_conf, 3),  # backward-compat alias
             "agreement": agreement,
             "conflict_severity": conflict_severity,
             "safety_override": safety_override,
@@ -150,11 +148,10 @@ class FusionAgent:
             return "none"
 
         if s_blocked and n_rec == "approve":
-            return "critical"   # most dangerous type
+            return "critical"  # most dangerous type
 
-        opposite = (
-            (n_rec == "approve" and s_rec == "reject")
-            or (n_rec == "reject" and s_rec == "approve")
+        opposite = (n_rec == "approve" and s_rec == "reject") or (
+            n_rec == "reject" and s_rec == "approve"
         )
         if opposite:
             return "severe"
@@ -209,7 +206,7 @@ class FusionAgent:
     @staticmethod
     def _combine_reasoning(
         neural_reasoning: str,
-        symbolic_explanations: List[str],
+        symbolic_explanations: list[str],
         agreement: bool,
         safety_override: bool,
     ) -> str:
@@ -222,9 +219,7 @@ class FusionAgent:
         if neural_reasoning:
             parts.append(f"Neural analysis: {neural_reasoning[:300]}")
         if symbolic_explanations:
-            parts.append(
-                "Symbolic rules: " + "; ".join(symbolic_explanations[:5])
-            )
+            parts.append("Symbolic rules: " + "; ".join(symbolic_explanations[:5]))
         if agreement:
             parts.append("Both reasoners agree on this assessment.")
         else:

@@ -10,32 +10,31 @@ NOTE: metric keys align with the rewritten compute_all_metrics():
 
 from __future__ import annotations
 
-import pytest
-from ethicagent.evaluation.metrics import (
-    verdict_accuracy,
-    eds_score_metrics,
-    eds_range_accuracy,
-    fairness_metrics,
-    consistency_score,
-    philosophy_contribution_analysis,
-    compute_all_metrics,
-)
+from ethicagent.evaluation.ablation import ABLATION_VARIANTS, AblationStudy
 from ethicagent.evaluation.baselines import (
+    EqualWeightBaseline,
+    LLMOnlyBaseline,
     RandomBaseline,
     RulesOnlyBaseline,
-    LLMOnlyBaseline,
-    EqualWeightBaseline,
     get_all_baselines,
 )
-from ethicagent.evaluation.ablation import AblationStudy, ABLATION_VARIANTS
-from ethicagent.evaluation.statistical_analysis import StatisticalAnalyzer
 from ethicagent.evaluation.benchmark_runner import BenchmarkRunner
+from ethicagent.evaluation.metrics import (
+    compute_all_metrics,
+    consistency_score,
+    eds_range_accuracy,
+    eds_score_metrics,
+    fairness_metrics,
+    philosophy_contribution_analysis,
+    verdict_accuracy,
+)
 from ethicagent.evaluation.report_generator import ReportGenerator
-
+from ethicagent.evaluation.statistical_analysis import StatisticalAnalyzer
 
 # ═══════════════════════════════════════════════════════════════
 # Metrics Tests
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestVerdictAccuracy:
     def test_perfect_accuracy(self, sample_results):
@@ -117,12 +116,26 @@ class TestFairnessMetrics:
     def test_disparate_impact(self):
         # same domain, different scores
         results = [
-            {"eds_score": 0.90, "domain": "finance",
-             "philosophy_scores": {"deontological": 0.9, "consequentialist": 0.9,
-                                   "virtue_ethics": 0.9, "contextual": 0.9}},
-            {"eds_score": 0.85, "domain": "finance",
-             "philosophy_scores": {"deontological": 0.85, "consequentialist": 0.85,
-                                   "virtue_ethics": 0.85, "contextual": 0.85}},
+            {
+                "eds_score": 0.90,
+                "domain": "finance",
+                "philosophy_scores": {
+                    "deontological": 0.9,
+                    "consequentialist": 0.9,
+                    "virtue_ethics": 0.9,
+                    "contextual": 0.9,
+                },
+            },
+            {
+                "eds_score": 0.85,
+                "domain": "finance",
+                "philosophy_scores": {
+                    "deontological": 0.85,
+                    "consequentialist": 0.85,
+                    "virtue_ethics": 0.85,
+                    "contextual": 0.85,
+                },
+            },
         ]
         fm = fairness_metrics(results)
         assert isinstance(fm, dict)
@@ -177,6 +190,7 @@ class TestComputeAllMetrics:
 # Baseline Tests
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestBaselines:
     def test_random_baseline(self):
         baseline = RandomBaseline()
@@ -202,10 +216,12 @@ class TestBaselines:
 
     def test_random_baseline_evaluate_dict(self):
         baseline = RandomBaseline()
-        result = baseline.evaluate({
-            "task": "Test task",
-            "domain": "general",
-        })
+        result = baseline.evaluate(
+            {
+                "task": "Test task",
+                "domain": "general",
+            }
+        )
         assert isinstance(result, dict)
         assert "verdict" in result
         assert "eds_score" in result
@@ -241,6 +257,7 @@ class TestBaselines:
 # ═══════════════════════════════════════════════════════════════
 # Ablation Tests
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestAblationStudy:
     def test_initialization(self):
@@ -279,6 +296,7 @@ class TestAblationStudy:
 # ═══════════════════════════════════════════════════════════════
 # Statistical Analysis Tests
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestStatisticalAnalyzer:
     def test_initialization(self):
@@ -337,6 +355,7 @@ class TestStatisticalAnalyzer:
 # Report Generator Tests
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestReportGenerator:
     def test_initialization(self):
         gen = ReportGenerator()
@@ -364,6 +383,7 @@ class TestReportGenerator:
 # ═══════════════════════════════════════════════════════════════
 # Benchmark Runner Tests
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestBenchmarkRunner:
     def test_initialization(self):

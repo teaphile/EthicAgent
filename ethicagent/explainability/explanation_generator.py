@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,7 @@ class DetailLevel(str, Enum):
 @dataclass
 class Explanation:
     """A structured explanation of an ethical decision."""
+
     level: DetailLevel
     summary: str
     full_text: str
@@ -103,8 +104,14 @@ class ExplanationGenerator:
             full_text = self._standard_explanation(eds, verdict, domain, phil_scores, reasoning)
         elif level == DetailLevel.DETAILED:
             full_text = self._detailed_explanation(
-                eds, verdict, domain, phil_scores, reasoning,
-                factors, counterfactuals, recommendations,
+                eds,
+                verdict,
+                domain,
+                phil_scores,
+                reasoning,
+                factors,
+                counterfactuals,
+                recommendations,
             )
         else:
             full_text = self._technical_explanation(decision)
@@ -144,12 +151,14 @@ class ExplanationGenerator:
             "contextual": "Situational context",
         }
         for phil, score in phil_scores.items():
-            factors.append({
-                "name": labels.get(phil, phil),
-                "philosophy": phil,
-                "score": score,
-                "rating": "strong" if score >= 0.8 else "adequate" if score >= 0.5 else "weak",
-            })
+            factors.append(
+                {
+                    "name": labels.get(phil, phil),
+                    "philosophy": phil,
+                    "score": score,
+                    "rating": "strong" if score >= 0.8 else "adequate" if score >= 0.5 else "weak",
+                }
+            )
         return factors
 
     def _generate_counterfactuals(
@@ -227,8 +236,11 @@ class ExplanationGenerator:
 
     def _standard_explanation(
         self,
-        eds: float, verdict: str, domain: str,
-        phil_scores: dict[str, float], reasoning: str,
+        eds: float,
+        verdict: str,
+        domain: str,
+        phil_scores: dict[str, float],
+        reasoning: str,
     ) -> str:
         lines = [self._generate_summary(eds, verdict, domain)]
         lines.append("")
@@ -247,9 +259,14 @@ class ExplanationGenerator:
 
     def _detailed_explanation(
         self,
-        eds: float, verdict: str, domain: str,
-        phil_scores: dict[str, float], reasoning: str,
-        factors: list, counterfactuals: list, recommendations: list,
+        eds: float,
+        verdict: str,
+        domain: str,
+        phil_scores: dict[str, float],
+        reasoning: str,
+        factors: list,
+        counterfactuals: list,
+        recommendations: list,
     ) -> str:
         lines = [
             "=" * 60,
@@ -292,4 +309,5 @@ class ExplanationGenerator:
     def _technical_explanation(self, decision: dict[str, Any]) -> str:
         """Full technical dump for auditors."""
         import json
+
         return json.dumps(decision, indent=2, default=str)

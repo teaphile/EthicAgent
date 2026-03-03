@@ -16,19 +16,26 @@ from __future__ import annotations
 
 import logging
 import random
-import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # ── perturbation templates ──────────────────────────────────────
 _CHAR_TYPOS = {
-    "a": "s", "e": "r", "i": "o", "o": "p", "u": "y",
-    "t": "r", "n": "m", "s": "d", "l": "k", "r": "e",
+    "a": "s",
+    "e": "r",
+    "i": "o",
+    "o": "p",
+    "u": "y",
+    "t": "r",
+    "n": "m",
+    "s": "d",
+    "l": "k",
+    "r": "e",
 }
 
-_SYNONYMS: Dict[str, List[str]] = {
+_SYNONYMS: dict[str, list[str]] = {
     "deny": ["reject", "refuse", "decline"],
     "approve": ["accept", "grant", "authorize"],
     "candidate": ["applicant", "job seeker", "individual"],
@@ -49,14 +56,18 @@ _REPHRASE_TEMPLATES = [
 ]
 
 _NEGATION_PREFIXES = [
-    "Do NOT ", "Under no circumstances should we ",
-    "It would be wrong to ", "Never ", "Refuse to ",
+    "Do NOT ",
+    "Under no circumstances should we ",
+    "It would be wrong to ",
+    "Never ",
+    "Refuse to ",
 ]
 
 
 @dataclass
 class PerturbedCase:
     """A single perturbed version of an original case."""
+
     original_task: str
     perturbed_task: str
     perturbation_type: str
@@ -66,11 +77,12 @@ class PerturbedCase:
 @dataclass
 class PerturbationResult:
     """Result of running perturbation attacks on one case."""
+
     case_id: str
     domain: str
     original_verdict: str
     original_eds: float
-    perturbations: List[Dict[str, Any]] = field(default_factory=list)
+    perturbations: list[dict[str, Any]] = field(default_factory=list)
     verdict_flips: int = 0
     max_eds_drift: float = 0.0
     robust: bool = True
@@ -88,8 +100,8 @@ class PerturbationAttack:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        config: dict[str, Any] | None = None,
         seed: int = 42,
     ) -> None:
         self.orchestrator = orchestrator
@@ -98,9 +110,9 @@ class PerturbationAttack:
         self.eds_threshold = self.config.get("eds_drift_threshold", 0.10)
 
     # ── public ──────────────────────────────────────────────────
-    def generate(self, task: str, n: int = 5) -> List[PerturbedCase]:
+    def generate(self, task: str, n: int = 5) -> list[PerturbedCase]:
         """Generate *n* perturbed variants of *task*."""
-        perturbations: List[PerturbedCase] = []
+        perturbations: list[PerturbedCase] = []
 
         # 1. Character typo
         perturbations.append(self._typo(task))
@@ -119,9 +131,9 @@ class PerturbationAttack:
 
         return perturbations[:n]
 
-    def run(self, cases: List[Any]) -> List[PerturbationResult]:
+    def run(self, cases: list[Any]) -> list[PerturbationResult]:
         """Run perturbation attacks across a list of cases."""
-        results: List[PerturbationResult] = []
+        results: list[PerturbationResult] = []
 
         for case in cases:
             task = getattr(case, "task", str(case))
@@ -152,14 +164,16 @@ class PerturbationAttack:
                     pr.verdict_flips += 1
                 pr.max_eds_drift = max(pr.max_eds_drift, eds_drift)
 
-                pr.perturbations.append({
-                    "type": p.perturbation_type,
-                    "perturbed_task": p.perturbed_task[:200],
-                    "verdict": p_verdict,
-                    "eds_score": round(p_eds, 4),
-                    "eds_drift": round(eds_drift, 4),
-                    "verdict_flipped": flipped,
-                })
+                pr.perturbations.append(
+                    {
+                        "type": p.perturbation_type,
+                        "perturbed_task": p.perturbed_task[:200],
+                        "verdict": p_verdict,
+                        "eds_score": round(p_eds, 4),
+                        "eds_drift": round(eds_drift, 4),
+                        "verdict_flipped": flipped,
+                    }
+                )
 
             # robust if zero unexpected flips and eds drift within threshold
             pr.robust = (pr.verdict_flips == 0) and (pr.max_eds_drift <= self.eds_threshold)
@@ -167,7 +181,7 @@ class PerturbationAttack:
 
         return results
 
-    def summary(self, results: List[PerturbationResult]) -> Dict[str, Any]:
+    def summary(self, results: list[PerturbationResult]) -> dict[str, Any]:
         """Aggregate perturbation results into a summary."""
         n = len(results)
         if n == 0:
@@ -253,11 +267,12 @@ class PerturbationAttack:
         )
 
     # ── evaluation ──────────────────────────────────────────────
-    def _evaluate(self, task: str, domain: str) -> Dict[str, Any]:
+    def _evaluate(self, task: str, domain: str) -> dict[str, Any]:
         if self.orchestrator:
             return self.orchestrator.run(task=task, domain=domain)
         # simulation: deterministic hash → score
         import hashlib
+
         h = int(hashlib.md5(task.encode()).hexdigest(), 16)
         eds = 0.35 + (h % 550) / 1000
         if eds >= 0.80:

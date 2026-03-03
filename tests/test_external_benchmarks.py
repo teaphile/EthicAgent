@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import pytest
 
-from ethicagent.benchmarks.external.ethics_adapter import EthicsDatasetAdapter
 from ethicagent.benchmarks.external.bbq_adapter import BBQAdapter
+from ethicagent.benchmarks.external.ethics_adapter import EthicsDatasetAdapter
 from ethicagent.scenarios.base_scenario import ScenarioCase
-
 
 # ═══════════════════════════════════════════════════════════════
 # ETHICS Dataset Adapter
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestEthicsAdapter:
     """Tests for the ETHICS dataset adapter (Hendrycks et al., 2021)."""
@@ -62,8 +62,11 @@ class TestEthicsAdapter:
         adapter = EthicsDatasetAdapter()
         adapter.load(use_builtin=True)
         assert set(adapter.subsets) == {
-            "commonsense", "justice", "deontology",
-            "utilitarianism", "virtue",
+            "commonsense",
+            "justice",
+            "deontology",
+            "utilitarianism",
+            "virtue",
         }
 
     def test_summary_has_expected_keys(self):
@@ -99,6 +102,7 @@ class TestEthicsAdapter:
 # ═══════════════════════════════════════════════════════════════
 # BBQ Adapter
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestBBQAdapter:
     """Tests for the BBQ bias benchmark adapter (Parrish et al., 2022)."""

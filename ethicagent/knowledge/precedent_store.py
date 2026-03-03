@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Precedent:
     """A stored ethical precedent (case)."""
+
     id: str
     domain: str
     description: str
@@ -79,7 +80,6 @@ _SEED_PRECEDENTS: list[dict[str, Any]] = [
         "was_appropriate": True,
         "lessons": "Emergency care is a legal and ethical obligation regardless of payment ability",
     },
-
     # Finance
     {
         "id": "PREC-FI-001",
@@ -101,7 +101,6 @@ _SEED_PRECEDENTS: list[dict[str, Any]] = [
         "was_appropriate": True,
         "lessons": "Regular disparate impact testing is essential for credit models",
     },
-
     # Hiring
     {
         "id": "PREC-HR-001",
@@ -123,7 +122,6 @@ _SEED_PRECEDENTS: list[dict[str, Any]] = [
         "was_appropriate": True,
         "lessons": "Communication style should not be penalized when job doesn't require it",
     },
-
     # Disaster
     {
         "id": "PREC-DR-001",
@@ -146,7 +144,9 @@ class PrecedentStore:
     reasoning and promote consistency.
     """
 
-    def __init__(self, data_dir: str | Path | None = None, filepath: str | Path | None = None) -> None:
+    def __init__(
+        self, data_dir: str | Path | None = None, filepath: str | Path | None = None
+    ) -> None:
         self._precedents: list[Precedent] = []
         self._by_domain: dict[str, list[int]] = {}
         self._filepath = filepath
@@ -173,18 +173,20 @@ class PrecedentStore:
 
     def add_from_dict(self, data: dict[str, Any]) -> None:
         """Add a precedent from a dict."""
-        self.add(Precedent(
-            id=data.get("id", f"PREC-CUSTOM-{len(self._precedents)+1:03d}"),
-            domain=data.get("domain", "general"),
-            description=data.get("description", ""),
-            keywords=data.get("keywords", []),
-            decision=data.get("decision", ""),
-            outcome=data.get("outcome", ""),
-            was_appropriate=data.get("was_appropriate", True),
-            lessons=data.get("lessons", ""),
-            eds_score=data.get("eds_score", 0.0),
-            metadata=data.get("metadata", {}),
-        ))
+        self.add(
+            Precedent(
+                id=data.get("id", f"PREC-CUSTOM-{len(self._precedents) + 1:03d}"),
+                domain=data.get("domain", "general"),
+                description=data.get("description", ""),
+                keywords=data.get("keywords", []),
+                decision=data.get("decision", ""),
+                outcome=data.get("outcome", ""),
+                was_appropriate=data.get("was_appropriate", True),
+                lessons=data.get("lessons", ""),
+                eds_score=data.get("eds_score", 0.0),
+                metadata=data.get("metadata", {}),
+            )
+        )
 
     def query(
         self,
@@ -219,16 +221,18 @@ class PrecedentStore:
 
         results = []
         for sim, prec in scored[:top_k]:
-            results.append({
-                "id": prec.id,
-                "similarity": round(sim, 4),
-                "description": prec.description,
-                "decision": prec.decision,
-                "outcome": prec.outcome,
-                "was_appropriate": prec.was_appropriate,
-                "lessons": prec.lessons,
-                "domain": prec.domain,
-            })
+            results.append(
+                {
+                    "id": prec.id,
+                    "similarity": round(sim, 4),
+                    "description": prec.description,
+                    "decision": prec.decision,
+                    "outcome": prec.outcome,
+                    "was_appropriate": prec.was_appropriate,
+                    "lessons": prec.lessons,
+                    "domain": prec.domain,
+                }
+            )
 
         return results
 
@@ -248,10 +252,15 @@ class PrecedentStore:
         """Return all precedents as dicts (backward-compat)."""
         return [
             {
-                "id": p.id, "domain": p.domain, "description": p.description,
-                "keywords": p.keywords, "decision": p.decision,
-                "outcome": p.outcome, "was_appropriate": p.was_appropriate,
-                "lessons": p.lessons, "eds_score": p.eds_score,
+                "id": p.id,
+                "domain": p.domain,
+                "description": p.description,
+                "keywords": p.keywords,
+                "decision": p.decision,
+                "outcome": p.outcome,
+                "was_appropriate": p.was_appropriate,
+                "lessons": p.lessons,
+                "eds_score": p.eds_score,
                 "verdict": p.decision,  # alias used by filter_by_verdict
                 **p.metadata,
             }
@@ -269,21 +278,26 @@ class PrecedentStore:
         **kwargs: Any,
     ) -> None:
         """Add a precedent using keyword arguments (backward-compat)."""
-        self.add(Precedent(
-            id=case_id,
-            domain=domain,
-            description=task,
-            keywords=kwargs.get("keywords", task.lower().split()),
-            decision=verdict,
-            outcome=kwargs.get("outcome", reasoning),
-            was_appropriate=kwargs.get("was_appropriate", True),
-            lessons=reasoning,
-            eds_score=eds_score,
-            metadata={"task": task, "reasoning": reasoning, "verdict": verdict},
-        ))
+        self.add(
+            Precedent(
+                id=case_id,
+                domain=domain,
+                description=task,
+                keywords=kwargs.get("keywords", task.lower().split()),
+                decision=verdict,
+                outcome=kwargs.get("outcome", reasoning),
+                was_appropriate=kwargs.get("was_appropriate", True),
+                lessons=reasoning,
+                eds_score=eds_score,
+                metadata={"task": task, "reasoning": reasoning, "verdict": verdict},
+            )
+        )
 
     def search_similar(
-        self, text: str, domain: str | None = None, top_k: int = 3,
+        self,
+        text: str,
+        domain: str | None = None,
+        top_k: int = 3,
     ) -> list[dict[str, Any]]:
         """Alias for :meth:`query` (backward-compat)."""
         return self.query(text, domain=domain, top_k=top_k)
@@ -294,11 +308,16 @@ class PrecedentStore:
         for p in self._precedents:
             v = p.metadata.get("verdict", p.decision)
             if v == verdict:
-                results.append({
-                    "id": p.id, "domain": p.domain, "description": p.description,
-                    "decision": p.decision, "verdict": verdict,
-                    "eds_score": p.eds_score,
-                })
+                results.append(
+                    {
+                        "id": p.id,
+                        "domain": p.domain,
+                        "description": p.description,
+                        "decision": p.decision,
+                        "verdict": verdict,
+                        "eds_score": p.eds_score,
+                    }
+                )
         return results
 
     def get_statistics(self) -> dict[str, Any]:
@@ -314,9 +333,7 @@ class PrecedentStore:
 
     def save(self, filepath: str | Path | None = None) -> None:
         """Persist precedents to a JSON file."""
-        fp = Path(filepath) if filepath else (
-            Path(self._filepath) if self._filepath else None
-        )
+        fp = Path(filepath) if filepath else (Path(self._filepath) if self._filepath else None)
         if fp is None:
             logger.warning("save() called without a filepath — skipping")
             return
@@ -327,9 +344,7 @@ class PrecedentStore:
 
     def load(self, filepath: str | Path | None = None) -> None:
         """Load precedents from a JSON file (merges with existing)."""
-        fp = Path(filepath) if filepath else (
-            Path(self._filepath) if self._filepath else None
-        )
+        fp = Path(filepath) if filepath else (Path(self._filepath) if self._filepath else None)
         if fp is None or not fp.exists():
             return
         self._load_single_file(fp)
@@ -393,8 +408,7 @@ class PrecedentStore:
         filename = self._DOMAIN_FILE_MAP.get(domain.lower())
         if filename is None:
             raise ValueError(
-                f"Unknown domain '{domain}'. "
-                f"Choose from: {', '.join(self._DOMAIN_FILE_MAP)}"
+                f"Unknown domain '{domain}'. Choose from: {', '.join(self._DOMAIN_FILE_MAP)}"
             )
 
         if data_dir is None:
@@ -417,12 +431,14 @@ class PrecedentStore:
         loaded = self.count - before
         logger.info(
             "Loaded %d precedents for domain '%s' from %s",
-            loaded, domain, filepath.name,
+            loaded,
+            domain,
+            filepath.name,
         )
         return loaded
 
     @classmethod
-    def auto_load(cls, data_dir: str | Path | None = None) -> "PrecedentStore":
+    def auto_load(cls, data_dir: str | Path | None = None) -> PrecedentStore:
         """Create a PrecedentStore pre-populated with all domain precedents.
 
         This is the recommended factory method for production use.

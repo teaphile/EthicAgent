@@ -19,7 +19,7 @@ human reviewers can audit the reasoning.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -30,12 +30,13 @@ logger = logging.getLogger(__name__)
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 class ConflictSeverity(Enum):
-    NONE = "none"               # All lenses agree
-    MINOR = "minor"             # Small score differences, same verdict direction
-    MODERATE = "moderate"       # Different recommendations but no hard-block
-    SEVERE = "severe"           # One lens blocks, others permit
-    CRITICAL = "critical"       # Hard-block from deontological
+    NONE = "none"  # All lenses agree
+    MINOR = "minor"  # Small score differences, same verdict direction
+    MODERATE = "moderate"  # Different recommendations but no hard-block
+    SEVERE = "severe"  # One lens blocks, others permit
+    CRITICAL = "critical"  # Hard-block from deontological
 
 
 class ResolutionStrategy(Enum):
@@ -48,17 +49,19 @@ class ResolutionStrategy(Enum):
 @dataclass
 class PhilosophyPosition:
     """One philosophy's stance on an action."""
-    philosophy: str       # "deontological", "consequentialist", "virtue", "contextual"
-    score: float          # 0-1
-    verdict: str          # "approve", "escalate", "reject", "hard-block"
-    confidence: float     # 0-1
-    key_argument: str     # one-sentence summary
+
+    philosophy: str  # "deontological", "consequentialist", "virtue", "contextual"
+    score: float  # 0-1
+    verdict: str  # "approve", "escalate", "reject", "hard-block"
+    confidence: float  # 0-1
+    key_argument: str  # one-sentence summary
     weight: float = 0.25  # domain-adjusted weight
 
 
 @dataclass
 class ConflictRecord:
     """Record of a conflict between philosophies and how it was resolved."""
+
     severity: ConflictSeverity
     strategy_used: ResolutionStrategy
     positions: list[PhilosophyPosition]
@@ -111,6 +114,7 @@ _DOMAIN_WEIGHTS: dict[str, dict[str, float]] = {
 # Resolver
 # ---------------------------------------------------------------------------
 
+
 class ConflictResolver:
     """Resolves inter-philosophy conflicts to produce a unified verdict.
 
@@ -143,7 +147,7 @@ class ConflictResolver:
         conflicts: list[dict[str, Any]] = []
         philosophies = list(scores.keys())
         for i, p1 in enumerate(philosophies):
-            for p2 in philosophies[i + 1:]:
+            for p2 in philosophies[i + 1 :]:
                 diff = abs(scores[p1] - scores[p2])
                 if diff < 0.15:
                     continue  # no meaningful conflict
@@ -152,11 +156,13 @@ class ConflictResolver:
                     severity = "severe"
                 elif diff >= 0.3:
                     severity = "moderate"
-                conflicts.append({
-                    "philosophies": (p1, p2),
-                    "difference": round(diff, 4),
-                    "severity": severity,
-                })
+                conflicts.append(
+                    {
+                        "philosophies": (p1, p2),
+                        "difference": round(diff, 4),
+                        "severity": severity,
+                    }
+                )
         return conflicts
 
     def resolve(
@@ -244,8 +250,13 @@ class ConflictResolver:
 
         # Build explanation
         explanation = self._build_explanation(
-            severity, strategy, positions, verdict, score,
-            uncertainty, dissent,
+            severity,
+            strategy,
+            positions,
+            verdict,
+            score,
+            uncertainty,
+            dissent,
         )
 
         record = ConflictRecord(
@@ -262,7 +273,7 @@ class ConflictResolver:
         # Track history
         self._history.append(record)
         if len(self._history) > self._history_limit:
-            self._history = self._history[-self._history_limit:]
+            self._history = self._history[-self._history_limit :]
 
         return record
 
@@ -421,9 +432,7 @@ class ConflictResolver:
 
         # Combine
         uncertainty = (
-            0.4 * normalized_variance
-            + 0.35 * disagreement
-            + 0.25 * confidence_uncertainty
+            0.4 * normalized_variance + 0.35 * disagreement + 0.25 * confidence_uncertainty
         )
 
         return max(0.0, min(1.0, uncertainty))
@@ -470,17 +479,9 @@ class ConflictResolver:
 
         return {
             "total_conflicts": len(self._history),
-            "severity_distribution": {
-                s: severities.count(s)
-                for s in set(severities)
-            },
-            "strategy_distribution": {
-                s: strategies.count(s)
-                for s in set(strategies)
-            },
-            "avg_moral_uncertainty": round(
-                sum(uncertainties) / len(uncertainties), 4
-            ),
+            "severity_distribution": {s: severities.count(s) for s in set(severities)},
+            "strategy_distribution": {s: strategies.count(s) for s in set(strategies)},
+            "avg_moral_uncertainty": round(sum(uncertainties) / len(uncertainties), 4),
             "max_moral_uncertainty": round(max(uncertainties), 4),
         }
 
@@ -497,8 +498,7 @@ class ConflictResolver:
         dissent: list[str],
     ) -> str:
         lines = [
-            f"Conflict resolution: severity={severity.value}, "
-            f"strategy={strategy.value}",
+            f"Conflict resolution: severity={severity.value}, strategy={strategy.value}",
             f"Resolved verdict: {verdict} (score={score:.3f})",
             f"Moral uncertainty: {uncertainty:.3f}",
         ]
@@ -518,8 +518,6 @@ class ConflictResolver:
                 lines.append(f"  ⚠ {d}")
 
         if uncertainty > 0.6:
-            lines.append(
-                "⚠ High moral uncertainty — human review strongly recommended"
-            )
+            lines.append("⚠ High moral uncertainty — human review strongly recommended")
 
         return "\n".join(lines)

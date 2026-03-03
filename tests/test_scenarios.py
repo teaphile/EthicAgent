@@ -10,17 +10,18 @@ import json
 import os
 
 import pytest
-from ethicagent.scenarios.base_scenario import BaseScenario, ScenarioCase
-from ethicagent.scenarios.healthcare_triage import HealthcareTriageScenario
-from ethicagent.scenarios.loan_approval import LoanApprovalScenario
-from ethicagent.scenarios.hiring_decision import HiringDecisionScenario
-from ethicagent.scenarios.disaster_response import DisasterResponseScenario
-from ethicagent.scenarios import SCENARIO_REGISTRY, get_all_cases
 
+from ethicagent.scenarios import SCENARIO_REGISTRY, get_all_cases
+from ethicagent.scenarios.base_scenario import BaseScenario, ScenarioCase
+from ethicagent.scenarios.disaster_response import DisasterResponseScenario
+from ethicagent.scenarios.healthcare_triage import HealthcareTriageScenario
+from ethicagent.scenarios.hiring_decision import HiringDecisionScenario
+from ethicagent.scenarios.loan_approval import LoanApprovalScenario
 
 # ═══════════════════════════════════════════════════════════════
 # ScenarioCase data class
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestScenarioCase:
     def test_creation(self):
@@ -61,6 +62,7 @@ class TestScenarioCase:
 # Registry & helpers
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestScenarioRegistry:
     def test_registry_has_four_domains(self):
         assert len(SCENARIO_REGISTRY) == 4
@@ -83,6 +85,7 @@ class TestScenarioRegistry:
 # ═══════════════════════════════════════════════════════════════
 # Healthcare Triage
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestHealthcareTriageScenario:
     def test_initialization(self):
@@ -122,6 +125,7 @@ class TestHealthcareTriageScenario:
 # Loan Approval
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestLoanApprovalScenario:
     def test_initialization(self):
         scenario = LoanApprovalScenario()
@@ -151,6 +155,7 @@ class TestLoanApprovalScenario:
 # Hiring Decision
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestHiringDecisionScenario:
     def test_initialization(self):
         scenario = HiringDecisionScenario()
@@ -166,16 +171,14 @@ class TestHiringDecisionScenario:
 
     def test_contains_hard_block_cases(self):
         scenario = HiringDecisionScenario()
-        hard_blocks = [
-            c for c in scenario.get_cases()
-            if c.expected_verdict == "hard_block"
-        ]
+        hard_blocks = [c for c in scenario.get_cases() if c.expected_verdict == "hard_block"]
         assert len(hard_blocks) >= 3
 
 
 # ═══════════════════════════════════════════════════════════════
 # Disaster Response
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestDisasterResponseScenario:
     def test_initialization(self):
@@ -201,6 +204,7 @@ class TestDisasterResponseScenario:
 # Cross-scenario invariants
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestCrossScenarioInvariants:
     """Properties that hold across all scenarios."""
 
@@ -224,6 +228,7 @@ class TestCrossScenarioInvariants:
 # JSON data files (if present)
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestDataFiles:
     DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "scenarios")
 
@@ -234,23 +239,29 @@ class TestDataFiles:
         with open(path) as f:
             return json.load(f)
 
-    @pytest.mark.parametrize("filename", [
-        "healthcare_triage.json",
-        "loan_approval.json",
-        "hiring_decision.json",
-        "disaster_response.json",
-    ])
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "healthcare_triage.json",
+            "loan_approval.json",
+            "hiring_decision.json",
+            "disaster_response.json",
+        ],
+    )
     def test_json_valid(self, filename):
         data = self._load_json(filename)
         assert isinstance(data, list)
         assert len(data) >= 50
 
-    @pytest.mark.parametrize("filename", [
-        "healthcare_triage.json",
-        "loan_approval.json",
-        "hiring_decision.json",
-        "disaster_response.json",
-    ])
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "healthcare_triage.json",
+            "loan_approval.json",
+            "hiring_decision.json",
+            "disaster_response.json",
+        ],
+    )
     def test_json_case_structure(self, filename):
         data = self._load_json(filename)
         for case in data[:3]:

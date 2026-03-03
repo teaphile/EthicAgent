@@ -17,8 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.utils.helpers import now_iso
 
@@ -34,21 +33,21 @@ class ReportGenerator:
 
     def __init__(
         self,
-        results: Optional[Dict[str, Any]] = None,
+        results: dict[str, Any] | None = None,
         output_dir: str = "reports",
     ) -> None:
         self.results = results or {}
         self.output_dir = output_dir
 
-    def set_results(self, results: Dict[str, Any]) -> None:
+    def set_results(self, results: dict[str, Any]) -> None:
         self.results = results
 
     # ─── Full Report ─────────────────────────────────────────
 
     def generate_full_report(
         self,
-        formats: Optional[List[str]] = None,
-    ) -> Dict[str, str]:
+        formats: list[str] | None = None,
+    ) -> dict[str, str]:
         """Generate reports in all requested formats.
 
         Args:
@@ -60,7 +59,7 @@ class ReportGenerator:
         formats = formats or ["latex", "markdown", "html"]
         os.makedirs(self.output_dir, exist_ok=True)
 
-        generated: Dict[str, str] = {}
+        generated: dict[str, str] = {}
 
         for fmt in formats:
             if fmt == "latex":
@@ -91,35 +90,35 @@ class ReportGenerator:
 
     # ── Metric accessors (keep report code DRY) ──────────────
 
-    def _ea(self) -> Dict[str, Any]:
+    def _ea(self) -> dict[str, Any]:
         """Return the EthicAgent aggregate metrics dict."""
         return self.results.get("aggregate_metrics", {}).get("ethicagent", {})
 
-    def _va(self, metrics: Optional[Dict] = None) -> float:
+    def _va(self, metrics: dict | None = None) -> float:
         m = metrics or self._ea()
         return m.get("verdict_accuracy", {}).get("overall_accuracy", 0.0)
 
-    def _eds_mean(self, metrics: Optional[Dict] = None) -> float:
+    def _eds_mean(self, metrics: dict | None = None) -> float:
         m = metrics or self._ea()
         return m.get("eds_score_metrics", {}).get("mean", 0.0)
 
-    def _eds_std(self, metrics: Optional[Dict] = None) -> float:
+    def _eds_std(self, metrics: dict | None = None) -> float:
         m = metrics or self._ea()
         return m.get("eds_score_metrics", {}).get("std", 0.0)
 
-    def _range_acc(self, metrics: Optional[Dict] = None) -> float:
+    def _range_acc(self, metrics: dict | None = None) -> float:
         m = metrics or self._ea()
         return m.get("eds_range_accuracy", {}).get("in_range_rate", 0.0)
 
-    def _consistency(self, metrics: Optional[Dict] = None) -> float:
+    def _consistency(self, metrics: dict | None = None) -> float:
         m = metrics or self._ea()
         return m.get("consistency", {}).get("consistency", 0.0)
 
     # ─── LaTeX ───────────────────────────────────────────────
 
     def generate_latex(self) -> str:
-        parts: List[str] = [
-            f"% EthicAgent Evaluation Results",
+        parts: list[str] = [
+            "% EthicAgent Evaluation Results",
             f"% Generated: {now_iso()}\n",
             self._latex_main_table(),
             "",
@@ -140,30 +139,32 @@ class ReportGenerator:
         ra = self._range_acc()
         cons = self._consistency()
 
-        return "\n".join([
-            r"\begin{table}[htbp]",
-            r"\centering",
-            r"\caption{Overall EthicAgent Performance}",
-            r"\label{tab:main_results}",
-            r"\begin{tabular}{lc}",
-            r"\toprule",
-            r"\textbf{Metric} & \textbf{Value} \\",
-            r"\midrule",
-            f"Verdict Accuracy & {acc:.1%} \\\\",
-            f"Mean EDS & ${mean:.3f} \\pm {std:.3f}$ \\\\",
-            f"EDS Range Accuracy & {ra:.1%} \\\\",
-            f"Consistency & {cons:.3f} \\\\",
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ])
+        return "\n".join(
+            [
+                r"\begin{table}[htbp]",
+                r"\centering",
+                r"\caption{Overall EthicAgent Performance}",
+                r"\label{tab:main_results}",
+                r"\begin{tabular}{lc}",
+                r"\toprule",
+                r"\textbf{Metric} & \textbf{Value} \\",
+                r"\midrule",
+                f"Verdict Accuracy & {acc:.1%} \\\\",
+                f"Mean EDS & ${mean:.3f} \\pm {std:.3f}$ \\\\",
+                f"EDS Range Accuracy & {ra:.1%} \\\\",
+                f"Consistency & {cons:.3f} \\\\",
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table}",
+            ]
+        )
 
     def _latex_scenario_table(self) -> str:
         sr = self.results.get("scenario_results", {})
         if not sr:
             return "% No scenario results available"
 
-        rows: List[str] = []
+        rows: list[str] = []
         for name, data in sr.items():
             m = data.get("metrics", {})
             acc = self._va(m)
@@ -172,20 +173,22 @@ class ReportGenerator:
             clean = name.replace("_", " ").replace("Scenario", "").strip()
             rows.append(f"{clean} & {acc:.1%} & {mean:.3f} & {n} \\\\")
 
-        return "\n".join([
-            r"\begin{table}[htbp]",
-            r"\centering",
-            r"\caption{Per-Scenario Results}",
-            r"\label{tab:scenario_results}",
-            r"\begin{tabular}{lccc}",
-            r"\toprule",
-            r"\textbf{Scenario} & \textbf{Accuracy} & \textbf{Mean EDS} & \textbf{Cases} \\",
-            r"\midrule",
-            *rows,
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ])
+        return "\n".join(
+            [
+                r"\begin{table}[htbp]",
+                r"\centering",
+                r"\caption{Per-Scenario Results}",
+                r"\label{tab:scenario_results}",
+                r"\begin{tabular}{lccc}",
+                r"\toprule",
+                r"\textbf{Scenario} & \textbf{Accuracy} & \textbf{Mean EDS} & \textbf{Cases} \\",
+                r"\midrule",
+                *rows,
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table}",
+            ]
+        )
 
     def _latex_baseline_table(self) -> str:
         agg = self.results.get("aggregate_metrics", {})
@@ -196,7 +199,7 @@ class ReportGenerator:
         ea_acc = self._va()
         ea_eds = self._eds_mean()
 
-        rows: List[str] = []
+        rows: list[str] = []
         for name in sorted(imp.keys()):
             bl = agg.get(name, {})
             bl_acc = self._va(bl)
@@ -206,33 +209,33 @@ class ReportGenerator:
             clean = name.replace("_", " ").title()
             rows.append(f"{clean} & {bl_acc:.1%} & {bl_eds:.3f} & {iv_str} \\\\")
 
-        return "\n".join([
-            r"\begin{table}[htbp]",
-            r"\centering",
-            r"\caption{Comparison with Baselines}",
-            r"\label{tab:baseline_comparison}",
-            r"\begin{tabular}{lccc}",
-            r"\toprule",
-            r"\textbf{Method} & \textbf{Accuracy} & \textbf{Mean EDS} & \textbf{Improvement} \\",
-            r"\midrule",
-            f"\\textbf{{EthicAgent}} & \\textbf{{{ea_acc:.1%}}} & \\textbf{{{ea_eds:.3f}}} & --- \\\\",
-            r"\midrule",
-            *rows,
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ])
+        return "\n".join(
+            [
+                r"\begin{table}[htbp]",
+                r"\centering",
+                r"\caption{Comparison with Baselines}",
+                r"\label{tab:baseline_comparison}",
+                r"\begin{tabular}{lccc}",
+                r"\toprule",
+                r"\textbf{Method} & \textbf{Accuracy} & \textbf{Mean EDS} & \textbf{Improvement} \\",
+                r"\midrule",
+                f"\\textbf{{EthicAgent}} & \\textbf{{{ea_acc:.1%}}} & \\textbf{{{ea_eds:.3f}}} & --- \\\\",
+                r"\midrule",
+                *rows,
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table}",
+            ]
+        )
 
     def _latex_ablation_table(self) -> str:
         variants = self.results.get("ablation_results", {}).get("variants", {})
         if not variants:
             return "% No ablation results available"
 
-        full_acc = self._va(
-            variants.get("full_system", {}).get("metrics", {})
-        )
+        full_acc = self._va(variants.get("full_system", {}).get("metrics", {}))
 
-        rows: List[str] = []
+        rows: list[str] = []
         for name, data in sorted(variants.items()):
             if name == "full_system" or "error" in data:
                 continue
@@ -241,54 +244,58 @@ class ReportGenerator:
             clean = name.replace("no_", "w/o ").replace("_", " ").title()
             rows.append(f"{clean} & {acc:.1%} & {delta:+.1%} \\\\")
 
-        return "\n".join([
-            r"\begin{table}[htbp]",
-            r"\centering",
-            r"\caption{Ablation Study Results}",
-            r"\label{tab:ablation}",
-            r"\begin{tabular}{lcc}",
-            r"\toprule",
-            r"\textbf{Variant} & \textbf{Accuracy} & \textbf{$\Delta$ Accuracy} \\",
-            r"\midrule",
-            f"Full System & {full_acc:.1%} & --- \\\\",
-            r"\midrule",
-            *rows,
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ])
+        return "\n".join(
+            [
+                r"\begin{table}[htbp]",
+                r"\centering",
+                r"\caption{Ablation Study Results}",
+                r"\label{tab:ablation}",
+                r"\begin{tabular}{lcc}",
+                r"\toprule",
+                r"\textbf{Variant} & \textbf{Accuracy} & \textbf{$\Delta$ Accuracy} \\",
+                r"\midrule",
+                f"Full System & {full_acc:.1%} & --- \\\\",
+                r"\midrule",
+                *rows,
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table}",
+            ]
+        )
 
     def _latex_philosophy_table(self) -> str:
         phil = self._ea().get("philosophy_contributions", {})
         if not phil:
             return "% No philosophy contribution data available"
 
-        rows: List[str] = []
+        rows: list[str] = []
         for pname, pdata in phil.items():
             m = pdata.get("mean", 0)
             s = pdata.get("std", 0)
             clean = pname.replace("_", " ").title()
             rows.append(f"{clean} & {m:.3f} & {s:.3f} \\\\")
 
-        return "\n".join([
-            r"\begin{table}[htbp]",
-            r"\centering",
-            r"\caption{Philosophy Module Contributions}",
-            r"\label{tab:philosophy}",
-            r"\begin{tabular}{lcc}",
-            r"\toprule",
-            r"\textbf{Philosophy} & \textbf{Mean Score} & \textbf{Std Dev} \\",
-            r"\midrule",
-            *rows,
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ])
+        return "\n".join(
+            [
+                r"\begin{table}[htbp]",
+                r"\centering",
+                r"\caption{Philosophy Module Contributions}",
+                r"\label{tab:philosophy}",
+                r"\begin{tabular}{lcc}",
+                r"\toprule",
+                r"\textbf{Philosophy} & \textbf{Mean Score} & \textbf{Std Dev} \\",
+                r"\midrule",
+                *rows,
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table}",
+            ]
+        )
 
     # ─── Markdown ────────────────────────────────────────────
 
     def generate_markdown(self) -> str:
-        parts: List[str] = [
+        parts: list[str] = [
             "# EthicAgent Evaluation Results",
             f"\n*Generated: {now_iso()}*\n",
             "## Overall Performance\n",
@@ -303,14 +310,16 @@ class ReportGenerator:
         return "\n".join(parts)
 
     def _md_main_table(self) -> str:
-        return "\n".join([
-            "| Metric | Value |",
-            "|--------|-------|",
-            f"| Verdict Accuracy | {self._va():.1%} |",
-            f"| Mean EDS | {self._eds_mean():.3f} ± {self._eds_std():.3f} |",
-            f"| EDS Range Accuracy | {self._range_acc():.1%} |",
-            f"| Consistency | {self._consistency():.3f} |",
-        ])
+        return "\n".join(
+            [
+                "| Metric | Value |",
+                "|--------|-------|",
+                f"| Verdict Accuracy | {self._va():.1%} |",
+                f"| Mean EDS | {self._eds_mean():.3f} ± {self._eds_std():.3f} |",
+                f"| EDS Range Accuracy | {self._range_acc():.1%} |",
+                f"| Consistency | {self._consistency():.3f} |",
+            ]
+        )
 
     def _md_scenario_table(self) -> str:
         sr = self.results.get("scenario_results", {})
@@ -355,9 +364,7 @@ class ReportGenerator:
         if not variants:
             return "*No ablation results available*"
 
-        full_acc = self._va(
-            variants.get("full_system", {}).get("metrics", {})
-        )
+        full_acc = self._va(variants.get("full_system", {}).get("metrics", {}))
         lines = [
             "| Variant | Accuracy | Δ Accuracy |",
             "|---------|----------|------------|",
@@ -410,7 +417,7 @@ class ReportGenerator:
     def _md_to_html(md: str) -> str:
         """Minimal Markdown-to-HTML converter (headers + tables)."""
         lines = md.split("\n")
-        out: List[str] = []
+        out: list[str] = []
         in_table = False
 
         for line in lines:

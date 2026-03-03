@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 # ── Data containers ─────────────────────────────────────────────
 
+
 @dataclass
 class ScenarioCase:
     """A single test case within a scenario.
@@ -40,12 +41,12 @@ class ScenarioCase:
     case_id: str
     domain: str
     task: str
-    difficulty: str = "medium"         # easy | medium | hard
-    expected_verdict: str = ""         # approve / reject / escalate / hard_block
+    difficulty: str = "medium"  # easy | medium | hard
+    expected_verdict: str = ""  # approve / reject / escalate / hard_block
     expected_eds_range: tuple[float, float] = (0.0, 1.0)
     context: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
-    tags: list[str] = field(default_factory=list)   # e.g. ["discrimination", "safety"]
+    tags: list[str] = field(default_factory=list)  # e.g. ["discrimination", "safety"]
 
 
 @dataclass
@@ -66,6 +67,7 @@ class ScenarioResult:
 
 
 # ── Base class ──────────────────────────────────────────────────
+
 
 class BaseScenario(ABC):
     """Abstract base class for ethical evaluation scenarios.
@@ -119,14 +121,12 @@ class BaseScenario(ABC):
             cases: list[ScenarioCase] = []
             for item in items:
                 case = ScenarioCase(
-                    case_id=item.get("case_id", f"CASE-{len(cases)+1:03d}"),
+                    case_id=item.get("case_id", f"CASE-{len(cases) + 1:03d}"),
                     domain=item.get("domain", self.get_domain()),
                     task=item.get("task", ""),
                     difficulty=item.get("difficulty", "medium"),
                     expected_verdict=item.get("expected_verdict", ""),
-                    expected_eds_range=tuple(
-                        item.get("expected_eds_range", [0.0, 1.0])
-                    ),
+                    expected_eds_range=tuple(item.get("expected_eds_range", [0.0, 1.0])),
                     context=item.get("context", {}),
                     metadata=item.get("metadata", {}),
                     tags=item.get("tags", []),
@@ -134,8 +134,9 @@ class BaseScenario(ABC):
                 cases.append(case)
 
             self.cases = cases
-            logger.info("Loaded %d cases from %s for scenario '%s'",
-                        len(cases), filepath, self.name)
+            logger.info(
+                "Loaded %d cases from %s for scenario '%s'", len(cases), filepath, self.name
+            )
             return cases
 
         except Exception as exc:
@@ -195,13 +196,9 @@ class BaseScenario(ABC):
             actual_eds = float(getattr(pipeline_result, "eds_score", 0.0))
 
             verdict_match = (
-                actual_verdict == case.expected_verdict.lower()
-                if case.expected_verdict
-                else True
+                actual_verdict == case.expected_verdict.lower() if case.expected_verdict else True
             )
-            eds_in_range = (
-                case.expected_eds_range[0] <= actual_eds <= case.expected_eds_range[1]
-            )
+            eds_in_range = case.expected_eds_range[0] <= actual_eds <= case.expected_eds_range[1]
 
             return ScenarioResult(
                 case_id=case.case_id,
@@ -248,20 +245,15 @@ class BaseScenario(ABC):
         difficulty_stats: dict[str, dict[str, Any]] = {}
         for diff in ("easy", "medium", "hard"):
             diff_results = [
-                r for r, c in zip(self.results, self.cases)
-                if c.difficulty == diff and not r.error
+                r for r, c in zip(self.results, self.cases) if c.difficulty == diff and not r.error
             ]
             if diff_results:
                 difficulty_stats[diff] = {
                     "count": len(diff_results),
                     "verdict_accuracy": (
-                        sum(1 for r in diff_results if r.verdict_match)
-                        / len(diff_results)
+                        sum(1 for r in diff_results if r.verdict_match) / len(diff_results)
                     ),
-                    "avg_eds": (
-                        sum(r.actual_eds for r in diff_results)
-                        / len(diff_results)
-                    ),
+                    "avg_eds": (sum(r.actual_eds for r in diff_results) / len(diff_results)),
                 }
 
         # Per-tag breakdown
@@ -323,8 +315,9 @@ class BaseScenario(ABC):
 
     # ── Filtering helpers ───────────────────────────────────────
 
-    def filter_cases(self, *, difficulty: str | None = None,
-                     tag: str | None = None) -> list[ScenarioCase]:
+    def filter_cases(
+        self, *, difficulty: str | None = None, tag: str | None = None
+    ) -> list[ScenarioCase]:
         """Return a subset of cases matching the given filters."""
         result = self.cases
         if difficulty:

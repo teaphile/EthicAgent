@@ -19,11 +19,12 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-from ethicagent.evaluation.metrics import compute_all_metrics
 from ethicagent.evaluation.baselines import get_all_baselines
+from ethicagent.evaluation.metrics import compute_all_metrics
 from ethicagent.utils.helpers import now_iso
 
 logger = logging.getLogger(__name__)
@@ -38,15 +39,15 @@ class BenchmarkRunner:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        baselines: Optional[Dict[str, Any]] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        baselines: dict[str, Any] | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.baselines = baselines or get_all_baselines()
         self.config = config or {}
-        self.results: Dict[str, Any] = {}
-        self._progress_cb: Optional[Callable] = None
+        self.results: dict[str, Any] = {}
+        self._progress_cb: Callable | None = None
 
     def set_progress_callback(
         self,
@@ -59,7 +60,11 @@ class BenchmarkRunner:
         self._progress_cb = callback
 
     def _progress(
-        self, phase: str, current: int, total: int, message: str = "",
+        self,
+        phase: str,
+        current: int,
+        total: int,
+        message: str = "",
     ) -> None:
         if self._progress_cb:
             self._progress_cb(phase, current, total, message)
@@ -69,11 +74,11 @@ class BenchmarkRunner:
 
     def run_full_benchmark(
         self,
-        scenarios: List[Any],
+        scenarios: list[Any],
         include_baselines: bool = True,
         include_ablation: bool = False,
-        ablation_config: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        ablation_config: dict | None = None,
+    ) -> dict[str, Any]:
         """Run a complete benchmark evaluation.
 
         Args:
@@ -91,10 +96,11 @@ class BenchmarkRunner:
 
         logger.info(
             "Starting benchmark '%s' — %d scenarios",
-            benchmark_id, len(scenarios),
+            benchmark_id,
+            len(scenarios),
         )
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "benchmark_id": benchmark_id,
             "start_time": now_iso(),
             "scenario_results": {},
@@ -152,8 +158,8 @@ class BenchmarkRunner:
 
     # ─── Single Scenario ─────────────────────────────────────
 
-    def _run_scenario(self, scenario: Any) -> Dict[str, Any]:
-        case_results: List[Dict[str, Any]] = []
+    def _run_scenario(self, scenario: Any) -> dict[str, Any]:
+        case_results: list[dict[str, Any]] = []
         t0 = time.perf_counter()
 
         for case in scenario.cases:
@@ -162,12 +168,14 @@ class BenchmarkRunner:
                 case_results.append(r)
             except Exception as exc:
                 logger.error("Case %s failed: %s", case.case_id, exc)
-                case_results.append({
-                    "case_id": case.case_id,
-                    "error": str(exc),
-                    "expected_verdict": getattr(case, "expected_verdict", ""),
-                    "actual_verdict": "error",
-                })
+                case_results.append(
+                    {
+                        "case_id": case.case_id,
+                        "error": str(exc),
+                        "expected_verdict": getattr(case, "expected_verdict", ""),
+                        "actual_verdict": "error",
+                    }
+                )
 
         return {
             "scenario": scenario.__class__.__name__,
@@ -178,7 +186,7 @@ class BenchmarkRunner:
             "elapsed_seconds": round(time.perf_counter() - t0, 3),
         }
 
-    def _evaluate_case(self, case: Any) -> Dict[str, Any]:
+    def _evaluate_case(self, case: Any) -> dict[str, Any]:
         if self.orchestrator:
             r = self.orchestrator.run(
                 task=case.task,
@@ -195,9 +203,10 @@ class BenchmarkRunner:
         r["actual_verdict"] = r.get("verdict", "unknown")
         return r
 
-    def _simulate_case(self, case: Any) -> Dict[str, Any]:
+    def _simulate_case(self, case: Any) -> dict[str, Any]:
         """Simulate evaluation at ~85 % accuracy when no orchestrator is set."""
         import random
+
         rng = random.Random(hash(case.case_id))
 
         expected = getattr(case, "expected_verdict", "escalate")
@@ -224,8 +233,8 @@ class BenchmarkRunner:
 
     # ─── Baseline Run ────────────────────────────────────────
 
-    def _run_baseline(self, baseline: Any, scenarios: List[Any]) -> Dict[str, Any]:
-        all_results: List[Dict[str, Any]] = []
+    def _run_baseline(self, baseline: Any, scenarios: list[Any]) -> dict[str, Any]:
+        all_results: list[dict[str, Any]] = []
         t0 = time.perf_counter()
 
         for scenario in scenarios:
@@ -241,14 +250,18 @@ class BenchmarkRunner:
                 except Exception as exc:
                     logger.error(
                         "Baseline '%s' failed on %s: %s",
-                        getattr(baseline, "name", "?"), case.case_id, exc,
+                        getattr(baseline, "name", "?"),
+                        case.case_id,
+                        exc,
                     )
-                    all_results.append({
-                        "case_id": case.case_id,
-                        "error": str(exc),
-                        "expected_verdict": getattr(case, "expected_verdict", ""),
-                        "actual_verdict": "error",
-                    })
+                    all_results.append(
+                        {
+                            "case_id": case.case_id,
+                            "error": str(exc),
+                            "expected_verdict": getattr(case, "expected_verdict", ""),
+                            "actual_verdict": "error",
+                        }
+                    )
 
         return {
             "baseline": getattr(baseline, "name", baseline.__class__.__name__),
@@ -260,11 +273,11 @@ class BenchmarkRunner:
 
     # ─── Aggregation ─────────────────────────────────────────
 
-    def _compute_aggregates(self, results: Dict[str, Any]) -> Dict[str, Any]:
-        aggregate: Dict[str, Any] = {}
+    def _compute_aggregates(self, results: dict[str, Any]) -> dict[str, Any]:
+        aggregate: dict[str, Any] = {}
 
         # EthicAgent aggregate
-        ea_results: List[Dict] = []
+        ea_results: list[dict] = []
         for sd in results.get("scenario_results", {}).values():
             ea_results.extend(sd.get("results", []))
         if ea_results:
@@ -277,11 +290,9 @@ class BenchmarkRunner:
         # Improvement %
         if "ethicagent" in aggregate:
             ea_acc = (
-                aggregate["ethicagent"]
-                .get("verdict_accuracy", {})
-                .get("overall_accuracy", 0.0)
+                aggregate["ethicagent"].get("verdict_accuracy", {}).get("overall_accuracy", 0.0)
             )
-            improvements: Dict[str, float] = {}
+            improvements: dict[str, float] = {}
             for name, m in aggregate.items():
                 if name == "ethicagent":
                     continue
@@ -296,7 +307,7 @@ class BenchmarkRunner:
 
     # ─── Helpers ──────────────────────────────────────────────
 
-    def _scenario_to_dicts(self, scenario: Any) -> List[Dict[str, Any]]:
+    def _scenario_to_dicts(self, scenario: Any) -> list[dict[str, Any]]:
         return [
             {
                 "case_id": c.case_id,
@@ -311,6 +322,7 @@ class BenchmarkRunner:
 
     def export_results(self, filepath: str) -> None:
         """Export benchmark results to JSON."""
+
         def _sanitize(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {k: _sanitize(v) for k, v in obj.items()}
@@ -328,12 +340,12 @@ class BenchmarkRunner:
             json.dump(_sanitize(self.results), f, indent=2, default=str)
         logger.info("Results exported → %s", filepath)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get a brief summary of benchmark results."""
         if not self.results:
             return {"status": "no results"}
 
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "benchmark_id": self.results.get("benchmark_id", ""),
             "total_scenarios": len(self.results.get("scenario_results", {})),
             "total_baselines": len(self.results.get("baseline_results", {})),
@@ -343,9 +355,7 @@ class BenchmarkRunner:
         agg = self.results.get("aggregate_metrics", {})
         if "ethicagent" in agg:
             summary["ethicagent_accuracy"] = (
-                agg["ethicagent"]
-                .get("verdict_accuracy", {})
-                .get("overall_accuracy", 0.0)
+                agg["ethicagent"].get("verdict_accuracy", {}).get("overall_accuracy", 0.0)
             )
 
         if "improvement_over_baselines" in agg:

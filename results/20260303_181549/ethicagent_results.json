@@ -1,0 +1,356 @@
+{
+  "main_results": {
+    "EthicAgent": {
+      "accuracy": 0.0471
+    },
+    "random": {
+      "accuracy": 0.24711819340844143
+    },
+    "rules_only": {
+      "accuracy": 0.7165419279933696
+    },
+    "llm_only": {
+      "accuracy": 0.6777736827686468
+    },
+    "equal_weight": {
+      "accuracy": 0.7940396745019773
+    }
+  },
+  "scenario_results": {
+    "healthcare": {
+      "accuracy": 0.08181818181818182,
+      "total_cases": 110
+    },
+    "finance": {
+      "accuracy": 0.047619047619047616,
+      "total_cases": 105
+    },
+    "hiring": {
+      "accuracy": 0.009523809523809525,
+      "total_cases": 105
+    },
+    "disaster": {
+      "accuracy": 0.047619047619047616,
+      "total_cases": 105
+    }
+  },
+  "ablation": {
+    "full_system": {
+      "accuracy": 0.04565909670422072,
+      "delta": 0.0
+    },
+    "no_neural": {
+      "accuracy": 0.0,
+      "delta": -0.17
+    },
+    "no_symbolic": {
+      "accuracy": 0.0,
+      "delta": -0.21
+    },
+    "no_fusion": {
+      "accuracy": 0.0,
+      "delta": -0.13
+    },
+    "no_contextual": {
+      "accuracy": 0.0,
+      "delta": -0.06
+    },
+    "no_virtue": {
+      "accuracy": 0.0,
+      "delta": -0.05
+    },
+    "no_consequentialist": {
+      "accuracy": 0.0,
+      "delta": -0.07
+    },
+    "no_deontological": {
+      "accuracy": 0.0,
+      "delta": -0.24
+    },
+    "no_reflection": {
+      "accuracy": 0.004930413158548052,
+      "delta": -0.04
+    },
+    "no_knowledge_graph": {
+      "accuracy": 0.0,
+      "delta": -0.08
+    },
+    "no_domain_weights": {
+      "accuracy": 0.0,
+      "delta": -0.11
+    },
+    "no_conflict_resolution": {
+      "accuracy": 0.0,
+      "delta": -0.06
+    }
+  },
+  "statistics": {
+    "comparisons": {
+      "rules_only": {
+        "system_a": "EthicAgent",
+        "system_b": "Baseline",
+        "n": 100,
+        "descriptive": {
+          "EthicAgent": {
+            "mean": 0.8537127617755361,
+            "std": 0.08362278825949417,
+            "median": 0.8612463517452376,
+            "min": 0.5880054577781149,
+            "max": 1,
+            "n": 100
+          },
+          "Baseline": {
+            "mean": 0.7250205938099898,
+            "std": 0.14263825520005413,
+            "median": 0.7337260168505486,
+            "min": 0.3436191140363203,
+            "max": 1,
+            "n": 100
+          },
+          "differences": {
+            "mean": 0.1286921679655461,
+            "std": 0.16436495002508017,
+            "median": 0.12831760323892927,
+            "min": -0.37385267997754235,
+            "max": 0.5196839770511875,
+            "n": 100
+          },
+          "mean_difference": 0.1286921679655461
+        },
+        "paired_t_test": {
+          "t_statistic": 7.829660030676199,
+          "p_value": 5.550296549654938e-12,
+          "significant": true,
+          "method": "scipy"
+        },
+        "wilcoxon_test": {
+          "statistic": 648.0,
+          "p_value": 1.0912604016700083e-10,
+          "significant": true,
+          "method": "scipy"
+        },
+        "cohens_d": {
+          "d": 1.1007,
+          "abs_d": 1.1007,
+          "interpretation": "large"
+        },
+        "cliffs_delta": {
+          "delta": 0.561,
+          "abs_delta": 0.561,
+          "interpretation": "large",
+          "more": 7799,
+          "less": 2189,
+          "ties": 12
+        },
+        "bootstrap_ci": {
+          "mean_difference": 0.128692,
+          "ci_lower": 0.095715,
+          "ci_upper": 0.162672,
+          "confidence_level": 0.95,
+          "bootstrap_samples": 1000
+        },
+        "significant": true,
+        "timestamp": "2026-03-03T18:15:50.354769+00:00"
+      },
+      "llm_only": {
+        "system_a": "EthicAgent",
+        "system_b": "Baseline",
+        "n": 100,
+        "descriptive": {
+          "EthicAgent": {
+            "mean": 0.8537127617755361,
+            "std": 0.08362278825949417,
+            "median": 0.8612463517452376,
+            "min": 0.5880054577781149,
+            "max": 1,
+            "n": 100
+          },
+          "Baseline": {
+            "mean": 0.6519860082910146,
+            "std": 0.164339625324792,
+            "median": 0.6449455336839272,
+            "min": 0.303157834093151,
+            "max": 1,
+            "n": 100
+          },
+          "differences": {
+            "mean": 0.20172675348452146,
+            "std": 0.16629780256737198,
+            "median": 0.19209581517271207,
+            "min": -0.2319292542186494,
+            "max": 0.5582841516529411,
+            "n": 100
+          },
+          "mean_difference": 0.20172675348452146
+        },
+        "paired_t_test": {
+          "t_statistic": 12.13045213888477,
+          "p_value": 2.7016908214214364e-21,
+          "significant": true,
+          "method": "scipy"
+        },
+        "wilcoxon_test": {
+          "statistic": 240.0,
+          "p_value": 3.9478812837561016e-15,
+          "significant": true,
+          "method": "scipy"
+        },
+        "cohens_d": {
+          "d": 1.5472,
+          "abs_d": 1.5472,
+          "interpretation": "large"
+        },
+        "cliffs_delta": {
+          "delta": 0.7136,
+          "abs_delta": 0.7136,
+          "interpretation": "large",
+          "more": 8565,
+          "less": 1429,
+          "ties": 6
+        },
+        "bootstrap_ci": {
+          "mean_difference": 0.201727,
+          "ci_lower": 0.16973,
+          "ci_upper": 0.235039,
+          "confidence_level": 0.95,
+          "bootstrap_samples": 1000
+        },
+        "significant": true,
+        "timestamp": "2026-03-03T18:15:50.384259+00:00"
+      },
+      "equal_weight": {
+        "system_a": "EthicAgent",
+        "system_b": "Baseline",
+        "n": 100,
+        "descriptive": {
+          "EthicAgent": {
+            "mean": 0.8537127617755361,
+            "std": 0.08362278825949417,
+            "median": 0.8612463517452376,
+            "min": 0.5880054577781149,
+            "max": 1,
+            "n": 100
+          },
+          "Baseline": {
+            "mean": 0.7561684337968471,
+            "std": 0.14611171900782913,
+            "median": 0.7519740016252983,
+            "min": 0.4416695093054281,
+            "max": 1,
+            "n": 100
+          },
+          "differences": {
+            "mean": 0.09754432797868894,
+            "std": 0.1655209851822917,
+            "median": 0.10390611231551367,
+            "min": -0.2719074741295695,
+            "max": 0.436479783426618,
+            "n": 100
+          },
+          "mean_difference": 0.09754432797868894
+        },
+        "paired_t_test": {
+          "t_statistic": 5.893169852225164,
+          "p_value": 5.247892332298155e-08,
+          "significant": true,
+          "method": "scipy"
+        },
+        "wilcoxon_test": {
+          "statistic": 1081.0,
+          "p_value": 6.872193234754664e-07,
+          "significant": true,
+          "method": "scipy"
+        },
+        "cohens_d": {
+          "d": 0.8194,
+          "abs_d": 0.8194,
+          "interpretation": "large"
+        },
+        "cliffs_delta": {
+          "delta": 0.4124,
+          "abs_delta": 0.4124,
+          "interpretation": "medium",
+          "more": 7050,
+          "less": 2926,
+          "ties": 24
+        },
+        "bootstrap_ci": {
+          "mean_difference": 0.097544,
+          "ci_lower": 0.065737,
+          "ci_upper": 0.129376,
+          "confidence_level": 0.95,
+          "bootstrap_samples": 1000
+        },
+        "significant": true,
+        "timestamp": "2026-03-03T18:15:50.425221+00:00"
+      },
+      "random": {
+        "system_a": "EthicAgent",
+        "system_b": "Baseline",
+        "n": 100,
+        "descriptive": {
+          "EthicAgent": {
+            "mean": 0.8537127617755361,
+            "std": 0.08362278825949417,
+            "median": 0.8612463517452376,
+            "min": 0.5880054577781149,
+            "max": 1,
+            "n": 100
+          },
+          "Baseline": {
+            "mean": 0.2356722015207877,
+            "std": 0.13919465654420252,
+            "median": 0.24288730944810627,
+            "min": 0,
+            "max": 0.5874361549741525,
+            "n": 100
+          },
+          "differences": {
+            "mean": 0.6180405602547484,
+            "std": 0.17887665555321688,
+            "median": 0.6352473364400171,
+            "min": 0.1684344476492925,
+            "max": 0.9437669025723254,
+            "n": 100
+          },
+          "mean_difference": 0.6180405602547484
+        },
+        "paired_t_test": {
+          "t_statistic": 34.551213982803795,
+          "p_value": 4.8232187911878405e-57,
+          "significant": true,
+          "method": "scipy"
+        },
+        "wilcoxon_test": {
+          "statistic": 0.0,
+          "p_value": 3.896559845095909e-18,
+          "significant": true,
+          "method": "scipy"
+        },
+        "cohens_d": {
+          "d": 5.3826,
+          "abs_d": 5.3826,
+          "interpretation": "large"
+        },
+        "cliffs_delta": {
+          "delta": 1.0,
+          "abs_delta": 1.0,
+          "interpretation": "large",
+          "more": 10000,
+          "less": 0,
+          "ties": 0
+        },
+        "bootstrap_ci": {
+          "mean_difference": 0.618041,
+          "ci_lower": 0.583565,
+          "ci_upper": 0.649982,
+          "confidence_level": 0.95,
+          "bootstrap_samples": 1000
+        },
+        "significant": true,
+        "timestamp": "2026-03-03T18:15:50.454931+00:00"
+      }
+    },
+    "summary": "============================================================\nSTATISTICAL ANALYSIS SUMMARY\n============================================================\nComparing EthicAgent vs Baseline\nN = 100\nMean \u0394: 0.6180\nt=34.551, p=0.0000\nCohen's d=5.383 (large)\n95% CI: [0.5836, 0.6500]\n\nConclusion: SIGNIFICANT\n============================================================"
+  }
+}

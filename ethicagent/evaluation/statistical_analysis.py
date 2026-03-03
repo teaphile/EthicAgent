@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import math
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ethicagent.utils.helpers import now_iso
 
@@ -47,11 +47,11 @@ class StatisticalAnalyzer:
 
     def compare_systems(
         self,
-        system_a_scores: List[float],
-        system_b_scores: List[float],
+        system_a_scores: list[float],
+        system_b_scores: list[float],
         system_a_name: str = "EthicAgent",
         system_b_name: str = "Baseline",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compare two systems using multiple statistical tests.
 
         Args:
@@ -76,13 +76,15 @@ class StatisticalAnalyzer:
         if n < 2:
             return {"error": "Need at least 2 samples for comparison"}
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "system_a": system_a_name,
             "system_b": system_b_name,
             "n": n,
             "descriptive": self._descriptive_stats(
-                system_a_scores, system_b_scores,
-                system_a_name, system_b_name,
+                system_a_scores,
+                system_b_scores,
+                system_a_name,
+                system_b_name,
             ),
             "paired_t_test": self._paired_t_test(system_a_scores, system_b_scores),
             "wilcoxon_test": self._wilcoxon_test(system_a_scores, system_b_scores),
@@ -91,17 +93,15 @@ class StatisticalAnalyzer:
             "bootstrap_ci": self._bootstrap_ci(system_a_scores, system_b_scores),
         }
 
-        result["significant"] = (
-            result["paired_t_test"].get("p_value", 1.0) < self.alpha
-        )
+        result["significant"] = result["paired_t_test"].get("p_value", 1.0) < self.alpha
         result["timestamp"] = now_iso()
         return result
 
     def compare_multiple(
         self,
-        system_scores: Dict[str, List[float]],
+        system_scores: dict[str, list[float]],
         reference_system: str = "EthicAgent",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compare a reference system against several others.
 
         Applies Bonferroni and Holm corrections for multiple tests.
@@ -113,7 +113,7 @@ class StatisticalAnalyzer:
         others = [k for k in system_scores if k != reference_system]
         m = len(others)
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "reference": reference_system,
             "n_comparisons": m,
             "alpha": self.alpha,
@@ -121,14 +121,14 @@ class StatisticalAnalyzer:
             "comparisons": {},
         }
 
-        p_values: List[Tuple[str, float]] = []
+        p_values: list[tuple[str, float]] = []
         for name in others:
             comp = self.compare_systems(ref, system_scores[name], reference_system, name)
             result["comparisons"][name] = comp
             p_values.append((name, comp.get("paired_t_test", {}).get("p_value", 1.0)))
 
         # Bonferroni
-        bonf: Dict[str, Dict[str, Any]] = {}
+        bonf: dict[str, dict[str, Any]] = {}
         for name, p in p_values:
             cp = min(p * m, 1.0)
             bonf[name] = {"original_p": p, "corrected_p": cp, "significant": cp < self.alpha}
@@ -142,16 +142,25 @@ class StatisticalAnalyzer:
 
     @staticmethod
     def _descriptive_stats(
-        a: List[float], b: List[float],
-        name_a: str, name_b: str,
-    ) -> Dict[str, Any]:
-        def _stats(scores: List[float]) -> Dict[str, float]:
+        a: list[float],
+        b: list[float],
+        name_a: str,
+        name_b: str,
+    ) -> dict[str, Any]:
+        def _stats(scores: list[float]) -> dict[str, float]:
             n = len(scores)
             mean = sum(scores) / n
             var = sum((x - mean) ** 2 for x in scores) / max(n - 1, 1)
             s = sorted(scores)
             median = s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
-            return {"mean": mean, "std": math.sqrt(var), "median": median, "min": min(scores), "max": max(scores), "n": n}
+            return {
+                "mean": mean,
+                "std": math.sqrt(var),
+                "median": median,
+                "min": min(scores),
+                "max": max(scores),
+                "n": n,
+            }
 
         diffs = [x - y for x, y in zip(a, b)]
         return {
@@ -163,15 +172,21 @@ class StatisticalAnalyzer:
 
     # ─── Paired t-test ───────────────────────────────────────
 
-    def _paired_t_test(self, a: List[float], b: List[float]) -> Dict[str, Any]:
+    def _paired_t_test(self, a: list[float], b: list[float]) -> dict[str, Any]:
         try:
             from scipy import stats as sp
+
             t, p = sp.ttest_rel(a, b)
-            return {"t_statistic": float(t), "p_value": float(p), "significant": float(p) < self.alpha, "method": "scipy"}
+            return {
+                "t_statistic": float(t),
+                "p_value": float(p),
+                "significant": float(p) < self.alpha,
+                "method": "scipy",
+            }
         except ImportError:
             return self._manual_paired_t(a, b)
 
-    def _manual_paired_t(self, a: List[float], b: List[float]) -> Dict[str, Any]:
+    def _manual_paired_t(self, a: list[float], b: list[float]) -> dict[str, Any]:
         n = len(a)
         d = [x - y for x, y in zip(a, b)]
         md = sum(d) / n
@@ -179,18 +194,30 @@ class StatisticalAnalyzer:
         se = math.sqrt(vd / n) if vd > 0 else 1e-10
         t = md / se
         p = 2 * (1 - self._normal_cdf(abs(t)))
-        return {"t_statistic": t, "p_value": p, "significant": p < self.alpha, "method": "manual (normal approx)", "df": n - 1}
+        return {
+            "t_statistic": t,
+            "p_value": p,
+            "significant": p < self.alpha,
+            "method": "manual (normal approx)",
+            "df": n - 1,
+        }
 
     # ─── Wilcoxon ────────────────────────────────────────────
 
-    def _wilcoxon_test(self, a: List[float], b: List[float]) -> Dict[str, Any]:
+    def _wilcoxon_test(self, a: list[float], b: list[float]) -> dict[str, Any]:
         try:
             from scipy import stats as sp
+
             nz = sum(1 for x, y in zip(a, b) if x != y)
             if nz < 10:
                 return {"warning": "Too few non-zero differences", "n_non_zero": nz}
             stat, p = sp.wilcoxon(a, b)
-            return {"statistic": float(stat), "p_value": float(p), "significant": float(p) < self.alpha, "method": "scipy"}
+            return {
+                "statistic": float(stat),
+                "p_value": float(p),
+                "significant": float(p) < self.alpha,
+                "method": "scipy",
+            }
         except ImportError:
             return {"warning": "scipy not available for Wilcoxon test"}
         except Exception as exc:
@@ -199,7 +226,7 @@ class StatisticalAnalyzer:
     # ─── Effect Sizes ────────────────────────────────────────
 
     @staticmethod
-    def _cohens_d(a: List[float], b: List[float]) -> Dict[str, Any]:
+    def _cohens_d(a: list[float], b: list[float]) -> dict[str, Any]:
         n = len(a)
         ma, mb = sum(a) / n, sum(b) / n
         va = sum((x - ma) ** 2 for x in a) / max(n - 1, 1)
@@ -207,11 +234,15 @@ class StatisticalAnalyzer:
         pooled = math.sqrt((va + vb) / 2)
         d = (ma - mb) / pooled if pooled > 1e-10 else 0.0
         ad = abs(d)
-        interp = "negligible" if ad < 0.2 else ("small" if ad < 0.5 else ("medium" if ad < 0.8 else "large"))
+        interp = (
+            "negligible"
+            if ad < 0.2
+            else ("small" if ad < 0.5 else ("medium" if ad < 0.8 else "large"))
+        )
         return {"d": round(d, 4), "abs_d": round(ad, 4), "interpretation": interp}
 
     @staticmethod
-    def _cliffs_delta(a: List[float], b: List[float]) -> Dict[str, Any]:
+    def _cliffs_delta(a: list[float], b: list[float]) -> dict[str, Any]:
         more = sum(1 for x in a for y in b if x > y)
         less = sum(1 for x in a for y in b if x < y)
         total = len(a) * len(b)
@@ -220,23 +251,33 @@ class StatisticalAnalyzer:
 
         delta = (more - less) / total
         ad = abs(delta)
-        interp = "negligible" if ad < 0.147 else ("small" if ad < 0.33 else ("medium" if ad < 0.474 else "large"))
+        interp = (
+            "negligible"
+            if ad < 0.147
+            else ("small" if ad < 0.33 else ("medium" if ad < 0.474 else "large"))
+        )
         return {
-            "delta": round(delta, 4), "abs_delta": round(ad, 4),
+            "delta": round(delta, 4),
+            "abs_delta": round(ad, 4),
             "interpretation": interp,
-            "more": more, "less": less, "ties": total - more - less,
+            "more": more,
+            "less": less,
+            "ties": total - more - less,
         }
 
     # ─── Bootstrap CI ────────────────────────────────────────
 
     def _bootstrap_ci(
-        self, a: List[float], b: List[float], confidence: float = 0.95,
-    ) -> Dict[str, Any]:
+        self,
+        a: list[float],
+        b: list[float],
+        confidence: float = 0.95,
+    ) -> dict[str, Any]:
         n = len(a)
         diffs = [x - y for x, y in zip(a, b)]
         rng = random.Random(42)
 
-        means: List[float] = []
+        means: list[float] = []
         for _ in range(self.bootstrap_samples):
             sample = [rng.choice(diffs) for _ in range(n)]
             means.append(sum(sample) / n)
@@ -255,19 +296,21 @@ class StatisticalAnalyzer:
 
     # ─── Multiple-Comparison Correction ──────────────────────
 
-    def _holm_correction(self, p_values: List[Tuple[str, float]]) -> Dict[str, Dict[str, Any]]:
+    def _holm_correction(self, p_values: list[tuple[str, float]]) -> dict[str, dict[str, Any]]:
         m = len(p_values)
         if m == 0:
             return {}
 
         ranked = sorted(p_values, key=lambda x: x[1])
-        out: Dict[str, Dict[str, Any]] = {}
+        out: dict[str, dict[str, Any]] = {}
         for i, (name, p) in enumerate(ranked):
             adj_alpha = self.alpha / (m - i)
             cp = min(p * (m - i), 1.0)
             out[name] = {
-                "original_p": p, "corrected_p": cp,
-                "adjusted_alpha": adj_alpha, "rank": i + 1,
+                "original_p": p,
+                "corrected_p": cp,
+                "adjusted_alpha": adj_alpha,
+                "rank": i + 1,
                 "significant": p < adj_alpha,
             }
         return out
@@ -276,9 +319,9 @@ class StatisticalAnalyzer:
 
     def mcnemar_test(
         self,
-        correct_a: List[bool],
-        correct_b: List[bool],
-    ) -> Dict[str, Any]:
+        correct_a: list[bool],
+        correct_b: list[bool],
+    ) -> dict[str, Any]:
         """McNemar's test for comparing classifiers."""
         if len(correct_a) != len(correct_b):
             raise ValueError("Lists must have same length")
@@ -290,7 +333,12 @@ class StatisticalAnalyzer:
 
         disc = n_a_only + n_b_only
         if disc == 0:
-            return {"warning": "No discordant pairs", "chi2": 0.0, "p_value": 1.0, "significant": False}
+            return {
+                "warning": "No discordant pairs",
+                "chi2": 0.0,
+                "p_value": 1.0,
+                "significant": False,
+            }
 
         chi2 = (abs(n_a_only - n_b_only) - 1) ** 2 / disc
         p = 1 - self._chi2_cdf(chi2, 1)
@@ -338,9 +386,9 @@ class StatisticalAnalyzer:
 
     # ─── Summary ─────────────────────────────────────────────
 
-    def generate_summary(self, comparison: Dict[str, Any]) -> str:
+    def generate_summary(self, comparison: dict[str, Any]) -> str:
         """Generate a human-readable summary of statistical analysis."""
-        lines: List[str] = ["=" * 60, "STATISTICAL ANALYSIS SUMMARY", "=" * 60]
+        lines: list[str] = ["=" * 60, "STATISTICAL ANALYSIS SUMMARY", "=" * 60]
 
         if "comparisons" in comparison:
             # Multi-comparison
@@ -376,7 +424,9 @@ class StatisticalAnalyzer:
 
         else:
             # Single comparison
-            lines.append(f"Comparing {comparison.get('system_a', 'A')} vs {comparison.get('system_b', 'B')}")
+            lines.append(
+                f"Comparing {comparison.get('system_a', 'A')} vs {comparison.get('system_b', 'B')}"
+            )
             lines.append(f"N = {comparison.get('n', 0)}")
 
             desc = comparison.get("descriptive", {})

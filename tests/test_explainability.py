@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
+from ethicagent.explainability.decision_trace import DecisionTracer
 from ethicagent.explainability.explanation_generator import ExplanationGenerator
-from ethicagent.explainability.decision_trace import DecisionTracer, TraceStep
 
 
 class TestExplanationGenerator:
@@ -102,7 +101,10 @@ class TestDecisionTracer:
         tracer = DecisionTracer()
         trace_id = tracer.start_trace("test_task")
         tracer.record_step(
-            trace_id, stage="analysis", data={}, duration_ms=10,
+            trace_id,
+            stage="analysis",
+            data={},
+            duration_ms=10,
         )
         tracer.finalize_trace(trace_id, verdict="approve", eds_score=0.85)
         trace = tracer.get_trace(trace_id)
@@ -113,7 +115,10 @@ class TestDecisionTracer:
         tracer = DecisionTracer()
         trace_id = tracer.start_trace("export_test")
         tracer.record_step(
-            trace_id, stage="test", data={"key": "value"}, duration_ms=5,
+            trace_id,
+            stage="test",
+            data={"key": "value"},
+            duration_ms=5,
         )
         tracer.finalize_trace(trace_id, verdict="escalate", eds_score=0.60)
         exported = tracer.export_trace(trace_id)

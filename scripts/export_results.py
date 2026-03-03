@@ -21,8 +21,6 @@ import csv
 import json
 import logging
 import sys
-from datetime import datetime
-from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -87,8 +85,8 @@ def load_results(input_path: Path) -> dict[str, Any]:
 
 def export_latex(results: dict, output_dir: Path) -> None:
     """Export results as LaTeX tables."""
-    generator = ReportGenerator()
-    latex = generator.generate_latex(results)
+    generator = ReportGenerator(results=results)
+    latex = generator.generate_latex()
 
     filepath = output_dir / "tables.tex"
     filepath.write_text(latex)
@@ -129,18 +127,18 @@ def _generate_scenario_latex(scenario_results: dict) -> str:
         accuracy = data.get("accuracy", 0)
         total_cases += cases
         total_correct += correct
-        lines.append(
-            f"  {domain.title()} & {cases} & {correct} & {accuracy:.1%} \\\\"
-        )
+        lines.append(f"  {domain.title()} & {cases} & {correct} & {accuracy:.1%} \\\\")
 
     overall = total_correct / total_cases if total_cases > 0 else 0
-    lines.extend([
-        r"\midrule",
-        f"  \\textbf{{Overall}} & \\textbf{{{total_cases}}} & \\textbf{{{total_correct}}} & \\textbf{{{overall:.1%}}} \\\\",
-        r"\bottomrule",
-        r"\end{tabular}",
-        r"\end{table}",
-    ])
+    lines.extend(
+        [
+            r"\midrule",
+            f"  \\textbf{{Overall}} & \\textbf{{{total_cases}}} & \\textbf{{{total_correct}}} & \\textbf{{{overall:.1%}}} \\\\",
+            r"\bottomrule",
+            r"\end{tabular}",
+            r"\end{table}",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -165,11 +163,13 @@ def _generate_baseline_latex(baseline_results: dict) -> str:
         else:
             lines.append(f"  {name} & {accuracy:.1%} \\\\")
 
-    lines.extend([
-        r"\bottomrule",
-        r"\end{tabular}",
-        r"\end{table}",
-    ])
+    lines.extend(
+        [
+            r"\bottomrule",
+            r"\end{tabular}",
+            r"\end{table}",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -197,18 +197,20 @@ def _generate_ablation_latex(ablation_results: dict) -> str:
         else:
             lines.append(f"  {name} & {accuracy:.1%} & {delta_str} \\\\")
 
-    lines.extend([
-        r"\bottomrule",
-        r"\end{tabular}",
-        r"\end{table}",
-    ])
+    lines.extend(
+        [
+            r"\bottomrule",
+            r"\end{tabular}",
+            r"\end{table}",
+        ]
+    )
     return "\n".join(lines)
 
 
 def export_markdown(results: dict, output_dir: Path) -> None:
     """Export results as Markdown report."""
-    generator = ReportGenerator()
-    markdown = generator.generate_markdown(results)
+    generator = ReportGenerator(results=results)
+    markdown = generator.generate_markdown()
 
     filepath = output_dir / "report.md"
     filepath.write_text(markdown)
@@ -217,8 +219,8 @@ def export_markdown(results: dict, output_dir: Path) -> None:
 
 def export_html(results: dict, output_dir: Path) -> None:
     """Export results as HTML report."""
-    generator = ReportGenerator()
-    html = generator.generate_html(results)
+    generator = ReportGenerator(results=results)
+    html = generator.generate_html()
 
     filepath = output_dir / "report.html"
     filepath.write_text(html)
@@ -241,12 +243,14 @@ def export_csv(results: dict, output_dir: Path) -> None:
             writer = csv.writer(f)
             writer.writerow(["Domain", "Total Cases", "Correct", "Accuracy"])
             for domain, data in sorted(results["scenario_results"].items()):
-                writer.writerow([
-                    domain,
-                    data.get("total_cases", 0),
-                    data.get("correct", 0),
-                    f'{data.get("accuracy", 0):.4f}',
-                ])
+                writer.writerow(
+                    [
+                        domain,
+                        data.get("total_cases", 0),
+                        data.get("correct", 0),
+                        f"{data.get('accuracy', 0):.4f}",
+                    ]
+                )
         logger.info(f"  CSV scenarios: {filepath}")
 
     # Baseline results CSV
@@ -256,7 +260,7 @@ def export_csv(results: dict, output_dir: Path) -> None:
             writer = csv.writer(f)
             writer.writerow(["System", "Accuracy"])
             for system, data in sorted(results["baseline_results"].items()):
-                writer.writerow([system, f'{data.get("accuracy", 0):.4f}'])
+                writer.writerow([system, f"{data.get('accuracy', 0):.4f}"])
         logger.info(f"  CSV baselines: {filepath}")
 
     # Ablation results CSV
@@ -278,15 +282,23 @@ def parse_args() -> argparse.Namespace:
         description="Export EthicAgent results in various formats.",
     )
     parser.add_argument(
-        "--input", "-i", type=str, default="results",
-        help="Input file or directory containing results. Default: results/",
+        "--input",
+        "-i",
+        type=str,
+        default="data/results",
+        help="Input file or directory containing results. Default: data/results/",
     )
     parser.add_argument(
-        "--output", "-o", type=str, default=None,
+        "--output",
+        "-o",
+        type=str,
+        default=None,
         help="Output directory. Default: same as input directory",
     )
     parser.add_argument(
-        "--format", "-f", nargs="+",
+        "--format",
+        "-f",
+        nargs="+",
         choices=["json", "latex", "markdown", "html", "csv", "all"],
         default=["all"],
         help="Export formats. Default: all",

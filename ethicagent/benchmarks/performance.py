@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import statistics
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.scenarios import SCENARIO_REGISTRY
 from ethicagent.utils.helpers import now_iso
@@ -28,25 +28,25 @@ class PerformanceBenchmark:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.config = config or {}
         self.max_cases = config.get("max_cases", 50) if config else 50
 
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> dict[str, Any]:
         """Run the performance benchmark.
 
         Returns:
             Dict with latency stats and throughput.
         """
         t0 = time.perf_counter()
-        latencies: List[float] = []
-        per_domain: Dict[str, List[float]] = {}
+        latencies: list[float] = []
+        per_domain: dict[str, list[float]] = {}
 
         # Collect cases (sample across domains)
-        all_cases: List[Any] = []
+        all_cases: list[Any] = []
         for domain_name, cls in SCENARIO_REGISTRY.items():
             scenario = cls()
             cases = scenario.get_cases()
@@ -54,6 +54,7 @@ class PerformanceBenchmark:
 
         # Limit to max_cases for speed
         import random
+
         rng = random.Random(42)
         if len(all_cases) > self.max_cases:
             all_cases = rng.sample(all_cases, self.max_cases)
@@ -72,14 +73,14 @@ class PerformanceBenchmark:
         total_time = time.perf_counter() - t0
 
         # Stats
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "total_cases": len(all_cases),
             "total_seconds": round(total_time, 3),
-            "throughput_cases_per_sec": round(len(all_cases) / total_time, 2) if total_time > 0 else 0,
+            "throughput_cases_per_sec": round(len(all_cases) / total_time, 2)
+            if total_time > 0
+            else 0,
             "latency": self._latency_stats(latencies),
-            "per_domain_latency": {
-                d: self._latency_stats(lats) for d, lats in per_domain.items()
-            },
+            "per_domain_latency": {d: self._latency_stats(lats) for d, lats in per_domain.items()},
             "timestamp": now_iso(),
         }
 
@@ -104,7 +105,7 @@ class PerformanceBenchmark:
             time.sleep(0.005)
 
     @staticmethod
-    def _latency_stats(latencies: List[float]) -> Dict[str, float]:
+    def _latency_stats(latencies: list[float]) -> dict[str, float]:
         """Compute latency statistics in milliseconds."""
         if not latencies:
             return {}

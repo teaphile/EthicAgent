@@ -14,7 +14,7 @@ Routes the ethical verdict to one of four handlers:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.core.logger import AuditLogger
 
@@ -26,20 +26,20 @@ class ActionExecutor:
 
     def __init__(
         self,
-        audit_logger: Optional[AuditLogger] = None,
+        audit_logger: AuditLogger | None = None,
     ) -> None:
         self._audit = audit_logger
 
     def execute(
         self,
         decision: Any = None,
-        context: Dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
         *,
         verdict: str | None = None,
         eds_score: float | None = None,
         task: str | None = None,
         reasoning: str | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute the decision based on the verdict.
 
         Accepts either:
@@ -52,6 +52,7 @@ class ActionExecutor:
         # Keyword-arg form: build a simple namespace
         if verdict is not None or (decision is None and context is None):
             from types import SimpleNamespace
+
             v = verdict or "escalate"
             # Map simple verdict names to enum-style
             verdict_map = {
@@ -74,10 +75,7 @@ class ActionExecutor:
                 "domain": "general",
             }
 
-        verdict_val = (
-            decision.verdict.value
-            if hasattr(decision, "verdict") else "unknown"
-        )
+        verdict_val = decision.verdict.value if hasattr(decision, "verdict") else "unknown"
         eds = getattr(decision, "eds_score", 0.0)
 
         handlers = {
@@ -101,8 +99,7 @@ class ActionExecutor:
                 action=context.get("action", "")[:200],
                 domain=context.get("domain", "general"),
                 ethical_scores={
-                    pr.name: pr.score
-                    for pr in getattr(decision, "philosophy_results", [])
+                    pr.name: pr.score for pr in getattr(decision, "philosophy_results", [])
                 },
                 verdict=verdict_val,
                 reasoning=getattr(decision, "reasoning", ""),
@@ -114,13 +111,9 @@ class ActionExecutor:
 
     # -- verdict handlers ------------------------------------------------------
 
-    def _handle_approve(
-        self, decision: Any, ctx: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _handle_approve(self, decision: Any, ctx: dict[str, Any]) -> dict[str, Any]:
         warnings = self._extract_warnings(decision, ctx)
-        logger.info(
-            f"Action APPROVED (EDS={getattr(decision, 'eds_score', 0):.3f})"
-        )
+        logger.info(f"Action APPROVED (EDS={getattr(decision, 'eds_score', 0):.3f})")
         return {
             "status": "approved",
             "requires_human_review": False,
@@ -128,30 +121,21 @@ class ActionExecutor:
             "message": "Action approved — all ethical checks passed.",
         }
 
-    def _handle_escalate(
-        self, decision: Any, ctx: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _handle_escalate(self, decision: Any, ctx: dict[str, Any]) -> dict[str, Any]:
         priority = self._compute_review_priority(decision)
-        logger.info(
-            f"Action ESCALATED for human review (priority={priority})"
-        )
+        logger.info(f"Action ESCALATED for human review (priority={priority})")
         return {
             "status": "escalated",
             "requires_human_review": True,
             "review_priority": priority,
             "message": (
-                "Action requires human review — ethical scores are "
-                "in the ambiguous range."
+                "Action requires human review — ethical scores are in the ambiguous range."
             ),
         }
 
-    def _handle_reject(
-        self, decision: Any, ctx: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _handle_reject(self, decision: Any, ctx: dict[str, Any]) -> dict[str, Any]:
         alternatives = self._suggest_alternatives(decision, ctx)
-        logger.warning(
-            f"Action REJECTED (EDS={getattr(decision, 'eds_score', 0):.3f})"
-        )
+        logger.warning(f"Action REJECTED (EDS={getattr(decision, 'eds_score', 0):.3f})")
         return {
             "status": "rejected",
             "requires_human_review": False,
@@ -159,13 +143,9 @@ class ActionExecutor:
             "message": "Action rejected — ethical evaluation below threshold.",
         }
 
-    def _handle_hard_block(
-        self, decision: Any, ctx: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _handle_hard_block(self, decision: Any, ctx: dict[str, Any]) -> dict[str, Any]:
         rules = getattr(decision, "rules_triggered", [])
-        logger.error(
-            f"Action HARD-BLOCKED — rule violations: {rules}"
-        )
+        logger.error(f"Action HARD-BLOCKED — rule violations: {rules}")
         return {
             "status": "hard_blocked",
             "requires_human_review": False,
@@ -176,9 +156,7 @@ class ActionExecutor:
             ),
         }
 
-    def _handle_unknown(
-        self, decision: Any, ctx: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _handle_unknown(self, decision: Any, ctx: dict[str, Any]) -> dict[str, Any]:
         logger.warning("Unknown verdict — defaulting to escalate")
         return {
             "status": "escalated",
@@ -188,18 +166,14 @@ class ActionExecutor:
 
     # -- helpers ---------------------------------------------------------------
 
-    def _extract_warnings(
-        self, decision: Any, ctx: Dict[str, Any]
-    ) -> List[str]:
+    def _extract_warnings(self, decision: Any, ctx: dict[str, Any]) -> list[str]:
         warnings = []
         eds = getattr(decision, "eds_score", 1.0)
         if 0.80 <= eds < 0.85:
             warnings.append("EDS is just above the approval threshold.")
         conflict = getattr(decision, "conflict_analysis", {})
         if conflict.get("severity") in ("moderate", "severe"):
-            warnings.append(
-                f"Philosophical disagreement: {conflict.get('severity')}."
-            )
+            warnings.append(f"Philosophical disagreement: {conflict.get('severity')}.")
         if ctx.get("reversibility") == "irreversible":
             warnings.append("This action is irreversible — proceed with caution.")
         return warnings
@@ -213,9 +187,7 @@ class ActionExecutor:
         return "low"
 
     @staticmethod
-    def _suggest_alternatives(
-        decision: Any, ctx: Dict[str, Any]
-    ) -> List[str]:
+    def _suggest_alternatives(decision: Any, ctx: dict[str, Any]) -> list[str]:
         alts = []
         domain = ctx.get("domain", "general")
         if domain == "healthcare":

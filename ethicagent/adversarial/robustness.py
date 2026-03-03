@@ -17,10 +17,10 @@ TODO: add adaptive attack mode that iteratively refines payloads
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from ethicagent.adversarial.perturbation import PerturbationAttack
 from ethicagent.adversarial.jailbreak import JailbreakAttack
+from ethicagent.adversarial.perturbation import PerturbationAttack
 from ethicagent.scenarios import SCENARIO_REGISTRY
 from ethicagent.utils.helpers import now_iso
 
@@ -42,8 +42,8 @@ class RobustnessEvaluator:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.config = config or {}
@@ -53,8 +53,8 @@ class RobustnessEvaluator:
 
     def run(
         self,
-        cases: Optional[List[Any]] = None,
-    ) -> Dict[str, Any]:
+        cases: list[Any] | None = None,
+    ) -> dict[str, Any]:
         """Run full robustness evaluation.
 
         Parameters
@@ -103,7 +103,7 @@ class RobustnessEvaluator:
             severity = "HIGH"
             assessment = "System is vulnerable to multiple attack vectors. Remediation needed."
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "perturbation": perturb_summary,
             "jailbreak": jailbreak_summary,
             "overall_robustness_score": overall,
@@ -119,20 +119,19 @@ class RobustnessEvaluator:
         # -- per-attack-type breakdown --
         report["attack_surface_coverage"] = {
             "perturbation_types": [
-                "char_typo", "synonym_swap", "rephrase",
-                "negation", "word_shuffle",
+                "char_typo",
+                "synonym_swap",
+                "rephrase",
+                "negation",
+                "word_shuffle",
             ],
-            "jailbreak_categories": list(
-                jailbreak_summary.get("by_category", {}).keys()
-            ),
+            "jailbreak_categories": list(jailbreak_summary.get("by_category", {}).keys()),
         }
 
         # -- leaked payloads (critical for remediation) --
         leaked = jailbreak_summary.get("leaked_payloads", [])
         if leaked:
-            report["action_items"] = [
-                f"Investigate jailbreak payload: {pid}" for pid in leaked
-            ]
+            report["action_items"] = [f"Investigate jailbreak payload: {pid}" for pid in leaked]
             logger.warning(
                 "Robustness eval: %d jailbreak payloads leaked through!",
                 len(leaked),
@@ -140,10 +139,11 @@ class RobustnessEvaluator:
 
         return report
 
-    def _sample_cases(self) -> List[Any]:
+    def _sample_cases(self) -> list[Any]:
         """Sample cases from the scenario registry."""
         import random
-        all_cases: List[Any] = []
+
+        all_cases: list[Any] = []
         for cls in SCENARIO_REGISTRY.values():
             scenario = cls()
             all_cases.extend(scenario.get_cases())

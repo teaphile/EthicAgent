@@ -27,9 +27,9 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
 
 import matplotlib
+
 matplotlib.use("Agg")  # non-interactive backend
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -56,12 +56,13 @@ COLORS = {
 
 # ── Helpers ─────────────────────────────────────────────────
 
-def _read_csv(path: Path) -> List[Dict[str, str]]:
+
+def _read_csv(path: Path) -> list[dict[str, str]]:
     with open(path) as f:
         return list(csv.DictReader(f))
 
 
-def _read_json(path: Path) -> Dict:
+def _read_json(path: Path) -> dict:
     with open(path) as f:
         return json.load(f)
 
@@ -78,6 +79,7 @@ def _save(fig: plt.Figure, chart_dir: Path, name: str) -> None:
 # 1. Comparison bar chart
 # ═══════════════════════════════════════════════════════════════
 
+
 def chart_comparison(results_dir: Path, chart_dir: Path) -> None:
     rows = _read_csv(results_dir / "comparison_results.csv")
     overall = [r for r in rows if r["domain"] == "overall"]
@@ -91,8 +93,13 @@ def chart_comparison(results_dir: Path, chart_dir: Path) -> None:
 
     for bar, acc in zip(bars, accuracies):
         ax.text(
-            bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
-            f"{acc:.0%}", ha="center", va="bottom", fontsize=10, fontweight="bold",
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.01,
+            f"{acc:.0%}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            fontweight="bold",
         )
 
     ax.set_ylabel("Verdict Accuracy")
@@ -105,6 +112,7 @@ def chart_comparison(results_dir: Path, chart_dir: Path) -> None:
 # ═══════════════════════════════════════════════════════════════
 # 2. Ablation impact plot
 # ═══════════════════════════════════════════════════════════════
+
 
 def chart_ablation(results_dir: Path, chart_dir: Path) -> None:
     rows = _read_csv(results_dir / "ablation_results.csv")
@@ -125,8 +133,12 @@ def chart_ablation(results_dir: Path, chart_dir: Path) -> None:
 
     for bar, d in zip(bars, drops):
         ax.text(
-            bar.get_width() + 0.003, bar.get_y() + bar.get_height() / 2,
-            f"−{d:.0%}", ha="left", va="center", fontsize=9,
+            bar.get_width() + 0.003,
+            bar.get_y() + bar.get_height() / 2,
+            f"−{d:.0%}",
+            ha="left",
+            va="center",
+            fontsize=9,
         )
 
     ax.set_yticks(y_pos)
@@ -141,6 +153,7 @@ def chart_ablation(results_dir: Path, chart_dir: Path) -> None:
 # ═══════════════════════════════════════════════════════════════
 # 3. EDS distribution histogram
 # ═══════════════════════════════════════════════════════════════
+
 
 def chart_eds_distribution(results_dir: Path, chart_dir: Path) -> None:
     rows = _read_csv(results_dir / "per_domain_breakdown.csv")
@@ -161,8 +174,12 @@ def chart_eds_distribution(results_dir: Path, chart_dir: Path) -> None:
 
         ax = axes_flat[idx]
         ax.hist(
-            samples, bins=20, color=COLORS.get(domain, "#6B7280"),
-            edgecolor="white", linewidth=0.5, alpha=0.85,
+            samples,
+            bins=20,
+            color=COLORS.get(domain, "#6B7280"),
+            edgecolor="white",
+            linewidth=0.5,
+            alpha=0.85,
         )
         ax.axvline(0.80, color="#EF4444", linestyle="--", linewidth=1, label="Approve ≥ 0.80")
         ax.axvline(0.50, color="#F59E0B", linestyle="--", linewidth=1, label="Escalate ≥ 0.50")
@@ -182,6 +199,7 @@ def chart_eds_distribution(results_dir: Path, chart_dir: Path) -> None:
 # 4. Verdict distribution pie charts
 # ═══════════════════════════════════════════════════════════════
 
+
 def chart_verdict_distribution(results_dir: Path, chart_dir: Path) -> None:
     rows = _read_csv(results_dir / "per_domain_breakdown.csv")
 
@@ -197,8 +215,12 @@ def chart_verdict_distribution(results_dir: Path, chart_dir: Path) -> None:
 
         ax = axes_flat[idx]
         wedges, texts, autotexts = ax.pie(
-            counts, labels=verdict_labels, colors=verdict_colors,
-            autopct="%1.0f%%", startangle=90, textprops={"fontsize": 9},
+            counts,
+            labels=verdict_labels,
+            colors=verdict_colors,
+            autopct="%1.0f%%",
+            startangle=90,
+            textprops={"fontsize": 9},
         )
         for t in autotexts:
             t.set_fontsize(8)
@@ -212,6 +234,7 @@ def chart_verdict_distribution(results_dir: Path, chart_dir: Path) -> None:
 # ═══════════════════════════════════════════════════════════════
 # 5. Philosophy radar chart
 # ═══════════════════════════════════════════════════════════════
+
 
 def chart_philosophy_radar(results_dir: Path, chart_dir: Path) -> None:
     breakdown = _read_csv(results_dir / "per_domain_breakdown.csv")
@@ -239,14 +262,19 @@ def chart_philosophy_radar(results_dir: Path, chart_dir: Path) -> None:
             values = list(weights_dict)[:4]
         values += values[:1]
 
-        ax.plot(angles, values, "o-", linewidth=2, label=domain.title(),
-                color=COLORS.get(domain, "#6B7280"))
+        ax.plot(
+            angles,
+            values,
+            "o-",
+            linewidth=2,
+            label=domain.title(),
+            color=COLORS.get(domain, "#6B7280"),
+        )
         ax.fill(angles, values, alpha=0.1, color=COLORS.get(domain, "#6B7280"))
 
     ax.set_thetagrids(np.degrees(angles[:-1]), labels)
     ax.set_ylim(0, 0.5)
-    ax.set_title("Philosophy Weight Distribution by Domain", y=1.08,
-                 fontsize=13, fontweight="bold")
+    ax.set_title("Philosophy Weight Distribution by Domain", y=1.08, fontsize=13, fontweight="bold")
     ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.15), fontsize=9)
     _save(fig, chart_dir, "philosophy_radar")
 
@@ -254,6 +282,7 @@ def chart_philosophy_radar(results_dir: Path, chart_dir: Path) -> None:
 # ═══════════════════════════════════════════════════════════════
 # 6. Fairness heatmap
 # ═══════════════════════════════════════════════════════════════
+
 
 def chart_fairness_heatmap(results_dir: Path, chart_dir: Path) -> None:
     rows = _read_csv(results_dir / "fairness_results.csv")
@@ -280,8 +309,16 @@ def chart_fairness_heatmap(results_dir: Path, chart_dir: Path) -> None:
         for j in range(len(metrics)):
             val = data[i, j]
             color = "white" if val < 0.3 or val > 0.8 else "black"
-            ax.text(j, i, f"{val:.2f}", ha="center", va="center",
-                    color=color, fontsize=11, fontweight="bold")
+            ax.text(
+                j,
+                i,
+                f"{val:.2f}",
+                ha="center",
+                va="center",
+                color=color,
+                fontsize=11,
+                fontweight="bold",
+            )
 
     ax.set_title("Fairness Metrics by Domain", fontsize=13, fontweight="bold")
     fig.colorbar(im, ax=ax, shrink=0.8)
@@ -292,6 +329,7 @@ def chart_fairness_heatmap(results_dir: Path, chart_dir: Path) -> None:
 # ═══════════════════════════════════════════════════════════════
 # 7. Weight comparison grouped bars
 # ═══════════════════════════════════════════════════════════════
+
 
 def chart_weight_comparison(results_dir: Path, chart_dir: Path) -> None:
     _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -313,8 +351,14 @@ def chart_weight_comparison(results_dir: Path, chart_dir: Path) -> None:
         else:
             vals = list(weights)[:4]
         offset = (i - len(domains) / 2 + 0.5) * width
-        bars = ax.bar(x + offset, vals, width, label=domain.title(),
-                      color=COLORS.get(domain, "#6B7280"), edgecolor="white")
+        bars = ax.bar(
+            x + offset,
+            vals,
+            width,
+            label=domain.title(),
+            color=COLORS.get(domain, "#6B7280"),
+            edgecolor="white",
+        )
 
     ax.set_xticks(x)
     ax.set_xticklabels(phil_labels, fontsize=11)
@@ -330,13 +374,12 @@ def chart_weight_comparison(results_dir: Path, chart_dir: Path) -> None:
 # 8. Adversarial robustness
 # ═══════════════════════════════════════════════════════════════
 
+
 def chart_adversarial(results_dir: Path, chart_dir: Path) -> None:
     data = _read_json(results_dir / "adversarial_results.json")
 
     attacks = list(data["perturbation"]["by_attack_type"].keys())
-    robustness = [
-        data["perturbation"]["by_attack_type"][a]["robustness"] for a in attacks
-    ]
+    robustness = [data["perturbation"]["by_attack_type"][a]["robustness"] for a in attacks]
     labels = [a.replace("_", " ").title() for a in attacks]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
@@ -346,8 +389,12 @@ def chart_adversarial(results_dir: Path, chart_dir: Path) -> None:
     bars = ax1.barh(labels, robustness, color=colors, edgecolor="white")
     for bar, r in zip(bars, robustness):
         ax1.text(
-            bar.get_width() + 0.01, bar.get_y() + bar.get_height() / 2,
-            f"{r:.0%}", ha="left", va="center", fontsize=10,
+            bar.get_width() + 0.01,
+            bar.get_y() + bar.get_height() / 2,
+            f"{r:.0%}",
+            ha="left",
+            va="center",
+            fontsize=10,
         )
     ax1.set_xlim(0, 1.1)
     ax1.xaxis.set_major_formatter(mticker.PercentFormatter(1.0))
@@ -359,10 +406,21 @@ def chart_adversarial(results_dir: Path, chart_dir: Path) -> None:
     block_rate = jb["block_rate"]
     leak_rate = 1 - block_rate
 
-    ax2.barh(["Jailbreak\nPayloads"], [block_rate], color="#22C55E",
-             edgecolor="white", label=f"Blocked ({block_rate:.0%})")
-    ax2.barh(["Jailbreak\nPayloads"], [leak_rate], left=[block_rate],
-             color="#EF4444", edgecolor="white", label=f"Leaked ({leak_rate:.0%})")
+    ax2.barh(
+        ["Jailbreak\nPayloads"],
+        [block_rate],
+        color="#22C55E",
+        edgecolor="white",
+        label=f"Blocked ({block_rate:.0%})",
+    )
+    ax2.barh(
+        ["Jailbreak\nPayloads"],
+        [leak_rate],
+        left=[block_rate],
+        color="#EF4444",
+        edgecolor="white",
+        label=f"Leaked ({leak_rate:.0%})",
+    )
     ax2.set_xlim(0, 1.1)
     ax2.xaxis.set_major_formatter(mticker.PercentFormatter(1.0))
     ax2.set_title("Jailbreak Block Rate", fontweight="bold")
@@ -371,7 +429,8 @@ def chart_adversarial(results_dir: Path, chart_dir: Path) -> None:
     overall = data["overall_robustness_score"]
     fig.suptitle(
         f"Adversarial Robustness — Overall Score: {overall:.0%}",
-        fontsize=14, fontweight="bold",
+        fontsize=14,
+        fontweight="bold",
     )
     fig.tight_layout(rect=[0, 0, 1, 0.94])
     _save(fig, chart_dir, "adversarial_robustness")
@@ -381,10 +440,13 @@ def chart_adversarial(results_dir: Path, chart_dir: Path) -> None:
 # Main
 # ═══════════════════════════════════════════════════════════════
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate publication-ready charts.")
     parser.add_argument(
-        "--results-dir", type=str, default="data/results",
+        "--results-dir",
+        type=str,
+        default="data/results",
         help="Directory containing result CSVs/JSONs (default: data/results)",
     )
     args = parser.parse_args()

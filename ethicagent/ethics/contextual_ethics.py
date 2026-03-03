@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from ethicagent.ethics.ethical_score import PhilosophyResult as _PhilosophyResult
 
@@ -31,12 +31,14 @@ logger = logging.getLogger(__name__)
 # Enums and data classes
 # ---------------------------------------------------------------------------
 
+
 class EUAIActRisk(Enum):
     """EU AI Act risk classifications."""
-    UNACCEPTABLE = "unacceptable"   # Banned
-    HIGH = "high"                   # Strict requirements
-    LIMITED = "limited"             # Transparency obligations
-    MINIMAL = "minimal"            # No specific requirements
+
+    UNACCEPTABLE = "unacceptable"  # Banned
+    HIGH = "high"  # Strict requirements
+    LIMITED = "limited"  # Transparency obligations
+    MINIMAL = "minimal"  # No specific requirements
 
 
 class Jurisdiction(Enum):
@@ -50,6 +52,7 @@ class Jurisdiction(Enum):
 @dataclass
 class LegalAssessment:
     """Assessment of legal compliance for the context."""
+
     jurisdiction: Jurisdiction
     applicable_laws: list[str]
     risk_level: EUAIActRisk
@@ -60,6 +63,7 @@ class LegalAssessment:
 @dataclass
 class CulturalContext:
     """Cultural factors that may affect ethical assessment."""
+
     region: str
     relevant_norms: list[str]
     sensitivity_level: str  # "low", "medium", "high"
@@ -69,6 +73,7 @@ class CulturalContext:
 @dataclass
 class PrecedentMatch:
     """A previously handled similar situation."""
+
     case_id: str
     similarity: float  # 0-1
     outcome: str
@@ -79,9 +84,10 @@ class PrecedentMatch:
 @dataclass
 class ContextualResult:
     """Output of the contextual ethics evaluator."""
+
     score: float  # Ctx(a), 0.0 – 1.0
-    legal_assessment: Optional[LegalAssessment] = None
-    cultural_context: Optional[CulturalContext] = None
+    legal_assessment: LegalAssessment | None = None
+    cultural_context: CulturalContext | None = None
     precedents: list[PrecedentMatch] = field(default_factory=list)
     temporal_factors: dict[str, Any] = field(default_factory=dict)
     domain_norms: list[str] = field(default_factory=list)
@@ -95,30 +101,41 @@ class ContextualResult:
 # EU AI Act domain → risk mapping
 # These are simplified; real mapping needs detailed system analysis
 _EU_AI_ACT_RISK_MAP: dict[str, EUAIActRisk] = {
-    "healthcare": EUAIActRisk.HIGH,          # Medical device / diagnostic
-    "finance": EUAIActRisk.HIGH,             # Credit scoring
-    "hiring": EUAIActRisk.HIGH,              # Employment decisions
-    "disaster": EUAIActRisk.LIMITED,          # Emergency management
+    "healthcare": EUAIActRisk.HIGH,  # Medical device / diagnostic
+    "finance": EUAIActRisk.HIGH,  # Credit scoring
+    "hiring": EUAIActRisk.HIGH,  # Employment decisions
+    "disaster": EUAIActRisk.LIMITED,  # Emergency management
     "general": EUAIActRisk.MINIMAL,
 }
 
 _DOMAIN_LAWS: dict[str, list[str]] = {
     "healthcare": [
-        "HIPAA (US)", "GDPR Art. 9 (EU)", "Medical Device Regulation (EU)",
-        "Health Insurance Portability Act", "Mental Health Parity Act",
+        "HIPAA (US)",
+        "GDPR Art. 9 (EU)",
+        "Medical Device Regulation (EU)",
+        "Health Insurance Portability Act",
+        "Mental Health Parity Act",
     ],
     "finance": [
-        "ECOA (US)", "Fair Lending Act (US)", "GDPR (EU)",
-        "PSD2 (EU)", "Consumer Credit Directive (EU)",
-        "Dodd-Frank Act (US)", "Basel III",
+        "ECOA (US)",
+        "Fair Lending Act (US)",
+        "GDPR (EU)",
+        "PSD2 (EU)",
+        "Consumer Credit Directive (EU)",
+        "Dodd-Frank Act (US)",
+        "Basel III",
     ],
     "hiring": [
-        "Title VII Civil Rights Act (US)", "ADA (US)",
-        "ADEA (US)", "GDPR (EU)", "EU AI Act Annex III",
+        "Title VII Civil Rights Act (US)",
+        "ADA (US)",
+        "ADEA (US)",
+        "GDPR (EU)",
+        "EU AI Act Annex III",
         "Equal Pay Act (US)",
     ],
     "disaster": [
-        "Stafford Act (US)", "EMTALA (US)",
+        "Stafford Act (US)",
+        "EMTALA (US)",
         "EU Civil Protection Mechanism",
     ],
     "general": ["GDPR (EU)", "CCPA (US)", "AI Act (EU)"],
@@ -208,6 +225,7 @@ _CULTURAL_NORMS: dict[str, list[str]] = {
 # Evaluator
 # ---------------------------------------------------------------------------
 
+
 class ContextualEthicsEvaluator:
     """Evaluates Ctx(a) — how well the action fits its context.
 
@@ -222,7 +240,11 @@ class ContextualEthicsEvaluator:
         jurisdiction: str = "global",
     ) -> None:
         self.precedent_store = precedent_store
-        self.default_jurisdiction = Jurisdiction(jurisdiction) if jurisdiction in [j.value for j in Jurisdiction] else Jurisdiction.GLOBAL
+        self.default_jurisdiction = (
+            Jurisdiction(jurisdiction)
+            if jurisdiction in [j.value for j in Jurisdiction]
+            else Jurisdiction.GLOBAL
+        )
 
     def evaluate(
         self,
@@ -414,13 +436,15 @@ class ContextualEthicsEvaluator:
             )
             precedents = []
             for r in results:
-                precedents.append(PrecedentMatch(
-                    case_id=r.get("id", "unknown"),
-                    similarity=r.get("similarity", 0.0),
-                    outcome=r.get("outcome", "unknown"),
-                    was_appropriate=r.get("was_appropriate", True),
-                    lessons=r.get("lessons", ""),
-                ))
+                precedents.append(
+                    PrecedentMatch(
+                        case_id=r.get("id", "unknown"),
+                        similarity=r.get("similarity", 0.0),
+                        outcome=r.get("outcome", "unknown"),
+                        was_appropriate=r.get("was_appropriate", True),
+                        lessons=r.get("lessons", ""),
+                    )
+                )
             return precedents
         except Exception as e:
             logger.warning("Precedent lookup failed: %s", e)

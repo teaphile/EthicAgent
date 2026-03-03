@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ethicagent.knowledge.knowledge_graph import KnowledgeGraph
 from ethicagent.utils.helpers import now_iso
@@ -41,65 +41,167 @@ class ContextAgent:
     # false-positive analysis.  The healthcare list alone went through
     # 4 rounds of pruning.
     # ------------------------------------------------------------------
-    DOMAIN_KEYWORDS: Dict[str, List[str]] = {
+    DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "healthcare": [
-            "patient", "doctor", "nurse", "hospital", "medical",
-            "treatment", "diagnosis", "drug", "medication", "surgery",
-            "ventilator", "triage", "health", "clinical", "disease",
-            "symptom", "icu", "emergency room", "transplant", "therapy",
-            "prescription", "prognosis", "comorbidity", "palliative",
-            "consent", "blood pressure", "insulin", "chemotherapy",
-            "dialysis", "contraindication", "dosage", "organ",
+            "patient",
+            "doctor",
+            "nurse",
+            "hospital",
+            "medical",
+            "treatment",
+            "diagnosis",
+            "drug",
+            "medication",
+            "surgery",
+            "ventilator",
+            "triage",
+            "health",
+            "clinical",
+            "disease",
+            "symptom",
+            "icu",
+            "emergency room",
+            "transplant",
+            "therapy",
+            "prescription",
+            "prognosis",
+            "comorbidity",
+            "palliative",
+            "consent",
+            "blood pressure",
+            "insulin",
+            "chemotherapy",
+            "dialysis",
+            "contraindication",
+            "dosage",
+            "organ",
         ],
         "finance": [
-            "loan", "credit", "bank", "mortgage", "interest", "debt",
-            "income", "financial", "applicant", "approval", "lending",
-            "investment", "insurance", "payment", "collateral", "risk",
-            "credit score", "default", "apr", "underwriting",
-            "repayment", "amortization", "fico", "assets",
+            "loan",
+            "credit",
+            "bank",
+            "mortgage",
+            "interest",
+            "debt",
+            "income",
+            "financial",
+            "applicant",
+            "approval",
+            "lending",
+            "investment",
+            "insurance",
+            "payment",
+            "collateral",
+            "risk",
+            "credit score",
+            "default",
+            "apr",
+            "underwriting",
+            "repayment",
+            "amortization",
+            "fico",
+            "assets",
         ],
         "hiring": [
-            "candidate", "resume", "job", "interview", "hire", "recruit",
-            "qualification", "skills", "experience", "position",
-            "employee", "application", "screening", "background check",
-            "promote", "shortlist", "offer letter", "reference check",
-            "onboarding", "diversity", "compensation", "salary",
+            "candidate",
+            "resume",
+            "job",
+            "interview",
+            "hire",
+            "recruit",
+            "qualification",
+            "skills",
+            "experience",
+            "position",
+            "employee",
+            "application",
+            "screening",
+            "background check",
+            "promote",
+            "shortlist",
+            "offer letter",
+            "reference check",
+            "onboarding",
+            "diversity",
+            "compensation",
+            "salary",
         ],
         "disaster": [
-            "disaster", "earthquake", "flood", "hurricane", "wildfire",
-            "evacuation", "rescue", "emergency", "relief", "shelter",
-            "supplies", "victims", "affected", "deploy",
-            "resource allocation", "tsunami", "tornado", "landslide",
-            "pandemic", "famine", "refugee", "displaced", "triage",
+            "disaster",
+            "earthquake",
+            "flood",
+            "hurricane",
+            "wildfire",
+            "evacuation",
+            "rescue",
+            "emergency",
+            "relief",
+            "shelter",
+            "supplies",
+            "victims",
+            "affected",
+            "deploy",
+            "resource allocation",
+            "tsunami",
+            "tornado",
+            "landslide",
+            "pandemic",
+            "famine",
+            "refugee",
+            "displaced",
+            "triage",
         ],
     }
 
     # Urgency keywords ranked from most to least urgent
-    URGENCY_KEYWORDS: Dict[str, List[str]] = {
+    URGENCY_KEYWORDS: dict[str, list[str]] = {
         "emergency": [
-            "emergency", "life-threatening", "critical condition",
-            "dying", "cardiac arrest", "immediate danger",
-            "imminent death", "code blue", "hemorrhaging",
+            "emergency",
+            "life-threatening",
+            "critical condition",
+            "dying",
+            "cardiac arrest",
+            "immediate danger",
+            "imminent death",
+            "code blue",
+            "hemorrhaging",
         ],
         "critical": [
-            "critical", "urgent", "severe", "rapidly deteriorating",
-            "time-sensitive", "cannot wait", "within minutes",
+            "critical",
+            "urgent",
+            "severe",
+            "rapidly deteriorating",
+            "time-sensitive",
+            "cannot wait",
+            "within minutes",
         ],
         "high": [
-            "important", "high priority", "soon", "pressing",
-            "escalated", "within hours", "deteriorating",
+            "important",
+            "high priority",
+            "soon",
+            "pressing",
+            "escalated",
+            "within hours",
+            "deteriorating",
         ],
         "normal": [
-            "routine", "standard", "normal", "regular", "scheduled",
+            "routine",
+            "standard",
+            "normal",
+            "regular",
+            "scheduled",
         ],
         "low": [
-            "low priority", "when possible", "not urgent", "optional",
+            "low priority",
+            "when possible",
+            "not urgent",
+            "optional",
             "no rush",
         ],
     }
 
     # -- entity extraction patterns -------------------------------------------
-    ENTITY_PATTERNS: Dict[str, str] = {
+    ENTITY_PATTERNS: dict[str, str] = {
         "age": r"\b(\d{1,3})\s*(?:year[s]?\s*old|y/?o)\b",
         "gender": r"\b(male|female|man|woman|boy|girl|non-binary|transgender)\b",
         "amount": r"\$\s*([\d,]+(?:\.\d{2})?)",
@@ -111,7 +213,7 @@ class ContextAgent:
     }
 
     # -- stakeholder roles by domain ------------------------------------------
-    DOMAIN_STAKEHOLDERS: Dict[str, Dict[str, str]] = {
+    DOMAIN_STAKEHOLDERS: dict[str, dict[str, str]] = {
         "healthcare": {
             "patient": "victim",
             "doctor": "decision-maker",
@@ -153,7 +255,7 @@ class ContextAgent:
 
     def __init__(
         self,
-        knowledge_graph: Optional[KnowledgeGraph] = None,
+        knowledge_graph: KnowledgeGraph | None = None,
     ) -> None:
         self._kg = knowledge_graph
 
@@ -164,12 +266,12 @@ class ContextAgent:
     def extract_context(
         self,
         task: str,
-        provided_context: Optional[Dict[str, Any]] = None,
-        domain_hint: Optional[str] = None,
+        provided_context: dict[str, Any] | None = None,
+        domain_hint: str | None = None,
         *,
         # extra kwargs the orchestrator sometimes passes
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Build the full context dict from a free-text task.
 
         Steps:
@@ -206,8 +308,8 @@ class ContextAgent:
         bh = self._estimate_benefit_harm(task)
 
         # 7 — KG augmentation
-        kg_rules: List[Dict[str, Any]] = []
-        kg_precedents: List[Dict[str, Any]] = []
+        kg_rules: list[dict[str, Any]] = []
+        kg_precedents: list[dict[str, Any]] = []
         if self._kg:
             try:
                 # Use actual KG methods: get applicable laws and constraints
@@ -215,12 +317,14 @@ class ContextAgent:
                 kg_rules = [{"type": "law", "id": law} for law in laws]
                 protected = self._kg.get_protected_attributes(domain)
                 for attr in protected:
-                    kg_rules.append({"type": "constraint", "attribute": attr, "relation": "must_not_influence"})
+                    kg_rules.append(
+                        {"type": "constraint", "attribute": attr, "relation": "must_not_influence"}
+                    )
             except Exception as exc:
                 # KG might be empty — that's fine
                 logger.debug(f"KG augmentation failed: {exc}")
 
-        ctx: Dict[str, Any] = {
+        ctx: dict[str, Any] = {
             "action": task,
             "domain": domain,
             "domain_confidence": round(domain_confidence, 3),
@@ -256,7 +360,7 @@ class ContextAgent:
     # Classification helpers
     # ------------------------------------------------------------------
 
-    def _classify_domain(self, task: str) -> Tuple[str, float]:
+    def _classify_domain(self, task: str) -> tuple[str, float]:
         """Classify domain by keyword overlap, returning (domain, confidence).
 
         Confidence = proportion of max-score domain keywords matched
@@ -264,28 +368,28 @@ class ContextAgent:
         effective on our test suites.
         """
         task_lower = task.lower()
-        scores: Dict[str, int] = {}
+        scores: dict[str, int] = {}
 
         for dom, kws in self.DOMAIN_KEYWORDS.items():
             scores[dom] = sum(1 for kw in kws if kw in task_lower)
 
         best = max(scores.values()) if scores else 0
         if best == 0:
-            return "general", 0.5   # uncertain fallback
+            return "general", 0.5  # uncertain fallback
 
         winner = max(scores, key=lambda d: scores[d])
         # confidence: fraction of that domain's keywords matched, capped at 1
         conf = min(scores[winner] / max(len(self.DOMAIN_KEYWORDS[winner]) * 0.3, 1), 1.0)
         return winner, round(conf, 3)
 
-    def _extract_entities(self, task: str) -> Dict[str, Any]:
+    def _extract_entities(self, task: str) -> dict[str, Any]:
         """Pull structured entities from text using regex.
 
         This is our poor-man's NER — it works surprisingly well for
         the controlled task descriptions in our scenario sets, but
         would need spaCy for production free-text.
         """
-        entities: Dict[str, Any] = {}
+        entities: dict[str, Any] = {}
 
         for etype, pattern in self.ENTITY_PATTERNS.items():
             matches = re.findall(pattern, task, re.IGNORECASE)
@@ -296,9 +400,21 @@ class ContextAgent:
         name_pat = r"\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})+)\b"
         candidates = re.findall(name_pat, task)
         stop = {
-            "The", "This", "That", "With", "From", "Into", "What",
-            "When", "Where", "How", "Should", "Would", "Could",
-            "United States", "New York",
+            "The",
+            "This",
+            "That",
+            "With",
+            "From",
+            "Into",
+            "What",
+            "When",
+            "Where",
+            "How",
+            "Should",
+            "Would",
+            "Could",
+            "United States",
+            "New York",
         }
         names = [n for n in candidates if n not in stop]
         if names:
@@ -321,8 +437,8 @@ class ContextAgent:
         self,
         task: str,
         domain: str,
-        extra: Dict[str, Any],
-    ) -> Tuple[str, float]:
+        extra: dict[str, Any],
+    ) -> tuple[str, float]:
         """Score urgency from keywords, domain defaults, and metadata.
 
         Multiple signals are combined:
@@ -350,9 +466,7 @@ class ContextAgent:
         }
         return domain_defaults.get(domain, ("normal", 0.5))
 
-    def _identify_stakeholders(
-        self, task: str, domain: str
-    ) -> List[Dict[str, str]]:
+    def _identify_stakeholders(self, task: str, domain: str) -> list[dict[str, str]]:
         """Identify stakeholders and assign roles.
 
         Returns a list of dicts like::
@@ -384,7 +498,7 @@ class ContextAgent:
 
     def _extract_action_type(self, task: str, domain: str) -> str:
         task_lower = task.lower()
-        verbs: Dict[str, List[str]] = {
+        verbs: dict[str, list[str]] = {
             "approve": ["approve", "accept", "grant", "allow", "permit"],
             "deny": ["deny", "reject", "refuse", "decline", "block"],
             "treat": ["treat", "prescribe", "administer", "operate"],
@@ -399,25 +513,44 @@ class ContextAgent:
                 return atype
         return "evaluate"
 
-    def _estimate_benefit_harm(self, task: str) -> Dict[str, float]:
+    def _estimate_benefit_harm(self, task: str) -> dict[str, float]:
         """Quick benefit/harm heuristic from keyword counts."""
         tl = task.lower()
         benefit_words = [
-            "save", "help", "cure", "improve", "protect", "benefit",
-            "support", "heal", "prevent", "positive", "assist",
+            "save",
+            "help",
+            "cure",
+            "improve",
+            "protect",
+            "benefit",
+            "support",
+            "heal",
+            "prevent",
+            "positive",
+            "assist",
         ]
         harm_words = [
-            "harm", "damage", "risk", "danger", "death", "injury",
-            "loss", "pain", "suffer", "negative", "worsen", "deny",
-            "discriminate", "bias", "unfair",
+            "harm",
+            "damage",
+            "risk",
+            "danger",
+            "death",
+            "injury",
+            "loss",
+            "pain",
+            "suffer",
+            "negative",
+            "worsen",
+            "deny",
+            "discriminate",
+            "bias",
+            "unfair",
         ]
         b = min(0.3 + sum(1 for w in benefit_words if w in tl) * 0.1, 1.0)
         h = min(0.1 + sum(1 for w in harm_words if w in tl) * 0.1, 1.0)
         return {"benefit": round(b, 2), "harm": round(h, 2)}
 
-    def _estimate_population_scale(
-        self, task: str, entities: Dict[str, Any]
-    ) -> str:
+    def _estimate_population_scale(self, task: str, entities: dict[str, Any]) -> str:
         tl = task.lower()
         count = entities.get("count")
         if count:
@@ -443,8 +576,14 @@ class ContextAgent:
     def _estimate_reversibility(self, task: str, domain: str) -> str:
         tl = task.lower()
         irrev = [
-            "death", "kill", "terminate life", "permanent", "irreversible",
-            "amputate", "remove organ", "euthanasia",
+            "death",
+            "kill",
+            "terminate life",
+            "permanent",
+            "irreversible",
+            "amputate",
+            "remove organ",
+            "euthanasia",
         ]
         if any(kw in tl for kw in irrev):
             return "irreversible"
@@ -468,11 +607,11 @@ class ContextAgent:
         domain, _ = self._classify_domain(text)
         return domain
 
-    def extract_entities(self, text: str) -> List[Any]:
+    def extract_entities(self, text: str) -> list[Any]:
         """Public wrapper returning entities as a list."""
         entities_dict = self._extract_entities(text)
         # Flatten dict values into a list
-        result: List[Any] = []
+        result: list[Any] = []
         for v in entities_dict.values():
             if isinstance(v, list):
                 result.extend(v)
@@ -496,7 +635,7 @@ class ContextAgent:
         urgency, _ = self._determine_urgency(text, "general", {})
         return _MAP.get(urgency, urgency)
 
-    def analyze(self, text: str) -> Dict[str, Any]:
+    def analyze(self, text: str) -> dict[str, Any]:
         """Simplified analysis returning domain, entities, urgency."""
         ctx = self.extract_context(text)
         return {

@@ -24,7 +24,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from ethicagent.ethics.ethical_score import PhilosophyResult as _PhilosophyResult
 
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 class ImpactType(Enum):
     BENEFIT = "benefit"
     HARM = "harm"
@@ -42,22 +43,23 @@ class ImpactType(Enum):
 
 
 class TimeHorizon(Enum):
-    IMMEDIATE = "immediate"   # < 1 day
+    IMMEDIATE = "immediate"  # < 1 day
     SHORT_TERM = "short_term"  # 1 day – 1 month
     MEDIUM_TERM = "medium_term"  # 1 month – 1 year
-    LONG_TERM = "long_term"   # 1 year+
+    LONG_TERM = "long_term"  # 1 year+
 
 
 @dataclass
 class StakeholderImpact:
     """Impact assessment for a single stakeholder group."""
+
     group: str
     impact_type: ImpactType
-    magnitude: float          # 0.0 – 1.0  (how severe/beneficial)
-    probability: float        # 0.0 – 1.0  (how likely)
-    population_size: int      # approximate number of people affected
+    magnitude: float  # 0.0 – 1.0  (how severe/beneficial)
+    probability: float  # 0.0 – 1.0  (how likely)
+    population_size: int  # approximate number of people affected
     vulnerable: bool = False  # is this a vulnerable population?
-    reversible: bool = True   # can the impact be undone?
+    reversible: bool = True  # can the impact be undone?
     time_horizon: TimeHorizon = TimeHorizon.MEDIUM_TERM
     description: str = ""
 
@@ -73,8 +75,9 @@ class StakeholderImpact:
 @dataclass
 class ConsequentialistResult:
     """Output of the consequentialist evaluator."""
-    score: float                      # C(a), 0.0 – 1.0
-    net_utility: float                # raw utility before normalization
+
+    score: float  # C(a), 0.0 – 1.0
+    net_utility: float  # raw utility before normalization
     stakeholder_impacts: list[StakeholderImpact] = field(default_factory=list)
     reversibility_score: float = 0.5
     temporal_score: float = 0.5
@@ -90,45 +93,116 @@ class ConsequentialistResult:
 
 # Words that suggest positive outcomes
 _BENEFIT_SIGNALS = {
-    "save", "protect", "help", "improve", "benefit", "cure", "heal",
-    "rescue", "prevent", "reduce harm", "safe", "support", "empower",
-    "enable", "opportunity", "thrive", "well-being", "welfare",
-    "accessible", "inclusive", "equitable", "fair",
+    "save",
+    "protect",
+    "help",
+    "improve",
+    "benefit",
+    "cure",
+    "heal",
+    "rescue",
+    "prevent",
+    "reduce harm",
+    "safe",
+    "support",
+    "empower",
+    "enable",
+    "opportunity",
+    "thrive",
+    "well-being",
+    "welfare",
+    "accessible",
+    "inclusive",
+    "equitable",
+    "fair",
 }
 
 # Words that suggest negative outcomes
 _HARM_SIGNALS = {
-    "harm", "damage", "hurt", "injure", "kill", "destroy", "loss",
-    "suffer", "pain", "deny", "exclude", "discriminate", "violate",
-    "exploit", "manipulate", "deceive", "coerce", "endanger", "risk",
-    "bankrupt", "homeless", "starve",
-    "toxic", "poison", "contaminate", "pollute", "dump", "chemical",
-    "spill", "leak", "release toxic", "hazardous",
+    "harm",
+    "damage",
+    "hurt",
+    "injure",
+    "kill",
+    "destroy",
+    "loss",
+    "suffer",
+    "pain",
+    "deny",
+    "exclude",
+    "discriminate",
+    "violate",
+    "exploit",
+    "manipulate",
+    "deceive",
+    "coerce",
+    "endanger",
+    "risk",
+    "bankrupt",
+    "homeless",
+    "starve",
+    "toxic",
+    "poison",
+    "contaminate",
+    "pollute",
+    "dump",
+    "chemical",
+    "spill",
+    "leak",
+    "release toxic",
+    "hazardous",
 }
 
 # Words suggesting irreversibility
 _IRREVERSIBLE_SIGNALS = {
-    "permanent", "irreversible", "cannot undo", "fatal", "death",
-    "destroy", "delete permanently", "terminate", "irrecoverable",
+    "permanent",
+    "irreversible",
+    "cannot undo",
+    "fatal",
+    "death",
+    "destroy",
+    "delete permanently",
+    "terminate",
+    "irrecoverable",
 }
 
 # Words suggesting large scale
 _LARGE_SCALE_SIGNALS = {
-    "everyone", "all patients", "population", "community-wide",
-    "nationwide", "global", "thousands", "millions", "mass",
-    "widespread", "systemic", "institutional",
+    "everyone",
+    "all patients",
+    "population",
+    "community-wide",
+    "nationwide",
+    "global",
+    "thousands",
+    "millions",
+    "mass",
+    "widespread",
+    "systemic",
+    "institutional",
 }
 
 _VULNERABLE_SIGNALS = {
-    "child", "elderly", "disabled", "pregnant", "minority", "refugee",
-    "homeless", "impoverished", "low-income", "undocumented",
-    "indigenous", "mental health", "veteran",
+    "child",
+    "elderly",
+    "disabled",
+    "pregnant",
+    "minority",
+    "refugee",
+    "homeless",
+    "impoverished",
+    "low-income",
+    "undocumented",
+    "indigenous",
+    "mental health",
+    "veteran",
 }
 
 
 # ---------------------------------------------------------------------------
 # Evaluator
 # ---------------------------------------------------------------------------
+
 
 class ConsequentialistEvaluator:
     """Evaluates actions based on their expected outcomes.
@@ -411,14 +485,8 @@ class ConsequentialistEvaluator:
             return 0.5
 
         total_pop = sum(i.population_size for i in impacts)
-        benefit_pop = sum(
-            i.population_size for i in impacts
-            if i.impact_type == ImpactType.BENEFIT
-        )
-        harm_pop = sum(
-            i.population_size for i in impacts
-            if i.impact_type == ImpactType.HARM
-        )
+        benefit_pop = sum(i.population_size for i in impacts if i.impact_type == ImpactType.BENEFIT)
+        harm_pop = sum(i.population_size for i in impacts if i.impact_type == ImpactType.HARM)
 
         if total_pop == 0:
             return 0.5
@@ -446,37 +514,45 @@ class ConsequentialistEvaluator:
         # Build generic stakeholder impacts
         if benefit_count > 0:
             mag = min(0.9, 0.3 + 0.1 * benefit_count)
-            impacts.append(StakeholderImpact(
-                group="primary_beneficiaries",
-                impact_type=ImpactType.BENEFIT,
-                magnitude=mag,
-                probability=0.7,
-                population_size=100,
-                description="Inferred benefit from text signals",
-            ))
+            impacts.append(
+                StakeholderImpact(
+                    group="primary_beneficiaries",
+                    impact_type=ImpactType.BENEFIT,
+                    magnitude=mag,
+                    probability=0.7,
+                    population_size=100,
+                    description="Inferred benefit from text signals",
+                )
+            )
 
         if harm_count > 0:
             mag = min(0.9, 0.3 + 0.1 * harm_count)
-            impacts.append(StakeholderImpact(
-                group="affected_parties",
-                impact_type=ImpactType.HARM,
-                magnitude=mag,
-                probability=0.6,
-                population_size=50,
-                reversible=not has_irreversible,
-                description="Inferred harm from text signals",
-            ))
+            impacts.append(
+                StakeholderImpact(
+                    group="affected_parties",
+                    impact_type=ImpactType.HARM,
+                    magnitude=mag,
+                    probability=0.6,
+                    population_size=50,
+                    reversible=not has_irreversible,
+                    description="Inferred harm from text signals",
+                )
+            )
 
         if has_vulnerable:
-            impacts.append(StakeholderImpact(
-                group="vulnerable_population",
-                impact_type=ImpactType.HARM if harm_count > benefit_count else ImpactType.BENEFIT,
-                magnitude=0.5,
-                probability=0.6,
-                population_size=30,
-                vulnerable=True,
-                description="Vulnerable population identified",
-            ))
+            impacts.append(
+                StakeholderImpact(
+                    group="vulnerable_population",
+                    impact_type=ImpactType.HARM
+                    if harm_count > benefit_count
+                    else ImpactType.BENEFIT,
+                    magnitude=0.5,
+                    probability=0.6,
+                    population_size=30,
+                    vulnerable=True,
+                    description="Vulnerable population identified",
+                )
+            )
 
         # If context has stakeholders, create entries for them
         for sh in stakeholders:
@@ -485,30 +561,36 @@ class ConsequentialistEvaluator:
                 role = sh.get("role", "bystander")
                 is_vulnerable = sh.get("vulnerable", False)
                 impact_type = (
-                    ImpactType.BENEFIT if role in ("beneficiary", "decision-maker")
-                    else ImpactType.HARM if role == "victim"
+                    ImpactType.BENEFIT
+                    if role in ("beneficiary", "decision-maker")
+                    else ImpactType.HARM
+                    if role == "victim"
                     else ImpactType.NEUTRAL
                 )
-                impacts.append(StakeholderImpact(
-                    group=name,
-                    impact_type=impact_type,
-                    magnitude=0.5,
-                    probability=0.6,
-                    population_size=1,
-                    vulnerable=is_vulnerable,
-                    description=f"Stakeholder: {name} (role: {role})",
-                ))
+                impacts.append(
+                    StakeholderImpact(
+                        group=name,
+                        impact_type=impact_type,
+                        magnitude=0.5,
+                        probability=0.6,
+                        population_size=1,
+                        vulnerable=is_vulnerable,
+                        description=f"Stakeholder: {name} (role: {role})",
+                    )
+                )
 
         # Fallback — at least one neutral impact
         if not impacts:
-            impacts.append(StakeholderImpact(
-                group="general_public",
-                impact_type=ImpactType.NEUTRAL,
-                magnitude=0.1,
-                probability=0.5,
-                population_size=100,
-                description="No specific impacts identified",
-            ))
+            impacts.append(
+                StakeholderImpact(
+                    group="general_public",
+                    impact_type=ImpactType.NEUTRAL,
+                    magnitude=0.1,
+                    probability=0.5,
+                    population_size=100,
+                    description="No specific impacts identified",
+                )
+            )
 
         return impacts
 

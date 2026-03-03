@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.evaluation.metrics import compute_all_metrics
 from ethicagent.scenarios import SCENARIO_REGISTRY
@@ -31,20 +31,20 @@ class CrossDomainBenchmark:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.config = config or {}
 
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> dict[str, Any]:
         """Run the cross-domain benchmark.
 
         Returns:
             Results with in-domain / out-of-domain metrics per domain.
         """
         t0 = time.perf_counter()
-        results: Dict[str, Any] = {"domains": {}}
+        results: dict[str, Any] = {"domains": {}}
 
         for domain_name, scenario_cls in SCENARIO_REGISTRY.items():
             logger.info("Cross-domain: evaluating %s", domain_name)
@@ -81,12 +81,14 @@ class CrossDomainBenchmark:
         return results
 
     def _evaluate_cases(
-        self, cases: List[Any], domain_override: str,
-    ) -> Dict[str, Any]:
+        self,
+        cases: list[Any],
+        domain_override: str,
+    ) -> dict[str, Any]:
         """Evaluate cases, optionally overriding the domain parameter."""
         import random
 
-        case_results: List[Dict[str, Any]] = []
+        case_results: list[dict[str, Any]] = []
 
         for case in cases:
             if self.orchestrator:
@@ -104,7 +106,11 @@ class CrossDomainBenchmark:
 
                 own_domain = getattr(case, "domain", "general")
                 accuracy = 0.85 if domain_override == own_domain else 0.70
-                verdict = expected if rng.random() < accuracy else rng.choice(["approve", "escalate", "reject"])
+                verdict = (
+                    expected
+                    if rng.random() < accuracy
+                    else rng.choice(["approve", "escalate", "reject"])
+                )
 
                 r = {
                     "eds_score": round(eds, 4),

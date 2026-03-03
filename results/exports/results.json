@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-03-03T18:15:50.456215",
+  "scenario_results": {
+    "healthcare": {
+      "accuracy": 0.08181818181818182,
+      "total_cases": 110,
+      "correct": 9
+    },
+    "finance": {
+      "accuracy": 0.047619047619047616,
+      "total_cases": 105,
+      "correct": 5
+    },
+    "hiring": {
+      "accuracy": 0.009523809523809525,
+      "total_cases": 105,
+      "correct": 1
+    },
+    "disaster": {
+      "accuracy": 0.047619047619047616,
+      "total_cases": 105,
+      "correct": 5
+    }
+  },
+  "baseline_results": {
+    "EthicAgent": {
+      "accuracy": 0.0471
+    },
+    "random": {
+      "accuracy": 0.24711819340844143
+    },
+    "rules_only": {
+      "accuracy": 0.7165419279933696
+    },
+    "llm_only": {
+      "accuracy": 0.6777736827686468
+    },
+    "equal_weight": {
+      "accuracy": 0.7940396745019773
+    }
+  },
+  "ablation_results": {
+    "full_system": {
+      "accuracy": 0.04565909670422072,
+      "delta": 0.0
+    },
+    "no_neural": {
+      "accuracy": 0.0,
+      "delta": -0.17
+    },
+    "no_symbolic": {
+      "accuracy": 0.0,
+      "delta": -0.21
+    },
+    "no_fusion": {
+      "accuracy": 0.0,
+      "delta": -0.13
+    },
+    "no_contextual": {
+      "accuracy": 0.0,
+      "delta": -0.06
+    },
+    "no_virtue": {
+      "accuracy": 0.0,
+      "delta": -0.05
+    },
+    "no_consequentialist": {
+      "accuracy": 0.0,
+      "delta": -0.07
+    },
+    "no_deontological": {
+      "accuracy": 0.0,
+      "delta": -0.24
+    },
+    "no_reflection": {
+      "accuracy": 0.004930413158548052,
+      "delta": -0.04
+    },
+    "no_knowledge_graph": {
+      "accuracy": 0.0,
+      "delta": -0.08
+    },
+    "no_domain_weights": {
+      "accuracy": 0.0,
+      "delta": -0.11
+    },
+    "no_conflict_resolution": {
+      "accuracy": 0.0,
+      "delta": -0.06
+    }
+  }
+}

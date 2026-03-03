@@ -1,0 +1,6 @@
+System,Accuracy
+EthicAgent,0.0471
+equal_weight,0.7940
+llm_only,0.6778
+random,0.2471
+rules_only,0.7165

@@ -29,7 +29,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +47,11 @@ class EthicalVerdict(Enum):
 @dataclass
 class PhilosophyResult:
     """Score + reasoning from one philosophical lens."""
+
     name: str
     score: float
     reasoning: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -60,16 +61,17 @@ class EthicalDecision:
     Carries the EDS score, verdict, per-philosophy breakdown,
     confidence interval, and the reasoning text.
     """
+
     eds_score: float
     verdict: EthicalVerdict
     confidence: float
-    philosophy_results: List[PhilosophyResult]
-    weights_used: Dict[str, float]
+    philosophy_results: list[PhilosophyResult]
+    weights_used: dict[str, float]
     reasoning: str
-    rules_triggered: List[str] = field(default_factory=list)
-    conflict_analysis: Dict[str, Any] = field(default_factory=dict)
-    confidence_interval: Tuple[float, float] = (0.0, 1.0)
-    sensitivity: Dict[str, float] = field(default_factory=dict)
+    rules_triggered: list[str] = field(default_factory=list)
+    conflict_analysis: dict[str, Any] = field(default_factory=dict)
+    confidence_interval: tuple[float, float] = (0.0, 1.0)
+    sensitivity: dict[str, float] = field(default_factory=dict)
 
 
 class EthicalReasonerAgent:
@@ -86,26 +88,36 @@ class EthicalReasonerAgent:
     """
 
     # Default domain weights — can be overridden from config
-    DEFAULT_WEIGHTS: Dict[str, Dict[str, float]] = {
+    DEFAULT_WEIGHTS: dict[str, dict[str, float]] = {
         "healthcare": {
-            "deontological": 0.35, "consequentialist": 0.25,
-            "virtue_ethics": 0.20, "contextual": 0.20,
+            "deontological": 0.35,
+            "consequentialist": 0.25,
+            "virtue_ethics": 0.20,
+            "contextual": 0.20,
         },
         "finance": {
-            "deontological": 0.20, "consequentialist": 0.25,
-            "virtue_ethics": 0.35, "contextual": 0.20,
+            "deontological": 0.20,
+            "consequentialist": 0.25,
+            "virtue_ethics": 0.35,
+            "contextual": 0.20,
         },
         "hiring": {
-            "deontological": 0.15, "consequentialist": 0.20,
-            "virtue_ethics": 0.40, "contextual": 0.25,
+            "deontological": 0.15,
+            "consequentialist": 0.20,
+            "virtue_ethics": 0.40,
+            "contextual": 0.25,
         },
         "disaster": {
-            "deontological": 0.20, "consequentialist": 0.35,
-            "virtue_ethics": 0.15, "contextual": 0.30,
+            "deontological": 0.20,
+            "consequentialist": 0.35,
+            "virtue_ethics": 0.15,
+            "contextual": 0.30,
         },
         "general": {
-            "deontological": 0.25, "consequentialist": 0.25,
-            "virtue_ethics": 0.25, "contextual": 0.25,
+            "deontological": 0.25,
+            "consequentialist": 0.25,
+            "virtue_ethics": 0.25,
+            "contextual": 0.25,
         },
     }
 
@@ -115,8 +127,8 @@ class EthicalReasonerAgent:
 
     def __init__(
         self,
-        rules: Optional[Dict[str, Any]] = None,
-        domain_weights: Optional[Dict[str, Dict[str, float]]] = None,
+        rules: dict[str, Any] | None = None,
+        domain_weights: dict[str, dict[str, float]] | None = None,
     ) -> None:
         self._rules = rules or {}
         self._weights = domain_weights or dict(self.DEFAULT_WEIGHTS)
@@ -127,8 +139,8 @@ class EthicalReasonerAgent:
 
     def evaluate(
         self,
-        context: Dict[str, Any],
-        fusion_result: Dict[str, Any],
+        context: dict[str, Any],
+        fusion_result: dict[str, Any],
         domain: str,
     ) -> EthicalDecision:
         """Run the full 4-philosophy evaluation and return an EthicalDecision."""
@@ -144,8 +156,10 @@ class EthicalReasonerAgent:
 
         # -- compute EDS (the core formula) -----------------------------------
         eds = self.compute_eds(
-            d_result.score, c_result.score,
-            v_result.score, ctx_result.score,
+            d_result.score,
+            c_result.score,
+            v_result.score,
+            ctx_result.score,
             weights,
         )
 
@@ -173,8 +187,10 @@ class EthicalReasonerAgent:
 
         # -- sensitivity analysis ---------------------------------------------
         sens = self._sensitivity_analysis(
-            d_result.score, c_result.score,
-            v_result.score, ctx_result.score,
+            d_result.score,
+            c_result.score,
+            v_result.score,
+            ctx_result.score,
             weights,
         )
 
@@ -183,9 +199,7 @@ class EthicalReasonerAgent:
 
         # -- rules triggered (from fusion) ------------------------------------
         rules_triggered = [
-            r.get("id", "?")
-            for r in fusion_result.get("matched_rules", [])
-            if isinstance(r, dict)
+            r.get("id", "?") for r in fusion_result.get("matched_rules", []) if isinstance(r, dict)
         ]
         # also check the symbolic output directly
         if not rules_triggered:
@@ -204,19 +218,16 @@ class EthicalReasonerAgent:
             sensitivity=sens,
         )
 
-        logger.info(
-            f"Ethical evaluation: EDS={eds:.4f}, verdict={verdict.value}, "
-            f"conf={conf:.3f}"
-        )
+        logger.info(f"Ethical evaluation: EDS={eds:.4f}, verdict={verdict.value}, conf={conf:.3f}")
         return decision
 
     def compute_eds(
         self,
-        d_score_or_scores: float | Dict[str, float],
-        c_score_or_weights: float | Dict[str, float] | None = None,
+        d_score_or_scores: float | dict[str, float],
+        c_score_or_weights: float | dict[str, float] | None = None,
         v_score: float | None = None,
         ctx_score: float | None = None,
-        weights: Optional[Dict[str, float]] = None,
+        weights: dict[str, float] | None = None,
     ) -> float:
         """Compute Ethical Decision Score.
 
@@ -251,7 +262,9 @@ class EthicalReasonerAgent:
         return max(0.0, min(1.0, eds))
 
     def _compute_eds_from_dicts(
-        self, scores: Dict[str, float], weights: Dict[str, float],
+        self,
+        scores: dict[str, float],
+        weights: dict[str, float],
     ) -> float:
         """Compute EDS from score and weight dicts."""
         d = scores.get("deontological", 0.0)
@@ -267,8 +280,8 @@ class EthicalReasonerAgent:
 
     def determine_verdict(
         self,
-        eds_or_scores: float | Dict[str, float],
-        deontological_score_or_weights: float | Dict[str, float] | None = None,
+        eds_or_scores: float | dict[str, float],
+        deontological_score_or_weights: float | dict[str, float] | None = None,
     ) -> EthicalVerdict | str:
         """Map EDS to a verdict, with hard-block override.
 
@@ -290,7 +303,11 @@ class EthicalReasonerAgent:
 
         # Original form
         eds = eds_or_scores
-        d_score = float(deontological_score_or_weights) if deontological_score_or_weights is not None else 1.0
+        d_score = (
+            float(deontological_score_or_weights)
+            if deontological_score_or_weights is not None
+            else 1.0
+        )
         return self._verdict_from_eds(eds, d_score)
 
     def _verdict_from_eds(self, eds: float, d_score: float) -> EthicalVerdict:
@@ -305,10 +322,10 @@ class EthicalReasonerAgent:
 
     def what_if(
         self,
-        context: Dict[str, Any],
-        fusion_result: Dict[str, Any],
+        context: dict[str, Any],
+        fusion_result: dict[str, Any],
         domain: str,
-        override_weights: Optional[Dict[str, float]] = None,
+        override_weights: dict[str, float] | None = None,
     ) -> EthicalDecision:
         """Re-evaluate with alternative weights (what-if analysis)."""
         original_weights = self._weights.copy()
@@ -323,9 +340,7 @@ class EthicalReasonerAgent:
     # Philosophy evaluations
     # ------------------------------------------------------------------
 
-    def _eval_deontological(
-        self, ctx: Dict[str, Any], fusion: Dict[str, Any]
-    ) -> PhilosophyResult:
+    def _eval_deontological(self, ctx: dict[str, Any], fusion: dict[str, Any]) -> PhilosophyResult:
         """Duty-based evaluation: does the action comply with rules?
 
         Returns 0.0 for hard violations (triggers hard-block).
@@ -333,7 +348,8 @@ class EthicalReasonerAgent:
         # check fusion for hard violations
         if fusion.get("safety_override") or fusion.get("blocked"):
             return PhilosophyResult(
-                name="deontological", score=0.0,
+                name="deontological",
+                score=0.0,
                 reasoning="Hard rule violation detected — action blocked.",
                 details={"hard_violations": fusion.get("hard_violations", [])},
             )
@@ -358,7 +374,7 @@ class EthicalReasonerAgent:
         )
 
     def _eval_consequentialist(
-        self, ctx: Dict[str, Any], fusion: Dict[str, Any]
+        self, ctx: dict[str, Any], fusion: dict[str, Any]
     ) -> PhilosophyResult:
         """Utilitarian evaluation: net benefit vs harm."""
         scores = fusion.get("fused_scores", {})
@@ -370,14 +386,20 @@ class EthicalReasonerAgent:
 
         # scale multiplier
         scale_mult = {
-            "individual": 1.0, "small_group": 1.1,
-            "community": 1.2, "large_population": 1.3, "society": 1.5,
+            "individual": 1.0,
+            "small_group": 1.1,
+            "community": 1.2,
+            "large_population": 1.3,
+            "society": 1.5,
         }.get(scale, 1.0)
 
         # reversibility bonus
         rev = ctx.get("reversibility", "fully_reversible")
-        rev_bonus = {"fully_reversible": 0.1, "partially_reversible": 0.0,
-                     "irreversible": -0.15}.get(rev, 0.0)
+        rev_bonus = {
+            "fully_reversible": 0.1,
+            "partially_reversible": 0.0,
+            "irreversible": -0.15,
+        }.get(rev, 0.0)
 
         # temporal weighting: long-term benefit outweighs short-term harm
         temporal = ctx.get("temporal_impact", "medium_term")
@@ -403,14 +425,15 @@ class EthicalReasonerAgent:
                 f"scale={scale}, reversibility={rev}."
             ),
             details={
-                "benefit": benefit, "harm": harm, "scale": scale,
-                "reversibility": rev, "temporal": temporal,
+                "benefit": benefit,
+                "harm": harm,
+                "scale": scale,
+                "reversibility": rev,
+                "temporal": temporal,
             },
         )
 
-    def _eval_virtue(
-        self, ctx: Dict[str, Any], fusion: Dict[str, Any]
-    ) -> PhilosophyResult:
+    def _eval_virtue(self, ctx: dict[str, Any], fusion: dict[str, Any]) -> PhilosophyResult:
         """Virtue ethics: fairness, justice, compassion, honesty."""
         scores = fusion.get("fused_scores", {})
         base = float(scores.get("virtue_ethics", 0.5))
@@ -418,17 +441,22 @@ class EthicalReasonerAgent:
         # check for protected characteristics
         entities = ctx.get("entities", {})
         has_demographics = any(
-            k in entities
-            for k in ["race", "gender", "religion", "disability", "age"]
+            k in entities for k in ["race", "gender", "religion", "disability", "age"]
         )
 
         # penalty if action mentions protected characteristics
         # (proxy for potential discrimination)
         action = ctx.get("action", "").lower()
         bias_signals = [
-            "based on race", "because of gender", "due to age",
-            "based on religion", "discriminate", "unfair",
-            "biased against", "only men", "only women",
+            "based on race",
+            "because of gender",
+            "due to age",
+            "based on religion",
+            "discriminate",
+            "unfair",
+            "biased against",
+            "only men",
+            "only women",
         ]
         bias_penalty = sum(0.15 for sig in bias_signals if sig in action)
 
@@ -450,7 +478,7 @@ class EthicalReasonerAgent:
         )
 
     def _eval_contextual(
-        self, ctx: Dict[str, Any], fusion: Dict[str, Any], domain: str
+        self, ctx: dict[str, Any], fusion: dict[str, Any], domain: str
     ) -> PhilosophyResult:
         """Contextual ethics: is the action appropriate for this domain?"""
         scores = fusion.get("fused_scores", {})
@@ -483,9 +511,7 @@ class EthicalReasonerAgent:
     # Conflict analysis
     # ------------------------------------------------------------------
 
-    def _analyse_conflicts(
-        self, scores: Dict[str, float]
-    ) -> Dict[str, Any]:
+    def _analyse_conflicts(self, scores: dict[str, float]) -> dict[str, Any]:
         """Detect disagreements between philosophy scores."""
         vals = list(scores.values())
         if not vals:
@@ -509,11 +535,7 @@ class EthicalReasonerAgent:
             "spread": round(spread, 3),
             "highest": {"philosophy": high, "score": round(scores[high], 3)},
             "lowest": {"philosophy": low, "score": round(scores[low], 3)},
-            "details": [
-                f"{k}: {v:.3f}" for k, v in sorted(
-                    scores.items(), key=lambda x: -x[1]
-                )
-            ],
+            "details": [f"{k}: {v:.3f}" for k, v in sorted(scores.items(), key=lambda x: -x[1])],
         }
 
     # ------------------------------------------------------------------
@@ -522,8 +544,8 @@ class EthicalReasonerAgent:
 
     def _compute_confidence(
         self,
-        results: List[PhilosophyResult],
-        conflict: Dict[str, Any],
+        results: list[PhilosophyResult],
+        conflict: dict[str, Any],
     ) -> float:
         """Confidence from agreement between philosophies."""
         scores = [r.score for r in results]
@@ -538,8 +560,10 @@ class EthicalReasonerAgent:
 
         # conflict penalty
         severity_penalty = {
-            "none": 0.0, "minor": 0.05,
-            "moderate": 0.1, "severe": 0.2,
+            "none": 0.0,
+            "minor": 0.05,
+            "moderate": 0.1,
+            "severe": 0.2,
         }
         conf -= severity_penalty.get(conflict.get("severity", "none"), 0.0)
 
@@ -547,9 +571,9 @@ class EthicalReasonerAgent:
 
     def _confidence_interval(
         self,
-        results: List[PhilosophyResult],
+        results: list[PhilosophyResult],
         eds: float,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Approximate 95% CI for the EDS score.
 
         Uses the spread of philosophy scores as a proxy for
@@ -567,16 +591,19 @@ class EthicalReasonerAgent:
 
     def _sensitivity_analysis(
         self,
-        d: float, c: float, v: float, ctx: float,
-        weights: Dict[str, float],
+        d: float,
+        c: float,
+        v: float,
+        ctx: float,
+        weights: dict[str, float],
         delta: float = 0.05,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """How much does EDS change if each weight shifts by ±delta?
 
         Returns a dict mapping philosophy → max(|ΔEDS|).
         """
         base_eds = self.compute_eds(d, c, v, ctx, weights)
-        sens: Dict[str, float] = {}
+        sens: dict[str, float] = {}
 
         for key in ["deontological", "consequentialist", "virtue_ethics", "contextual"]:
             max_change = 0.0
@@ -599,10 +626,10 @@ class EthicalReasonerAgent:
 
     def _build_reasoning(
         self,
-        results: List[PhilosophyResult],
+        results: list[PhilosophyResult],
         eds: float,
         verdict: EthicalVerdict,
-        weights: Dict[str, float],
+        weights: dict[str, float],
         *,
         level: str = "standard",
     ) -> str:
@@ -610,15 +637,10 @@ class EthicalReasonerAgent:
 
         Levels: brief | standard | detailed | technical
         """
-        scores_str = ", ".join(
-            f"{r.name}={r.score:.3f}" for r in results
-        )
+        scores_str = ", ".join(f"{r.name}={r.score:.3f}" for r in results)
 
         if level == "brief":
-            return (
-                f"EDS={eds:.3f} → {verdict.value}. "
-                f"Scores: {scores_str}."
-            )
+            return f"EDS={eds:.3f} → {verdict.value}. Scores: {scores_str}."
 
         parts = [
             f"Ethical Decision Score: {eds:.4f}",
@@ -627,17 +649,14 @@ class EthicalReasonerAgent:
         ]
 
         if level in ("detailed", "technical"):
-            parts.append(
-                f"Weights: " + ", ".join(
-                    f"{k}={v:.2f}" for k, v in weights.items()
-                )
-            )
+            parts.append("Weights: " + ", ".join(f"{k}={v:.2f}" for k, v in weights.items()))
             for r in results:
                 parts.append(f"  {r.name}: {r.reasoning}")
 
         if level == "technical":
-            parts.append(f"Thresholds: approve≥{self.APPROVE_THRESHOLD}, "
-                         f"escalate≥{self.ESCALATE_THRESHOLD}")
+            parts.append(
+                f"Thresholds: approve≥{self.APPROVE_THRESHOLD}, escalate≥{self.ESCALATE_THRESHOLD}"
+            )
 
         return " | ".join(parts)
 
@@ -645,7 +664,7 @@ class EthicalReasonerAgent:
     # Weight lookup
     # ------------------------------------------------------------------
 
-    def _get_weights(self, domain: str) -> Dict[str, float]:
+    def _get_weights(self, domain: str) -> dict[str, float]:
         w = self._weights.get(domain, self._weights.get("general", {}))
         if not w:
             w = self.DEFAULT_WEIGHTS["general"]

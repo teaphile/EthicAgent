@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # ─── Sample Data Fixtures ────────────────────────────────────
 
+
 @pytest.fixture
 def sample_task() -> str:
     return "Approve a loan for an applicant with 700 credit score and stable employment"

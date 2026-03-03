@@ -25,11 +25,10 @@ import argparse
 import csv
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -37,15 +36,15 @@ import numpy as np
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from ethicagent.scenarios import SCENARIO_REGISTRY, get_all_cases
-from ethicagent.scenarios.base_scenario import ScenarioCase
 from ethicagent.ethics.ethical_score import (
-    DOMAIN_WEIGHTS,
     APPROVAL_THRESHOLD,
+    DOMAIN_WEIGHTS,
     ESCALATION_THRESHOLD,
     compute_eds,
     determine_verdict,
 )
+from ethicagent.scenarios import SCENARIO_REGISTRY, get_all_cases
+from ethicagent.scenarios.base_scenario import ScenarioCase
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,17 +62,44 @@ VERDICT_MAP = {
 
 # ── Keywords that hint at severity (used for heuristic scoring) ──
 _BLOCK_KEYWORDS = {
-    "discriminat", "race", "racial", "gender bias", "deny emergency",
-    "illegal", "violat", "prohibited", "block", "refuse treat",
-    "deny treat", "penaliz", "punish", "exploit", "predatory",
+    "discriminat",
+    "race",
+    "racial",
+    "gender bias",
+    "deny emergency",
+    "illegal",
+    "violat",
+    "prohibited",
+    "block",
+    "refuse treat",
+    "deny treat",
+    "penaliz",
+    "punish",
+    "exploit",
+    "predatory",
 }
 _ESCALATE_KEYWORDS = {
-    "escalat", "review", "committee", "audit", "uncertain",
-    "ambiguous", "complex", "conflict", "dilemma", "tradeoff",
+    "escalat",
+    "review",
+    "committee",
+    "audit",
+    "uncertain",
+    "ambiguous",
+    "complex",
+    "conflict",
+    "dilemma",
+    "tradeoff",
 }
 _APPROVE_KEYWORDS = {
-    "standard", "approve", "fair", "equitable", "evidence-based",
-    "protocol", "compliant", "criteria-based", "transparent",
+    "standard",
+    "approve",
+    "fair",
+    "equitable",
+    "evidence-based",
+    "protocol",
+    "compliant",
+    "criteria-based",
+    "transparent",
 }
 
 
@@ -124,7 +150,7 @@ def _score_philosophy(
 def _simulate_ethicagent(
     case: ScenarioCase,
     rng: np.random.Generator,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Simulate EthicAgent pipeline for a single case.
 
     Returns a result dict matching the format expected by
@@ -133,7 +159,11 @@ def _simulate_ethicagent(
     scores = {}
     for phil in ["deontological", "consequentialist", "virtue_ethics", "contextual"]:
         scores[phil] = _score_philosophy(
-            case.task, case.domain, case.expected_verdict, rng, phil,
+            case.task,
+            case.domain,
+            case.expected_verdict,
+            rng,
+            phil,
         )
 
     # Check for hard-block (deontological = 0) — must happen BEFORE EDS
@@ -170,7 +200,7 @@ def _simulate_baseline(
     case: ScenarioCase,
     baseline_name: str,
     rng: np.random.Generator,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Simulate a baseline system for a single case."""
     if baseline_name == "random":
         eds = rng.uniform(0.0, 1.0)
@@ -203,7 +233,11 @@ def _simulate_baseline(
         scores = {}
         for phil in ["deontological", "consequentialist", "virtue", "contextual"]:
             scores[phil] = _score_philosophy(
-                case.task, case.domain, case.expected_verdict, rng, phil,
+                case.task,
+                case.domain,
+                case.expected_verdict,
+                rng,
+                phil,
             )
         eds = sum(scores.values()) / 4.0
         if eds >= APPROVAL_THRESHOLD:
@@ -233,11 +267,12 @@ def _simulate_baseline(
 # Result generation functions
 # ═══════════════════════════════════════════════════════════════
 
+
 def generate_comparison_results(
-    cases: List[ScenarioCase],
+    cases: list[ScenarioCase],
     rng: np.random.Generator,
     output_dir: Path,
-) -> Dict[str, List[Dict]]:
+) -> dict[str, list[dict]]:
     """Generate comparison_results.csv — EthicAgent vs baselines."""
     logger.info("Generating comparison results for %d cases...", len(cases))
 
@@ -254,7 +289,7 @@ def generate_comparison_results(
     rows = []
     domains = list(SCENARIO_REGISTRY.keys()) + ["overall"]
 
-    def _compute_row(system_name: str, results: List[Dict], domain: str) -> Dict:
+    def _compute_row(system_name: str, results: list[dict], domain: str) -> dict:
         if domain == "overall":
             filtered = results
         else:
@@ -282,16 +317,22 @@ def generate_comparison_results(
         verdicts = [r["actual_verdict"] for r in filtered]
         approve_rate = verdicts.count("approve") / max(len(verdicts), 1)
         # Simulate group comparison — add small noise
-        fairness_di = float(np.clip(
-            1.0 - abs(rng.normal(0, 0.05)) - (1.0 - accuracy) * 0.3,
-            0.4, 1.0,
-        ))
+        fairness_di = float(
+            np.clip(
+                1.0 - abs(rng.normal(0, 0.05)) - (1.0 - accuracy) * 0.3,
+                0.4,
+                1.0,
+            )
+        )
 
         # Consistency: same-verdict agreement in similar EDS ranges
-        consistency = float(np.clip(
-            accuracy * 0.95 + rng.normal(0, 0.02),
-            0.2, 1.0,
-        ))
+        consistency = float(
+            np.clip(
+                accuracy * 0.95 + rng.normal(0, 0.02),
+                0.2,
+                1.0,
+            )
+        )
 
         return {
             "system": system_name,
@@ -320,10 +361,20 @@ def generate_comparison_results(
     # Write CSV
     csv_path = output_dir / "comparison_results.csv"
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "system", "domain", "total_cases", "accuracy",
-            "eds_mean", "eds_std", "eds_mae", "fairness_di", "consistency",
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "system",
+                "domain",
+                "total_cases",
+                "accuracy",
+                "eds_mean",
+                "eds_std",
+                "eds_mae",
+                "fairness_di",
+                "consistency",
+            ],
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -332,7 +383,7 @@ def generate_comparison_results(
 
 
 def generate_ablation_results(
-    cases: List[ScenarioCase],
+    cases: list[ScenarioCase],
     rng: np.random.Generator,
     output_dir: Path,
     full_accuracy: float,
@@ -370,30 +421,42 @@ def generate_ablation_results(
 
         fairness_base = 0.92
         fairness = round(
-            fairness_base - base_drop * 0.8 + rng.normal(0, 0.01), 2,
+            fairness_base - base_drop * 0.8 + rng.normal(0, 0.01),
+            2,
         )
 
         consistency_base = 0.90
         consistency = round(
-            consistency_base - base_drop * 0.5 + rng.normal(0, 0.01), 2,
+            consistency_base - base_drop * 0.5 + rng.normal(0, 0.01),
+            2,
         )
 
-        rows.append({
-            "variant": variant_name,
-            "component_removed": component,
-            "accuracy": max(accuracy, 0.0),
-            "accuracy_drop": round(-drop, 2) if drop > 0 else 0.0,
-            "eds_mae": max(eds_mae, 0.0),
-            "fairness_di": float(np.clip(fairness, 0.4, 1.0)),
-            "consistency": float(np.clip(consistency, 0.2, 1.0)),
-        })
+        rows.append(
+            {
+                "variant": variant_name,
+                "component_removed": component,
+                "accuracy": max(accuracy, 0.0),
+                "accuracy_drop": round(-drop, 2) if drop > 0 else 0.0,
+                "eds_mae": max(eds_mae, 0.0),
+                "fairness_di": float(np.clip(fairness, 0.4, 1.0)),
+                "consistency": float(np.clip(consistency, 0.2, 1.0)),
+            }
+        )
 
     csv_path = output_dir / "ablation_results.csv"
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "variant", "component_removed", "accuracy", "accuracy_drop",
-            "eds_mae", "fairness_di", "consistency",
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "variant",
+                "component_removed",
+                "accuracy",
+                "accuracy_drop",
+                "eds_mae",
+                "fairness_di",
+                "consistency",
+            ],
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -401,7 +464,7 @@ def generate_ablation_results(
 
 
 def generate_fairness_results(
-    all_results: Dict[str, List[Dict]],
+    all_results: dict[str, list[dict]],
     rng: np.random.Generator,
     output_dir: Path,
 ) -> None:
@@ -418,35 +481,60 @@ def generate_fairness_results(
     rows = []
     for domain in domains:
         domain_results = [r for r in all_results["ethicagent"] if r["domain"] == domain]
-        accuracy = sum(1 for r in domain_results if r["verdict_match"]) / max(len(domain_results), 1)
+        accuracy = sum(1 for r in domain_results if r["verdict_match"]) / max(
+            len(domain_results), 1
+        )
 
         for metric_name, threshold in metrics_def:
             if metric_name == "disparate_impact":
                 # DI is a ratio — higher is better, threshold 0.80
-                value = round(float(np.clip(
-                    0.88 + accuracy * 0.05 + rng.normal(0, 0.02), 0.75, 1.0,
-                )), 2)
+                value = round(
+                    float(
+                        np.clip(
+                            0.88 + accuracy * 0.05 + rng.normal(0, 0.02),
+                            0.75,
+                            1.0,
+                        )
+                    ),
+                    2,
+                )
                 status = "pass" if value >= threshold else "fail"
             else:
                 # SPD and EOD are differences — lower is better
-                value = round(float(np.clip(
-                    0.02 + (1 - accuracy) * 0.08 + rng.normal(0, 0.01), 0.0, 0.15,
-                )), 2)
+                value = round(
+                    float(
+                        np.clip(
+                            0.02 + (1 - accuracy) * 0.08 + rng.normal(0, 0.01),
+                            0.0,
+                            0.15,
+                        )
+                    ),
+                    2,
+                )
                 status = "pass" if value <= threshold else "fail"
 
-            rows.append({
-                "domain": domain,
-                "metric": metric_name,
-                "value": value,
-                "threshold": threshold,
-                "status": status,
-            })
+            rows.append(
+                {
+                    "domain": domain,
+                    "metric": metric_name,
+                    "value": value,
+                    "threshold": threshold,
+                    "status": status,
+                }
+            )
 
     csv_path = output_dir / "fairness_results.csv"
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "domain", "metric", "value", "threshold", "status",
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "domain",
+                "metric",
+                "value",
+                "threshold",
+                "status",
+            ],
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -454,7 +542,7 @@ def generate_fairness_results(
 
 
 def generate_statistical_tests(
-    all_results: Dict[str, List[Dict]],
+    all_results: dict[str, list[dict]],
     output_dir: Path,
 ) -> None:
     """Generate statistical_tests.json — significance testing."""
@@ -477,6 +565,7 @@ def generate_statistical_tests(
         # Approximate p-value from t-distribution (two-tailed)
         # Using normal approximation for large n
         from scipy import stats as scipy_stats
+
         try:
             p_value = float(scipy_stats.t.sf(abs(t_stat), df=n - 1) * 2)
         except Exception:
@@ -540,10 +629,7 @@ def generate_statistical_tests(
         }
 
     # Multiple comparison corrections
-    p_values = [
-        tests[k]["paired_t_test"]["p_value"]
-        for k in tests
-    ]
+    p_values = [tests[k]["paired_t_test"]["p_value"] for k in tests]
     bonferroni_alpha = 0.05 / len(p_values)
 
     # Holm correction
@@ -572,7 +658,7 @@ def generate_statistical_tests(
 
 
 def generate_per_domain_breakdown(
-    ea_results: List[Dict],
+    ea_results: list[dict],
     output_dir: Path,
 ) -> None:
     """Generate per_domain_breakdown.csv."""
@@ -588,27 +674,41 @@ def generate_per_domain_breakdown(
         verdicts = [r["actual_verdict"] for r in filtered]
         eds_values = [r["actual_eds"] for r in filtered]
 
-        rows.append({
-            "domain": domain,
-            "total": len(filtered),
-            "approve": verdicts.count("approve"),
-            "escalate": verdicts.count("escalate"),
-            "reject": verdicts.count("reject"),
-            "hard_block": verdicts.count("hard_block"),
-            "accuracy": round(
-                sum(1 for r in filtered if r["verdict_match"]) / len(filtered), 2,
-            ),
-            "mean_eds": round(float(np.mean(eds_values)), 3),
-            "median_eds": round(float(np.median(eds_values)), 3),
-            "std_eds": round(float(np.std(eds_values)), 3),
-        })
+        rows.append(
+            {
+                "domain": domain,
+                "total": len(filtered),
+                "approve": verdicts.count("approve"),
+                "escalate": verdicts.count("escalate"),
+                "reject": verdicts.count("reject"),
+                "hard_block": verdicts.count("hard_block"),
+                "accuracy": round(
+                    sum(1 for r in filtered if r["verdict_match"]) / len(filtered),
+                    2,
+                ),
+                "mean_eds": round(float(np.mean(eds_values)), 3),
+                "median_eds": round(float(np.median(eds_values)), 3),
+                "std_eds": round(float(np.std(eds_values)), 3),
+            }
+        )
 
     csv_path = output_dir / "per_domain_breakdown.csv"
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "domain", "total", "approve", "escalate", "reject", "hard_block",
-            "accuracy", "mean_eds", "median_eds", "std_eds",
-        ])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "domain",
+                "total",
+                "approve",
+                "escalate",
+                "reject",
+                "hard_block",
+                "accuracy",
+                "mean_eds",
+                "median_eds",
+                "std_eds",
+            ],
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -680,15 +780,13 @@ def generate_adversarial_results(
         "block_rate": round(blocked / total_payloads, 2),
         "leaked_payloads": leaked,
         "by_category": {
-            cat: {"blocked": was_blocked}
-            for cat, was_blocked in jailbreak_categories.items()
+            cat: {"blocked": was_blocked} for cat, was_blocked in jailbreak_categories.items()
         },
     }
 
     # Overall robustness
     overall_score = round(
-        0.6 * perturbation_results["robustness_rate"]
-        + 0.4 * jailbreak_results["block_rate"],
+        0.6 * perturbation_results["robustness_rate"] + 0.4 * jailbreak_results["block_rate"],
         2,
     )
 
@@ -712,16 +810,21 @@ def generate_adversarial_results(
 # Main
 # ═══════════════════════════════════════════════════════════════
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate all experiment results for EthicAgent publication.",
     )
     parser.add_argument(
-        "--output-dir", type=str, default="data/results",
+        "--output-dir",
+        type=str,
+        default="data/results",
         help="Directory for output files (default: data/results)",
     )
     parser.add_argument(
-        "--seed", type=int, default=42,
+        "--seed",
+        type=int,
+        default=42,
         help="Random seed for reproducibility (default: 42)",
     )
     args = parser.parse_args()

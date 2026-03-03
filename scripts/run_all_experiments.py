@@ -28,18 +28,17 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from ethicagent.scenarios import (
-    HealthcareTriageScenario,
-    LoanApprovalScenario,
-    HiringDecisionScenario,
-    DisasterResponseScenario,
-)
-from ethicagent.evaluation import BenchmarkRunner, StatisticalAnalyzer, ReportGenerator
-from ethicagent.evaluation.baselines import get_all_baselines
-from ethicagent.evaluation.ablation import AblationStudy, ABLATION_VARIANTS
-from ethicagent.evaluation.metrics import compute_all_metrics, verdict_accuracy, eds_score_metrics
 from ethicagent.agents.ethical_reasoner import EthicalReasonerAgent
-from ethicagent.core.logger import AuditLogger
+from ethicagent.evaluation import ReportGenerator, StatisticalAnalyzer
+from ethicagent.evaluation.ablation import ABLATION_VARIANTS, AblationStudy
+from ethicagent.evaluation.baselines import get_all_baselines
+from ethicagent.evaluation.metrics import verdict_accuracy
+from ethicagent.scenarios import (
+    DisasterResponseScenario,
+    HealthcareTriageScenario,
+    HiringDecisionScenario,
+    LoanApprovalScenario,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -51,10 +50,30 @@ logger = logging.getLogger(__name__)
 
 
 DOMAIN_WEIGHTS = {
-    "healthcare": {"deontological": 0.35, "consequentialist": 0.25, "virtue_ethics": 0.20, "contextual": 0.20},
-    "finance": {"deontological": 0.20, "consequentialist": 0.25, "virtue_ethics": 0.35, "contextual": 0.20},
-    "hiring": {"deontological": 0.15, "consequentialist": 0.20, "virtue_ethics": 0.40, "contextual": 0.25},
-    "disaster": {"deontological": 0.20, "consequentialist": 0.35, "virtue_ethics": 0.15, "contextual": 0.30},
+    "healthcare": {
+        "deontological": 0.35,
+        "consequentialist": 0.25,
+        "virtue_ethics": 0.20,
+        "contextual": 0.20,
+    },
+    "finance": {
+        "deontological": 0.20,
+        "consequentialist": 0.25,
+        "virtue_ethics": 0.35,
+        "contextual": 0.20,
+    },
+    "hiring": {
+        "deontological": 0.15,
+        "consequentialist": 0.20,
+        "virtue_ethics": 0.40,
+        "contextual": 0.25,
+    },
+    "disaster": {
+        "deontological": 0.20,
+        "consequentialist": 0.35,
+        "virtue_ethics": 0.15,
+        "contextual": 0.30,
+    },
 }
 
 SCENARIO_CLASSES = {
@@ -71,37 +90,50 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--simulation", action="store_true", default=True,
+        "--simulation",
+        action="store_true",
+        default=True,
         help="Run in simulation mode (no live LLM calls). Default: True",
     )
     parser.add_argument(
-        "--output-dir", type=str, default="results",
+        "--output-dir",
+        type=str,
+        default="results",
         help="Directory for output files. Default: results/",
     )
     parser.add_argument(
-        "--domains", nargs="+", choices=list(SCENARIO_CLASSES.keys()),
+        "--domains",
+        nargs="+",
+        choices=list(SCENARIO_CLASSES.keys()),
         default=list(SCENARIO_CLASSES.keys()),
         help="Domains to evaluate. Default: all",
     )
     parser.add_argument(
-        "--skip-baselines", action="store_true",
+        "--skip-baselines",
+        action="store_true",
         help="Skip baseline comparisons",
     )
     parser.add_argument(
-        "--skip-ablation", action="store_true",
+        "--skip-ablation",
+        action="store_true",
         help="Skip ablation study",
     )
     parser.add_argument(
-        "--skip-stats", action="store_true",
+        "--skip-stats",
+        action="store_true",
         help="Skip statistical analysis",
     )
     parser.add_argument(
-        "--formats", nargs="+", choices=["json", "latex", "markdown", "html"],
+        "--formats",
+        nargs="+",
+        choices=["json", "latex", "markdown", "html"],
         default=["json", "latex", "markdown"],
         help="Report formats to generate. Default: json latex markdown",
     )
     parser.add_argument(
-        "--verbose", "-v", action="store_true",
+        "--verbose",
+        "-v",
+        action="store_true",
         help="Enable verbose output",
     )
     return parser.parse_args()
@@ -127,26 +159,31 @@ def run_scenario_evaluation(
         domain_results = []
         for case in cases:
             # Use scores from context or generate defaults
-            scores = case.context.get("philosophy_scores", {
-                "deontological": case.context.get("deontological", 0.7),
-                "consequentialist": case.context.get("consequentialist", 0.7),
-                "virtue_ethics": case.context.get("virtue_ethics", 0.7),
-                "contextual": case.context.get("contextual", 0.7),
-            })
+            scores = case.context.get(
+                "philosophy_scores",
+                {
+                    "deontological": case.context.get("deontological", 0.7),
+                    "consequentialist": case.context.get("consequentialist", 0.7),
+                    "virtue_ethics": case.context.get("virtue_ethics", 0.7),
+                    "contextual": case.context.get("contextual", 0.7),
+                },
+            )
 
             eds = reasoner.compute_eds(scores, weights)
             verdict = reasoner.determine_verdict(scores, weights)
 
-            domain_results.append({
-                "case_id": case.case_id,
-                "task": case.task,
-                "expected_verdict": case.expected_verdict,
-                "predicted_verdict": verdict,
-                "expected_eds_range": case.expected_eds_range,
-                "predicted_eds": eds,
-                "match": verdict == case.expected_verdict,
-                "scores": scores,
-            })
+            domain_results.append(
+                {
+                    "case_id": case.case_id,
+                    "task": case.task,
+                    "expected_verdict": case.expected_verdict,
+                    "predicted_verdict": verdict,
+                    "expected_eds_range": case.expected_eds_range,
+                    "predicted_eds": eds,
+                    "match": verdict == case.expected_verdict,
+                    "scores": scores,
+                }
+            )
 
         accuracy = sum(1 for r in domain_results if r["match"]) / len(domain_results)
         all_results[domain] = {
@@ -155,7 +192,9 @@ def run_scenario_evaluation(
             "total_cases": len(domain_results),
             "correct": sum(1 for r in domain_results if r["match"]),
         }
-        logger.info(f"    {domain}: {accuracy:.1%} accuracy ({all_results[domain]['correct']}/{len(domain_results)})")
+        logger.info(
+            f"    {domain}: {accuracy:.1%} accuracy ({all_results[domain]['correct']}/{len(domain_results)})"
+        )
 
     return all_results
 
@@ -180,15 +219,15 @@ def run_baseline_comparison(
             all_predicted.append(case["predicted_verdict"])
             all_expected.append(case["expected_verdict"])
 
-    ethicagent_accuracy = verdict_accuracy([
-        {"actual_verdict": a, "expected_verdict": e}
-        for a, e in zip(all_predicted, all_expected)
-    ])
+    ethicagent_accuracy = verdict_accuracy(
+        [{"actual_verdict": a, "expected_verdict": e} for a, e in zip(all_predicted, all_expected)]
+    )
     baseline_results["EthicAgent"] = {"accuracy": ethicagent_accuracy.get("overall_accuracy", 0.0)}
     logger.info(f"  EthicAgent: {baseline_results['EthicAgent']['accuracy']:.1%}")
 
     # Baseline evaluations (simulated)
     import random
+
     random.seed(42)
 
     baseline_accuracies = {
@@ -218,11 +257,12 @@ def run_ablation_study(
     logger.info("PHASE 3: ABLATION STUDY")
     logger.info("=" * 60)
 
-    study = AblationStudy(simulation_mode=True)
+    study = AblationStudy()  # noqa: F841
     ablation_results = {}
 
     # Simulated ablation impacts
     import random
+
     random.seed(42)
 
     accuracy_impacts = {
@@ -247,10 +287,9 @@ def run_ablation_study(
         for case in domain_data["cases"]:
             all_predicted.append(case["predicted_verdict"])
             all_expected.append(case["expected_verdict"])
-    base_accuracy_result = verdict_accuracy([
-        {"actual_verdict": a, "expected_verdict": e}
-        for a, e in zip(all_predicted, all_expected)
-    ])
+    base_accuracy_result = verdict_accuracy(
+        [{"actual_verdict": a, "expected_verdict": e} for a, e in zip(all_predicted, all_expected)]
+    )
     base_accuracy = base_accuracy_result.get("overall_accuracy", 0.0)
 
     for variant in ABLATION_VARIANTS:
@@ -277,6 +316,7 @@ def run_statistical_analysis(
 
     analyzer = StatisticalAnalyzer()
     import random
+
     random.seed(42)
 
     n_cases = 100
@@ -290,9 +330,11 @@ def run_statistical_analysis(
         result = analyzer.compare_systems(ethicagent_scores, baseline_scores)
         comparisons[baseline_name] = result
         sig = "✓" if result.get("significant", False) else "✗"
+        p_val = result.get("paired_t_test", {}).get("p_value", 0)
+        d_val = result.get("cohens_d", {}).get("d", 0)
         logger.info(
-            f"  vs {baseline_name:15s}: p={result.get('p_value', 0):.6f} "
-            f"d={result.get('cohens_d', 0):.3f} sig={sig}"
+            f"  vs {baseline_name:15s}: p={p_val:.6f} "
+            f"d={d_val:.3f} sig={sig}"
         )
 
     # Generate summary from last comparison result
@@ -320,7 +362,6 @@ def generate_reports(
     logger.info("PHASE 5: REPORT GENERATION")
     logger.info("=" * 60)
 
-    generator = ReportGenerator(results=combined_results)
     combined_results = {
         "main_results": baseline_results,
         "scenario_results": {
@@ -330,6 +371,7 @@ def generate_reports(
         "ablation": ablation_results,
         "statistics": stats_results,
     }
+    generator = ReportGenerator(results=combined_results)
 
     for fmt in formats:
         filename = f"ethicagent_results.{fmt if fmt != 'latex' else 'tex'}"
@@ -338,6 +380,7 @@ def generate_reports(
         try:
             if fmt == "json":
                 import json as _json
+
                 content = _json.dumps(combined_results, indent=2, default=str)
             elif fmt == "latex":
                 content = generator.generate_latex()
@@ -416,8 +459,12 @@ def main():
 
     # Phase 5: Report Generation
     generate_reports(
-        scenario_results, baseline_results, ablation_results,
-        stats_results, output_dir, args.formats,
+        scenario_results,
+        baseline_results,
+        ablation_results,
+        stats_results,
+        output_dir,
+        args.formats,
     )
 
     # Summary

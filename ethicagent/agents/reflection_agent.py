@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -40,30 +40,25 @@ class ReflectionAgent:
     ) -> None:
         self._precedent_store = precedent_store
         self._memory_store = memory_store
-        self._history: List[Dict[str, Any]] = []
+        self._history: list[dict[str, Any]] = []
         self._history_limit = history_limit
-        self._domain_verdicts: Dict[str, Dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._domain_verdicts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
     # ------------------------------------------------------------------
 
     def reflect(
         self,
         decision: Any,
-        context: Dict[str, Any],
-        execution_result: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+        execution_result: dict[str, Any],
+    ) -> dict[str, Any]:
         """Run the full reflection loop.
 
         Returns a report dict with consistency analysis, bias checks,
         recommendations, and memory updates.
         """
         domain = context.get("domain", "general")
-        verdict = (
-            decision.verdict.value
-            if hasattr(decision, "verdict") else str(decision)
-        )
+        verdict = decision.verdict.value if hasattr(decision, "verdict") else str(decision)
         eds = getattr(decision, "eds_score", 0.0)
 
         record = {
@@ -108,27 +103,25 @@ class ReflectionAgent:
         )
         return report
 
-    def get_learning_summary(self) -> Dict[str, Any]:
+    def get_learning_summary(self) -> dict[str, Any]:
         """Aggregate stats from all reflections."""
         if not self._history:
             return {"total_decisions": 0, "domains": {}}
 
-        verdict_dist: Dict[str, int] = defaultdict(int)
+        verdict_dist: dict[str, int] = defaultdict(int)
         for h in self._history:
             verdict_dist[h.get("verdict", "unknown")] += 1
 
         return {
             "total_decisions": len(self._history),
             "verdict_distribution": dict(verdict_dist),
-            "domain_stats": {
-                d: dict(vd) for d, vd in self._domain_verdicts.items()
-            },
+            "domain_stats": {d: dict(vd) for d, vd in self._domain_verdicts.items()},
         }
 
     # ---------- Backward-compat public wrappers (used by tests) ----------
 
     @property
-    def decision_history(self) -> List[Dict[str, Any]]:
+    def decision_history(self) -> list[dict[str, Any]]:
         """Public access to history (backward-compat)."""
         return self._history
 
@@ -138,7 +131,7 @@ class ReflectionAgent:
         domain: str = "general",
         verdict: str = "escalate",
         eds_score: float = 0.0,
-        philosophy_scores: Optional[Dict[str, float]] = None,
+        philosophy_scores: dict[str, float] | None = None,
         **kwargs: Any,
     ) -> None:
         """Record a decision directly (backward-compat).
@@ -155,7 +148,7 @@ class ReflectionAgent:
         }
         self._add_to_history(record)
 
-    def analyze_consistency(self) -> Dict[str, Any]:
+    def analyze_consistency(self) -> dict[str, Any]:
         """Run consistency analysis over all recorded history."""
         if not self._history:
             return {"is_consistent": True, "similar_cases": 0, "note": "no history"}
@@ -166,7 +159,7 @@ class ReflectionAgent:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _record_precedent(self, record: Dict[str, Any]) -> None:
+    def _record_precedent(self, record: dict[str, Any]) -> None:
         if self._precedent_store:
             try:
                 self._precedent_store.add_precedent(
@@ -180,18 +173,13 @@ class ReflectionAgent:
             except Exception as exc:
                 logger.debug(f"Precedent store write failed: {exc}")
 
-    def _analyse_consistency(
-        self, record: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _analyse_consistency(self, record: dict[str, Any]) -> dict[str, Any]:
         """Check if this decision is consistent with past similar cases."""
         domain = record["domain"]
         verdict = record["verdict"]
 
         # find similar past decisions in same domain
-        similar = [
-            h for h in self._history
-            if h.get("domain") == domain
-        ]
+        similar = [h for h in self._history if h.get("domain") == domain]
         if not similar:
             return {"is_consistent": True, "similar_cases": 0, "note": "first case in domain"}
 
@@ -211,11 +199,9 @@ class ReflectionAgent:
             ),
         }
 
-    def _detect_bias_patterns(
-        self, domain: str
-    ) -> Dict[str, Any]:
+    def _detect_bias_patterns(self, domain: str) -> dict[str, Any]:
         """Look for skewed verdict distributions that might indicate bias."""
-        flags: List[str] = []
+        flags: list[str] = []
         dist = dict(self._domain_verdicts.get(domain, {}))
         total = sum(dist.values())
 
@@ -230,52 +216,46 @@ class ReflectionAgent:
                     f"({fraction:.0%}).  Possible systematic bias."
                 )
             elif fraction < 0.05 and verdict in ("escalate",):
-                flags.append(
-                    f"Very few escalations in '{domain}' — "
-                    f"system may be overconfident."
-                )
+                flags.append(f"Very few escalations in '{domain}' — system may be overconfident.")
 
         return {"flags": flags, "distribution": dist}
 
     def _generate_recommendations(
         self,
-        consistency: Dict[str, Any],
-        bias: Dict[str, Any],
-        record: Dict[str, Any],
-    ) -> List[str]:
-        recs: List[str] = []
+        consistency: dict[str, Any],
+        bias: dict[str, Any],
+        record: dict[str, Any],
+    ) -> list[str]:
+        recs: list[str] = []
         if not consistency.get("is_consistent"):
             recs.append(
-                "Review this decision — it's inconsistent with prior "
-                "rulings in the same domain."
+                "Review this decision — it's inconsistent with prior rulings in the same domain."
             )
         for flag in bias.get("flags", []):
             recs.append(f"Bias alert: {flag}")
 
         if record.get("eds_score", 1.0) < 0.6:
-            recs.append(
-                "Low EDS score — consider additional human review."
-            )
+            recs.append("Low EDS score — consider additional human review.")
         return recs
 
-    def _update_memory(
-        self, record: Dict[str, Any], context: Dict[str, Any]
-    ) -> None:
+    def _update_memory(self, record: dict[str, Any], context: dict[str, Any]) -> None:
         if self._memory_store:
             try:
-                self._memory_store.store_from_dict({
-                    "task": context.get("action", ""),
-                    "domain": record.get("domain", "general"),
-                    "verdict": record.get("verdict", ""),
-                    "eds_score": record.get("eds_score", 0.0),
-                })
+                self._memory_store.store_from_dict(
+                    {
+                        "task": context.get("action", ""),
+                        "domain": record.get("domain", "general"),
+                        "verdict": record.get("verdict", ""),
+                        "eds_score": record.get("eds_score", 0.0),
+                    }
+                )
             except Exception as exc:
                 logger.debug(f"Memory store write failed: {exc}")
 
-    def _add_to_history(self, record: Dict[str, Any]) -> None:
+    def _add_to_history(self, record: dict[str, Any]) -> None:
         self._history.append(record)
         if len(self._history) > self._history_limit:
-            self._history = self._history[-self._history_limit:]
+            self._history = self._history[-self._history_limit :]
 
         domain = record.get("domain", "general")
         verdict = record.get("verdict", "unknown")

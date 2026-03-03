@@ -1,0 +1,13 @@
+Variant,Accuracy,Delta
+full_system,0.0457,+0.0000
+no_conflict_resolution,0.0000,-0.0600
+no_consequentialist,0.0000,-0.0700
+no_contextual,0.0000,-0.0600
+no_deontological,0.0000,-0.2400
+no_domain_weights,0.0000,-0.1100
+no_fusion,0.0000,-0.1300
+no_knowledge_graph,0.0000,-0.0800
+no_neural,0.0000,-0.1700
+no_reflection,0.0049,-0.0400
+no_symbolic,0.0000,-0.2100
+no_virtue,0.0000,-0.0500

@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     import networkx as nx
@@ -61,10 +61,7 @@ class _FallbackGraphView:
         return node_id in self._nodes
 
     def has_edge(self, source: str, target: str) -> bool:
-        return any(
-            e.get("source") == source and e.get("target") == target
-            for e in self._edges
-        )
+        return any(e.get("source") == source and e.get("target") == target for e in self._edges)
 
 
 # ---------------------------------------------------------------------------
@@ -80,14 +77,12 @@ _SEED_NODES: list[dict[str, Any]] = [
     {"id": "religion", "type": "protected_attribute", "label": "Religion"},
     {"id": "sexual_orientation", "type": "protected_attribute", "label": "Sexual Orientation"},
     {"id": "national_origin", "type": "protected_attribute", "label": "National Origin"},
-
     # Decision domains
     {"id": "credit_decision", "type": "decision_domain", "label": "Credit/Lending Decision"},
     {"id": "hiring_decision", "type": "decision_domain", "label": "Employment Decision"},
     {"id": "medical_decision", "type": "decision_domain", "label": "Medical Decision"},
     {"id": "triage_decision", "type": "decision_domain", "label": "Emergency Triage"},
     {"id": "insurance_decision", "type": "decision_domain", "label": "Insurance Decision"},
-
     # Legal frameworks
     {"id": "hipaa", "type": "legal_framework", "label": "HIPAA"},
     {"id": "gdpr", "type": "legal_framework", "label": "GDPR"},
@@ -95,7 +90,6 @@ _SEED_NODES: list[dict[str, Any]] = [
     {"id": "ada", "type": "legal_framework", "label": "Americans with Disabilities Act"},
     {"id": "title_vii", "type": "legal_framework", "label": "Title VII Civil Rights Act"},
     {"id": "eu_ai_act", "type": "legal_framework", "label": "EU AI Act"},
-
     # Ethical principles
     {"id": "patient_consent", "type": "ethical_principle", "label": "Patient Consent"},
     {"id": "informed_consent", "type": "ethical_principle", "label": "Informed Consent"},
@@ -104,7 +98,6 @@ _SEED_NODES: list[dict[str, Any]] = [
     {"id": "accountability", "type": "ethical_principle", "label": "Accountability"},
     {"id": "fairness", "type": "ethical_principle", "label": "Fairness"},
     {"id": "do_no_harm", "type": "ethical_principle", "label": "Do No Harm"},
-
     # Stakeholder types
     {"id": "patient", "type": "stakeholder", "label": "Patient"},
     {"id": "applicant", "type": "stakeholder", "label": "Job Applicant"},
@@ -122,7 +115,6 @@ _SEED_EDGES: list[dict[str, Any]] = [
     {"source": "age", "target": "hiring_decision", "relation": "must_not_influence"},
     {"source": "disability", "target": "hiring_decision", "relation": "requires_accommodation"},
     {"source": "religion", "target": "hiring_decision", "relation": "must_not_influence"},
-
     # Legal frameworks → requirements
     {"source": "hipaa", "target": "patient_consent", "relation": "requires"},
     {"source": "hipaa", "target": "data_minimization", "relation": "requires"},
@@ -134,20 +126,17 @@ _SEED_EDGES: list[dict[str, Any]] = [
     {"source": "title_vii", "target": "fairness", "relation": "requires"},
     {"source": "eu_ai_act", "target": "transparency", "relation": "requires"},
     {"source": "eu_ai_act", "target": "accountability", "relation": "requires"},
-
     # Legal frameworks → decision domains (applicability)
     {"source": "hipaa", "target": "medical_decision", "relation": "applies_to"},
     {"source": "ecoa", "target": "credit_decision", "relation": "applies_to"},
     {"source": "title_vii", "target": "hiring_decision", "relation": "applies_to"},
     {"source": "ada", "target": "hiring_decision", "relation": "applies_to"},
-
     # Decision domains → principles
     {"source": "medical_decision", "target": "do_no_harm", "relation": "requires"},
     {"source": "medical_decision", "target": "patient_consent", "relation": "requires"},
     {"source": "triage_decision", "target": "do_no_harm", "relation": "requires"},
     {"source": "credit_decision", "target": "transparency", "relation": "requires"},
     {"source": "hiring_decision", "target": "fairness", "relation": "requires"},
-
     # Stakeholders → decision domains
     {"source": "patient", "target": "medical_decision", "relation": "affected_by"},
     {"source": "patient", "target": "triage_decision", "relation": "affected_by"},
@@ -161,6 +150,7 @@ _SEED_EDGES: list[dict[str, Any]] = [
 # ---------------------------------------------------------------------------
 # Knowledge graph class
 # ---------------------------------------------------------------------------
+
 
 class KnowledgeGraph:
     """Graph-based ethical knowledge store.
@@ -177,9 +167,7 @@ class KnowledgeGraph:
 
     def __init__(self, data_dir: str | Path | None = None) -> None:
         if nx is None:
-            logger.warning(
-                "NetworkX not installed — KnowledgeGraph will use fallback dict mode"
-            )
+            logger.warning("NetworkX not installed — KnowledgeGraph will use fallback dict mode")
             self._graph = None
             self._nodes: dict[str, dict] = {}
             self._edges: list[dict] = []
@@ -199,7 +187,8 @@ class KnowledgeGraph:
 
         logger.info(
             "KnowledgeGraph initialized: %d nodes, %d edges",
-            self.node_count, self.edge_count,
+            self.node_count,
+            self.edge_count,
         )
 
     # ---------- Properties ----------
@@ -252,7 +241,9 @@ class KnowledgeGraph:
 
                 logger.debug(
                     "Loaded %d nodes, %d edges from %s",
-                    len(nodes), len(edges), json_file.name,
+                    len(nodes),
+                    len(edges),
+                    json_file.name,
                 )
             except Exception as e:
                 logger.warning("Failed to load %s: %s", json_file, e)
@@ -310,10 +301,7 @@ class KnowledgeGraph:
         return self._nodes.get(node_id)
 
     def get_nodes_by_type(self, node_type: str) -> list[str]:
-        return [
-            nid for nid, meta in self._nodes.items()
-            if meta.get("type") == node_type
-        ]
+        return [nid for nid, meta in self._nodes.items() if meta.get("type") == node_type]
 
     # ---------- Backward-compat aliases (used by tests) ----------
 
@@ -322,9 +310,7 @@ class KnowledgeGraph:
         if self._graph is not None and node_id in self._graph:
             return list(self._graph.successors(node_id))
         # Fallback: scan edge list
-        return [
-            e["target"] for e in self._edges if e.get("source") == node_id
-        ]
+        return [e["target"] for e in self._edges if e.get("source") == node_id]
 
     def initialize_domain(self, domain: str, data_dir: str | Path | None = None) -> int:
         """Alias for :meth:`load_domain_data` (backward-compat).
@@ -339,7 +325,9 @@ class KnowledgeGraph:
             return 0
 
     def query_ethical_context(
-        self, query: str, domain: str | None = None,
+        self,
+        query: str,
+        domain: str | None = None,
     ) -> dict[str, Any]:
         """Return ethical context relevant to *query* in *domain*.
 
@@ -361,8 +349,12 @@ class KnowledgeGraph:
 
         if domain:
             constraints = self.get_constraints(
-                {"healthcare": "medical_decision", "finance": "credit_decision",
-                 "hiring": "hiring_decision", "disaster": "triage_decision"}.get(domain, domain)
+                {
+                    "healthcare": "medical_decision",
+                    "finance": "credit_decision",
+                    "hiring": "hiring_decision",
+                    "disaster": "triage_decision",
+                }.get(domain, domain)
             )
             laws = self.get_applicable_laws(domain)
             stakeholders = self.get_stakeholders(domain)
@@ -383,23 +375,27 @@ class KnowledgeGraph:
         must_not_influence, requires, requires_accommodation, etc.
         """
         constraint_relations = {
-            "must_not_influence", "requires", "requires_accommodation",
-            "prohibits", "restricts",
+            "must_not_influence",
+            "requires",
+            "requires_accommodation",
+            "prohibits",
+            "restricts",
         }
         results = []
 
         if self._graph is not None:
             for source, _, data in self._graph.in_edges(target_id, data=True):
                 if data.get("relation") in constraint_relations:
-                    results.append({
-                        "source": source,
-                        "relation": data["relation"],
-                        **{k: v for k, v in data.items() if k != "relation"},
-                    })
+                    results.append(
+                        {
+                            "source": source,
+                            "relation": data["relation"],
+                            **{k: v for k, v in data.items() if k != "relation"},
+                        }
+                    )
         else:
             for edge in self._edges:
-                if (edge.get("target") == target_id and
-                        edge.get("relation") in constraint_relations):
+                if edge.get("target") == target_id and edge.get("relation") in constraint_relations:
                     results.append(edge)
 
         return results
@@ -443,8 +439,7 @@ class KnowledgeGraph:
                     attrs.append(source)
         else:
             for edge in self._edges:
-                if (edge.get("target") == target and
-                        edge.get("relation") == "must_not_influence"):
+                if edge.get("target") == target and edge.get("relation") == "must_not_influence":
                     attrs.append(edge["source"])
 
         return attrs
@@ -502,9 +497,11 @@ class KnowledgeGraph:
                 return data.get("relation") == "must_not_influence"
         else:
             for edge in self._edges:
-                if (edge.get("source") == attribute and
-                        edge.get("target") == target and
-                        edge.get("relation") == "must_not_influence"):
+                if (
+                    edge.get("source") == attribute
+                    and edge.get("target") == target
+                    and edge.get("relation") == "must_not_influence"
+                ):
                     return True
         return False
 
@@ -519,10 +516,7 @@ class KnowledgeGraph:
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the graph for JSON export."""
-        nodes = [
-            {"id": nid, **meta}
-            for nid, meta in self._nodes.items()
-        ]
+        nodes = [{"id": nid, **meta} for nid, meta in self._nodes.items()]
         return {"nodes": nodes, "edges": self._edges}
 
     def summary(self) -> str:
@@ -571,8 +565,7 @@ class KnowledgeGraph:
         filename = self._DOMAIN_FILE_MAP.get(domain.lower())
         if filename is None:
             raise ValueError(
-                f"Unknown domain '{domain}'. "
-                f"Choose from: {', '.join(self._DOMAIN_FILE_MAP)}"
+                f"Unknown domain '{domain}'. Choose from: {', '.join(self._DOMAIN_FILE_MAP)}"
             )
 
         if data_dir is None:
@@ -590,12 +583,14 @@ class KnowledgeGraph:
         loaded = self.node_count - before
         logger.info(
             "Loaded %d new nodes for domain '%s' from %s",
-            loaded, domain, filepath.name,
+            loaded,
+            domain,
+            filepath.name,
         )
         return loaded
 
     @classmethod
-    def auto_load(cls, data_dir: str | Path | None = None) -> "KnowledgeGraph":
+    def auto_load(cls, data_dir: str | Path | None = None) -> KnowledgeGraph:
         """Create a KnowledgeGraph pre-populated with all domain data.
 
         This is the recommended factory method for production use.

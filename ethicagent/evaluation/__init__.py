@@ -9,9 +9,9 @@ High-level API:
 """
 
 from ethicagent.evaluation.benchmark_runner import BenchmarkRunner
-from ethicagent.evaluation.statistical_analysis import StatisticalAnalyzer
-from ethicagent.evaluation.report_generator import ReportGenerator
 from ethicagent.evaluation.metrics import compute_all_metrics
+from ethicagent.evaluation.report_generator import ReportGenerator
+from ethicagent.evaluation.statistical_analysis import StatisticalAnalyzer
 
 __all__ = [
     "BenchmarkRunner",

@@ -31,43 +31,40 @@ without burning API credits.
 from __future__ import annotations
 
 import logging
+import random
 import time
 import uuid
-import random
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
+from ethicagent.agents.action_executor import ActionExecutor
+from ethicagent.agents.context_agent import ContextAgent
+from ethicagent.agents.ethical_reasoner import EthicalReasonerAgent
+from ethicagent.agents.fusion_agent import FusionAgent
+from ethicagent.agents.human_gateway import HumanGateway
+from ethicagent.agents.neural_reasoner import NeuralReasoner
+from ethicagent.agents.reflection_agent import ReflectionAgent
+from ethicagent.agents.symbolic_reasoner import SymbolicReasoner
+from ethicagent.core.logger import AuditLogger
 from ethicagent.core.state import (
-    PipelineState,
     PipelineStage,
-    StageResult,
+    PipelineState,
     StateManager,
 )
-from ethicagent.core.logger import AuditLogger
-from ethicagent.utils.config_loader import ConfigLoader
-from ethicagent.utils.validators import validate_task_input
-
-from ethicagent.agents.context_agent import ContextAgent
-from ethicagent.agents.neural_reasoner import NeuralReasoner
-from ethicagent.agents.symbolic_reasoner import SymbolicReasoner
-from ethicagent.agents.fusion_agent import FusionAgent
-from ethicagent.agents.ethical_reasoner import EthicalReasonerAgent
-from ethicagent.agents.action_executor import ActionExecutor
-from ethicagent.agents.human_gateway import HumanGateway
-from ethicagent.agents.reflection_agent import ReflectionAgent
-
 from ethicagent.knowledge.knowledge_graph import KnowledgeGraph
-from ethicagent.knowledge.precedent_store import PrecedentStore
 from ethicagent.knowledge.memory_store import MemoryStore
-
+from ethicagent.knowledge.precedent_store import PrecedentStore
+from ethicagent.utils.config_loader import ConfigLoader
 from ethicagent.utils.helpers import now_iso
+from ethicagent.utils.validators import validate_task_input
 
 logger = logging.getLogger(__name__)
 
 # -- small constants used throughout -----------------------------------------------
 _MAX_LLM_RETRIES = 3
-_BACKOFF_BASE = 1.5        # exponential back-off base (seconds)
-_BACKOFF_JITTER = 0.3      # ±jitter to avoid thundering-herd
+_BACKOFF_BASE = 1.5  # exponential back-off base (seconds)
+_BACKOFF_JITTER = 0.3  # ±jitter to avoid thundering-herd
 
 
 @dataclass
@@ -85,23 +82,23 @@ class PipelineResult:
     """
 
     action_id: str
-    status: str                                 # "completed" | "error" | …
+    status: str  # "completed" | "error" | …
     domain: str = "general"
     eds_score: float = 0.0
     verdict: str = "unknown"
     confidence: float = 0.0
-    philosophy_scores: Dict[str, float] = field(default_factory=dict)
-    weights_used: Dict[str, float] = field(default_factory=dict)
+    philosophy_scores: dict[str, float] = field(default_factory=dict)
+    weights_used: dict[str, float] = field(default_factory=dict)
     reasoning: str = ""
-    rules_triggered: List[str] = field(default_factory=list)
-    conflict_analysis: Dict[str, Any] = field(default_factory=dict)
-    execution_result: Dict[str, Any] = field(default_factory=dict)
-    reflection: Dict[str, Any] = field(default_factory=dict)
-    stage_outputs: Dict[str, Any] = field(default_factory=dict)
-    stage_timings: Dict[str, float] = field(default_factory=dict)
+    rules_triggered: list[str] = field(default_factory=list)
+    conflict_analysis: dict[str, Any] = field(default_factory=dict)
+    execution_result: dict[str, Any] = field(default_factory=dict)
+    reflection: dict[str, Any] = field(default_factory=dict)
+    stage_outputs: dict[str, Any] = field(default_factory=dict)
+    stage_timings: dict[str, float] = field(default_factory=dict)
     total_elapsed_s: float = 0.0
     timestamp: str = field(default_factory=now_iso)
-    error: Optional[str] = None
+    error: str | None = None
 
     # -- pretty-printing -------------------------------------------------------
     def __repr__(self) -> str:
@@ -113,7 +110,7 @@ class PipelineResult:
 
     def __str__(self) -> str:
         lines = [
-            f"╔══ EthicAgent Pipeline Result ═══════════════",
+            "╔══ EthicAgent Pipeline Result ═══════════════",
             f"║ Action   : {self.action_id}",
             f"║ Domain   : {self.domain}",
             f"║ Verdict  : {self.verdict.upper()}",
@@ -130,7 +127,7 @@ class PipelineResult:
         lines.append("╚═════════════════════════════════════════════")
         return "\n".join(lines)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Flatten everything into a JSON-friendly dict."""
         return {
             "action_id": self.action_id,
@@ -173,8 +170,8 @@ class EthicAgentOrchestrator:
 
     def __init__(
         self,
-        config_dir: Optional[str] = None,
-        review_callback: Optional[Callable] = None,
+        config_dir: str | None = None,
+        review_callback: Callable | None = None,
         use_llm: bool = True,
         llm_provider: str = "openai",
     ) -> None:
@@ -192,6 +189,7 @@ class EthicAgentOrchestrator:
         # -- configuration --------------------------------------------------------
         if config_dir:
             from pathlib import Path
+
             cfg_path = Path(config_dir)
             if cfg_path.is_file():
                 self.config = ConfigLoader.from_file(cfg_path)
@@ -222,7 +220,7 @@ class EthicAgentOrchestrator:
         self.precedent_store = PrecedentStore()
         # ChromaDB can be flaky in CI — fall back gracefully
         try:
-            self.memory_store: Optional[MemoryStore] = MemoryStore()
+            self.memory_store: MemoryStore | None = MemoryStore()
         except Exception as exc:
             logger.warning(
                 "MemoryStore init failed — running without semantic memory. "
@@ -266,7 +264,7 @@ class EthicAgentOrchestrator:
         # -- bookkeeping ----------------------------------------------------------
         self._total_runs: int = 0
         self._total_time: float = 0.0
-        self._verdict_counts: Dict[str, int] = {}
+        self._verdict_counts: dict[str, int] = {}
 
         logger.info("Orchestrator ready ✓")
 
@@ -277,8 +275,8 @@ class EthicAgentOrchestrator:
     def run(
         self,
         task: str,
-        domain: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        domain: str | None = None,
+        metadata: dict[str, Any] | None = None,
         *,
         dry_run: bool = False,
     ) -> PipelineResult:
@@ -299,8 +297,8 @@ class EthicAgentOrchestrator:
         t_start = time.time()
         action_id = f"ACT-{uuid.uuid4().hex[:8].upper()}"
         self._total_runs += 1
-        stage_timings: Dict[str, float] = {}
-        stage_outputs: Dict[str, Any] = {}
+        stage_timings: dict[str, float] = {}
+        stage_outputs: dict[str, Any] = {}
 
         logger.info(
             f"Pipeline started: action_id={action_id}, "
@@ -331,77 +329,59 @@ class EthicAgentOrchestrator:
 
         try:
             # ── Stage 1: Context Extraction ──────────────────────────
-            ctx, dt = self._timed(
-                self._stage_context, state, pipeline_input
-            )
+            ctx, dt = self._timed(self._stage_context, state, pipeline_input)
             stage_timings["context_extraction"] = dt
             stage_outputs["context"] = ctx
 
             detected_domain = domain or ctx.get("domain", "general")
 
             # ── Stage 2: Knowledge Retrieval ─────────────────────────
-            kg_out, dt = self._timed(
-                self._stage_knowledge, state, detected_domain
-            )
+            kg_out, dt = self._timed(self._stage_knowledge, state, detected_domain)
             stage_timings["knowledge_retrieval"] = dt
             stage_outputs["knowledge"] = kg_out
 
             # ── Stage 3: Neural Reasoning ────────────────────────────
             # Wrapped in retry logic — LLM APIs can be flaky
-            neural_out, dt = self._timed(
-                self._stage_neural, state, ctx, detected_domain
-            )
+            neural_out, dt = self._timed(self._stage_neural, state, ctx, detected_domain)
             stage_timings["neural_reasoning"] = dt
             stage_outputs["neural"] = neural_out
 
             # ── Stage 4: Symbolic Reasoning ──────────────────────────
-            sym_out, dt = self._timed(
-                self._stage_symbolic, state, ctx, detected_domain
-            )
+            sym_out, dt = self._timed(self._stage_symbolic, state, ctx, detected_domain)
             stage_timings["symbolic_reasoning"] = dt
             stage_outputs["symbolic"] = sym_out
 
             # ── Stage 5: Fusion ──────────────────────────────────────
-            fused, dt = self._timed(
-                self._stage_fusion, state, neural_out, sym_out, detected_domain
-            )
+            fused, dt = self._timed(self._stage_fusion, state, neural_out, sym_out, detected_domain)
             stage_timings["fusion"] = dt
             stage_outputs["fusion"] = fused
 
             # ── Stage 6: Ethical Evaluation (the core!) ──────────────
-            decision, dt = self._timed(
-                self._stage_ethical_eval, state, ctx, fused, detected_domain
-            )
+            decision, dt = self._timed(self._stage_ethical_eval, state, ctx, fused, detected_domain)
             stage_timings["ethical_evaluation"] = dt
             stage_outputs["ethical_decision"] = {
                 "eds_score": decision.eds_score,
                 "verdict": decision.verdict.value,
                 "confidence": decision.confidence,
-                "philosophy_scores": {
-                    pr.name: pr.score
-                    for pr in decision.philosophy_results
-                },
+                "philosophy_scores": {pr.name: pr.score for pr in decision.philosophy_results},
             }
 
             # ── Stage 7: Decision Gate ───────────────────────────────
-            exec_result, dt = self._timed(
-                self._stage_decision_gate, state, decision, ctx
-            )
+            exec_result, dt = self._timed(self._stage_decision_gate, state, decision, ctx)
             stage_timings["decision_gate"] = dt
             stage_outputs["execution"] = exec_result
 
             # Handle escalation (human-in-the-loop)
             if exec_result.get("status") == "escalated":
                 review = self.human_gateway.escalate(
-                    decision, ctx,
+                    decision,
+                    ctx,
                     priority=exec_result.get("review_priority", "medium"),
                 )
                 exec_result["human_review"] = review
 
             # ── Stage 8: Reflection ──────────────────────────────────
-            refl, dt = self._timed(
-                self._stage_reflection, state, decision, ctx, exec_result
-            )
+            refl, dt = self._timed(self._stage_reflection, state, decision, ctx, exec_result)
             stage_timings["reflection"] = dt
             stage_outputs["reflection"] = refl
 
@@ -424,9 +404,7 @@ class EthicAgentOrchestrator:
         self._total_time += elapsed
 
         verdict_str = decision.verdict.value
-        self._verdict_counts[verdict_str] = (
-            self._verdict_counts.get(verdict_str, 0) + 1
-        )
+        self._verdict_counts[verdict_str] = self._verdict_counts.get(verdict_str, 0) + 1
 
         result = PipelineResult(
             action_id=action_id,
@@ -435,9 +413,7 @@ class EthicAgentOrchestrator:
             eds_score=decision.eds_score,
             verdict=verdict_str,
             confidence=decision.confidence,
-            philosophy_scores={
-                pr.name: pr.score for pr in decision.philosophy_results
-            },
+            philosophy_scores={pr.name: pr.score for pr in decision.philosophy_results},
             weights_used=decision.weights_used,
             reasoning=decision.reasoning,
             rules_triggered=decision.rules_triggered,
@@ -457,11 +433,11 @@ class EthicAgentOrchestrator:
 
     def run_batch(
         self,
-        tasks: List[Dict[str, Any]],
-        progress_callback: Optional[Callable[[int, int, PipelineResult], None]] = None,
+        tasks: list[dict[str, Any]],
+        progress_callback: Callable[[int, int, PipelineResult], None] | None = None,
         *,
         dry_run: bool = False,
-    ) -> List[PipelineResult]:
+    ) -> list[PipelineResult]:
         """Evaluate a list of tasks through the pipeline.
 
         Each entry is a dict with keys ``task``, and optionally
@@ -476,7 +452,7 @@ class EthicAgentOrchestrator:
         Returns:
             List of PipelineResult in the same order as *tasks*.
         """
-        results: List[PipelineResult] = []
+        results: list[PipelineResult] = []
         total = len(tasks)
         logger.info(f"Starting batch evaluation ({total} tasks)")
 
@@ -497,14 +473,12 @@ class EthicAgentOrchestrator:
         logger.info(f"Batch complete — {total} tasks processed")
         return results
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Return aggregate pipeline statistics."""
         return {
             "total_runs": self._total_runs,
             "total_time_seconds": round(self._total_time, 3),
-            "avg_time_seconds": round(
-                self._total_time / max(self._total_runs, 1), 3
-            ),
+            "avg_time_seconds": round(self._total_time / max(self._total_runs, 1), 3),
             "verdict_distribution": dict(self._verdict_counts),
             "precedent_store": self.precedent_store.get_statistics(),
             "review_stats": self.human_gateway.get_review_statistics(),
@@ -515,17 +489,13 @@ class EthicAgentOrchestrator:
     # ║  STAGE IMPLEMENTATIONS                                       ║
     # ╚══════════════════════════════════════════════════════════════╝
 
-    def _stage_context(
-        self, state: PipelineState, inp: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _stage_context(self, state: PipelineState, inp: dict[str, Any]) -> dict[str, Any]:
         """Stage 1 — Context Extraction.
 
         The ContextAgent pulls out domain, entities, stakeholders,
         urgency, and other signals from the free-text task description.
         """
-        state.update_stage(
-            PipelineStage.CONTEXT_EXTRACTION, {"status": "running"}
-        )
+        state.update_stage(PipelineStage.CONTEXT_EXTRACTION, {"status": "running"})
 
         ctx = self.context_agent.extract_context(
             inp.get("task", ""),
@@ -536,13 +506,14 @@ class EthicAgentOrchestrator:
 
         state.update_stage(
             PipelineStage.CONTEXT_EXTRACTION,
-            {"domain": ctx.get("domain", "general"), "entities_found": len(ctx.get("entities", []))},
+            {
+                "domain": ctx.get("domain", "general"),
+                "entities_found": len(ctx.get("entities", [])),
+            },
         )
         return ctx
 
-    def _stage_knowledge(
-        self, state: PipelineState, domain: str
-    ) -> Dict[str, Any]:
+    def _stage_knowledge(self, state: PipelineState, domain: str) -> dict[str, Any]:
         """Stage 2 — Knowledge Retrieval from the domain graph."""
         state.update_stage(PipelineStage.KNOWLEDGE_QUERY, {"status": "running"})
 
@@ -559,8 +530,8 @@ class EthicAgentOrchestrator:
         return out
 
     def _stage_neural(
-        self, state: PipelineState, ctx: Dict[str, Any], domain: str
-    ) -> Dict[str, Any]:
+        self, state: PipelineState, ctx: dict[str, Any], domain: str
+    ) -> dict[str, Any]:
         """Stage 3 — Neural (LLM) reasoning with retry + back-off.
 
         We retry up to 3 times with exponential back-off because
@@ -570,21 +541,22 @@ class EthicAgentOrchestrator:
         """
         state.update_stage(PipelineStage.NEURAL_REASONING, {"status": "running"})
 
-        last_err: Optional[Exception] = None
+        last_err: Exception | None = None
         for attempt in range(_MAX_LLM_RETRIES):
             try:
                 result = self.neural_reasoner.reason(ctx, domain)
-                state.update_stage(PipelineStage.NEURAL_REASONING, {
-                    "recommendation": result.get("recommendation"),
-                    "confidence": result.get("confidence"),
-                    "source": result.get("source", "unknown"),
-                })
+                state.update_stage(
+                    PipelineStage.NEURAL_REASONING,
+                    {
+                        "recommendation": result.get("recommendation"),
+                        "confidence": result.get("confidence"),
+                        "source": result.get("source", "unknown"),
+                    },
+                )
                 return result
             except Exception as exc:
                 last_err = exc
-                wait = _BACKOFF_BASE ** attempt + random.uniform(
-                    -_BACKOFF_JITTER, _BACKOFF_JITTER
-                )
+                wait = _BACKOFF_BASE**attempt + random.uniform(-_BACKOFF_JITTER, _BACKOFF_JITTER)
                 logger.warning(
                     f"Neural reasoning attempt {attempt + 1}/{_MAX_LLM_RETRIES} "
                     f"failed: {exc}. Retrying in {wait:.1f}s …"
@@ -592,32 +564,33 @@ class EthicAgentOrchestrator:
                 time.sleep(wait)
 
         # all retries exhausted — let the reasoner's heuristic handle it
-        logger.error(
-            "Neural reasoning failed after all retries — using heuristic fallback"
-        )
+        logger.error("Neural reasoning failed after all retries — using heuristic fallback")
         result = self.neural_reasoner.reason(ctx, domain)
         return result
 
     def _stage_symbolic(
-        self, state: PipelineState, ctx: Dict[str, Any], domain: str
-    ) -> Dict[str, Any]:
+        self, state: PipelineState, ctx: dict[str, Any], domain: str
+    ) -> dict[str, Any]:
         """Stage 4 — Symbolic (rule-based) reasoning."""
         state.update_stage(PipelineStage.SYMBOLIC_REASONING, {"status": "running"})
         result = self.symbolic_reasoner.reason(ctx, domain)
-        state.update_stage(PipelineStage.SYMBOLIC_REASONING, {
-            "status": result.get("status"),
-            "blocked": result.get("blocked", False),
-            "rules_matched": len(result.get("matched_rules", [])),
-        })
+        state.update_stage(
+            PipelineStage.SYMBOLIC_REASONING,
+            {
+                "status": result.get("status"),
+                "blocked": result.get("blocked", False),
+                "rules_matched": len(result.get("matched_rules", [])),
+            },
+        )
         return result
 
     def _stage_fusion(
         self,
         state: PipelineState,
-        neural: Dict[str, Any],
-        symbolic: Dict[str, Any],
+        neural: dict[str, Any],
+        symbolic: dict[str, Any],
         domain: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Stage 5 — Fuse neural + symbolic outputs.
 
         The safety-first principle:  if the symbolic reasoner says
@@ -626,57 +599,67 @@ class EthicAgentOrchestrator:
         """
         state.update_stage(PipelineStage.FUSION, {"status": "running"})
         result = self.fusion_agent.fuse(neural, symbolic, domain)
-        state.update_stage(PipelineStage.FUSION, {
-            "recommendation": result.get("recommendation"),
-            "agreement": result.get("agreement"),
-        })
+        state.update_stage(
+            PipelineStage.FUSION,
+            {
+                "recommendation": result.get("recommendation"),
+                "agreement": result.get("agreement"),
+            },
+        )
         return result
 
     def _stage_ethical_eval(
         self,
         state: PipelineState,
-        ctx: Dict[str, Any],
-        fusion: Dict[str, Any],
+        ctx: dict[str, Any],
+        fusion: dict[str, Any],
         domain: str,
     ):
         """Stage 6 — Multi-philosophy ethical evaluation (EDS formula)."""
         state.update_stage(PipelineStage.ETHICAL_EVALUATION, {"status": "running"})
         decision = self.ethical_reasoner.evaluate(ctx, fusion, domain)
-        state.update_stage(PipelineStage.ETHICAL_EVALUATION, {
-            "eds_score": decision.eds_score,
-            "verdict": decision.verdict.value,
-            "confidence": decision.confidence,
-        })
+        state.update_stage(
+            PipelineStage.ETHICAL_EVALUATION,
+            {
+                "eds_score": decision.eds_score,
+                "verdict": decision.verdict.value,
+                "confidence": decision.confidence,
+            },
+        )
         return decision
 
     def _stage_decision_gate(
-        self, state: PipelineState, decision, ctx: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, state: PipelineState, decision, ctx: dict[str, Any]
+    ) -> dict[str, Any]:
         """Stage 7 — Decision gate + action execution."""
         state.update_stage(PipelineStage.DECISION_GATE, {"status": "running"})
         result = self.action_executor.execute(decision, ctx)
-        state.update_stage(PipelineStage.DECISION_GATE, {
-            "action_status": result.get("status"),
-            "requires_review": result.get("requires_human_review", False),
-        })
+        state.update_stage(
+            PipelineStage.DECISION_GATE,
+            {
+                "action_status": result.get("status"),
+                "requires_review": result.get("requires_human_review", False),
+            },
+        )
         return result
 
     def _stage_reflection(
         self,
         state: PipelineState,
         decision,
-        ctx: Dict[str, Any],
-        exec_result: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        ctx: dict[str, Any],
+        exec_result: dict[str, Any],
+    ) -> dict[str, Any]:
         """Stage 8 — Post-decision reflection & learning."""
         state.update_stage(PipelineStage.REFLECTION, {"status": "running"})
         refl = self.reflection_agent.reflect(decision, ctx, exec_result)
-        state.update_stage(PipelineStage.REFLECTION, {
-            "recommendations": len(refl.get("recommendations", [])),
-            "is_consistent": refl.get("consistency_analysis", {}).get(
-                "is_consistent"
-            ),
-        })
+        state.update_stage(
+            PipelineStage.REFLECTION,
+            {
+                "recommendations": len(refl.get("recommendations", [])),
+                "is_consistent": refl.get("consistency_analysis", {}).get("is_consistent"),
+            },
+        )
         return refl
 
     # ╔══════════════════════════════════════════════════════════════╗
@@ -684,7 +667,7 @@ class EthicAgentOrchestrator:
     # ╚══════════════════════════════════════════════════════════════╝
 
     @staticmethod
-    def _timed(fn: Callable, *args, **kwargs) -> Tuple[Any, float]:
+    def _timed(fn: Callable, *args, **kwargs) -> tuple[Any, float]:
         """Call *fn* and return ``(result, elapsed_seconds)``."""
         t0 = time.time()
         result = fn(*args, **kwargs)
@@ -693,7 +676,7 @@ class EthicAgentOrchestrator:
     def _dry_run(
         self,
         action_id: str,
-        inp: Dict[str, Any],
+        inp: dict[str, Any],
         state: PipelineState,
     ) -> PipelineResult:
         """Trace the pipeline stages without executing anything.
@@ -720,7 +703,7 @@ class EthicAgentOrchestrator:
             stage_outputs={"stages_traced": stages_traced, "input": inp},
         )
 
-    def _extract_domain_weights(self) -> Dict[str, Dict[str, float]]:
+    def _extract_domain_weights(self) -> dict[str, dict[str, float]]:
         """Pull per-domain philosophy weights from config.
 
         Falls back to uniform weights (0.25 each) when a domain
@@ -730,7 +713,7 @@ class EthicAgentOrchestrator:
           - Named keys: ``weights: {deontological: 0.35, ...}``
           - Short keys: ``w1: 0.35, w2: 0.25, w3: 0.20, w4: 0.20``
         """
-        weights: Dict[str, Dict[str, float]] = {}
+        weights: dict[str, dict[str, float]] = {}
         domains_cfg = self.domain_weights_cfg.get("domains", {})
         if not isinstance(domains_cfg, dict):
             domains_cfg = {}
@@ -792,7 +775,9 @@ def main() -> None:
         description="EthicAgent — Neuro-Symbolic Ethical Reasoning CLI",
     )
     parser.add_argument("task", nargs="?", default=None, help="Task to evaluate")
-    parser.add_argument("--domain", default=None, help="Domain hint (healthcare, finance, hiring, disaster)")
+    parser.add_argument(
+        "--domain", default=None, help="Domain hint (healthcare, finance, hiring, disaster)"
+    )
     parser.add_argument("--dry-run", action="store_true", help="Dry run mode (skip LLM calls)")
     args = parser.parse_args()
 

@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional
 
 from ethicagent.evaluation.metrics import compute_all_metrics
 from ethicagent.utils.helpers import now_iso
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # Ablation variants — which components to disable
-ABLATION_VARIANTS: Dict[str, Dict[str, Any]] = {
+ABLATION_VARIANTS: dict[str, dict[str, Any]] = {
     "full_system": {
         "description": "Full EthicAgent system (no ablation)",
         "disable": [],
@@ -88,21 +89,21 @@ class AblationStudy:
 
     def __init__(
         self,
-        orchestrator_factory: Optional[Callable[[Dict], Any]] = None,
-        variants: Optional[Dict[str, Dict]] = None,
+        orchestrator_factory: Callable[[dict], Any] | None = None,
+        variants: dict[str, dict] | None = None,
     ) -> None:
         self.orchestrator_factory = orchestrator_factory
         self.variants = variants or ABLATION_VARIANTS
-        self.results: Dict[str, Dict[str, Any]] = {}
+        self.results: dict[str, dict[str, Any]] = {}
 
     # ── Public API ───────────────────────────────────────────
 
     def run(
         self,
-        test_cases: List[Dict[str, Any]],
-        variant_names: Optional[List[str]] = None,
-        progress_callback: Optional[Callable[[str, int, int], None]] = None,
-    ) -> Dict[str, Any]:
+        test_cases: list[dict[str, Any]],
+        variant_names: list[str] | None = None,
+        progress_callback: Callable[[str, int, int], None] | None = None,
+    ) -> dict[str, Any]:
         """Run the ablation study across all variants.
 
         Args:
@@ -118,7 +119,8 @@ class AblationStudy:
 
         logger.info(
             "Starting ablation study: %d variants, %d cases",
-            total, len(test_cases),
+            total,
+            len(test_cases),
         )
 
         for i, name in enumerate(variants_to_run):
@@ -129,7 +131,10 @@ class AblationStudy:
             cfg = self.variants[name]
             logger.info(
                 "[%d/%d] Running variant '%s' — %s",
-                i + 1, total, name, cfg["description"],
+                i + 1,
+                total,
+                name,
+                cfg["description"],
             )
 
             if progress_callback:
@@ -147,9 +152,7 @@ class AblationStudy:
             "timestamp": now_iso(),
         }
 
-    def export_results(
-        self, results_or_filepath: Any = None, filepath: str | None = None
-    ) -> None:
+    def export_results(self, results_or_filepath: Any = None, filepath: str | None = None) -> None:
         """Export ablation results to JSON.
 
         Accepts either:
@@ -194,9 +197,9 @@ class AblationStudy:
     def _run_variant(
         self,
         variant_name: str,
-        variant_config: Dict[str, Any],
-        test_cases: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        variant_config: dict[str, Any],
+        test_cases: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Run a single ablation variant."""
         t0 = time.perf_counter()
 
@@ -241,21 +244,22 @@ class AblationStudy:
     def _simulate_variant(
         self,
         variant_name: str,
-        variant_config: Dict[str, Any],
-        test_cases: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        variant_config: dict[str, Any],
+        test_cases: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Simulate variant results when no orchestrator is available.
 
         Useful for testing the ablation framework itself. The more
         components you disable, the worse the simulated accuracy.
         """
         import random
+
         rng = random.Random(hash(variant_name))
 
         # Each disabled component degrades accuracy
         penalty = len(variant_config["disable"]) * 0.05
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for case in test_cases:
             expected = case.get("expected_verdict", "escalate")
             eds_range = case.get("expected_eds_range", (0.0, 1.0))
@@ -270,37 +274,35 @@ class AblationStudy:
             else:
                 verdict = rng.choice(["approve", "escalate", "reject"])
 
-            results.append({
-                "eds_score": round(eds, 4),
-                "verdict": verdict,
-                "actual_verdict": verdict,
-                "expected_verdict": expected,
-                "expected_eds_range": eds_range,
-                "domain": case.get("domain", "general"),
-                "philosophy_scores": {
-                    "deontological": round(rng.random(), 4),
-                    "consequentialist": round(rng.random(), 4),
-                    "virtue_ethics": round(rng.random(), 4),
-                    "contextual": round(rng.random(), 4),
-                },
-            })
+            results.append(
+                {
+                    "eds_score": round(eds, 4),
+                    "verdict": verdict,
+                    "actual_verdict": verdict,
+                    "expected_verdict": expected,
+                    "expected_eds_range": eds_range,
+                    "domain": case.get("domain", "general"),
+                    "philosophy_scores": {
+                        "deontological": round(rng.random(), 4),
+                        "consequentialist": round(rng.random(), 4),
+                        "virtue_ethics": round(rng.random(), 4),
+                        "contextual": round(rng.random(), 4),
+                    },
+                }
+            )
 
         return results
 
-    def _compare_variants(self) -> Dict[str, Any]:
+    def _compare_variants(self) -> dict[str, Any]:
         """Compare results across all variants."""
-        comparison: Dict[str, Any] = {}
+        comparison: dict[str, Any] = {}
 
         # Accuracy ranking
-        accuracy_ranking: List[tuple] = []
+        accuracy_ranking: list[tuple] = []
         for name, data in self.results.items():
             if "error" in data:
                 continue
-            acc = (
-                data.get("metrics", {})
-                .get("verdict_accuracy", {})
-                .get("overall_accuracy", 0.0)
-            )
+            acc = data.get("metrics", {}).get("verdict_accuracy", {}).get("overall_accuracy", 0.0)
             accuracy_ranking.append((name, round(acc, 4)))
 
         accuracy_ranking.sort(key=lambda x: x[1], reverse=True)
@@ -311,7 +313,7 @@ class AblationStudy:
             (acc for name, acc in accuracy_ranking if name == "full_system"),
             0.0,
         )
-        deltas: Dict[str, float] = {}
+        deltas: dict[str, float] = {}
         for name, acc in accuracy_ranking:
             if name == "full_system":
                 continue

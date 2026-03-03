@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-import pytest
+from ethicagent.ethics.conflict_resolver import ConflictResolver
+from ethicagent.ethics.consequentialist import ConsequentialistEvaluator
+from ethicagent.ethics.contextual_ethics import ContextualEthicsEvaluator
+from ethicagent.ethics.deontological import DeontologicalEvaluator
 from ethicagent.ethics.ethical_score import (
+    EthicalDecision,
     EthicalVerdict,
     PhilosophyResult,
-    EthicalDecision,
 )
-from ethicagent.ethics.deontological import DeontologicalEvaluator
-from ethicagent.ethics.consequentialist import ConsequentialistEvaluator
 from ethicagent.ethics.virtue_ethics import VirtueEthicsEvaluator
-from ethicagent.ethics.contextual_ethics import ContextualEthicsEvaluator
-from ethicagent.ethics.conflict_resolver import ConflictResolver
-
 
 # ═══════════════════════════════════════════════════════════════
 # Ethical Score & Verdict
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestEthicalVerdict:
     def test_verdict_values(self):
@@ -85,6 +84,7 @@ class TestEthicalDecision:
 # Deontological Evaluator
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestDeontologicalEvaluator:
     def test_initialization(self):
         evaluator = DeontologicalEvaluator()
@@ -124,6 +124,7 @@ class TestDeontologicalEvaluator:
 # Consequentialist Evaluator
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestConsequentialistEvaluator:
     def test_initialization(self):
         evaluator = ConsequentialistEvaluator()
@@ -157,6 +158,7 @@ class TestConsequentialistEvaluator:
 # Virtue Ethics Evaluator
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestVirtueEthicsEvaluator:
     def test_initialization(self):
         evaluator = VirtueEthicsEvaluator()
@@ -185,6 +187,7 @@ class TestVirtueEthicsEvaluator:
 # Contextual Ethics Evaluator
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestContextualEthicsEvaluator:
     def test_initialization(self):
         evaluator = ContextualEthicsEvaluator()
@@ -209,6 +212,7 @@ class TestContextualEthicsEvaluator:
 # ═══════════════════════════════════════════════════════════════
 # Conflict Resolver
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestConflictResolver:
     def test_initialization(self):

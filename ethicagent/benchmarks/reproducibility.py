@@ -15,7 +15,7 @@ import logging
 import random
 import statistics
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.scenarios import SCENARIO_REGISTRY
 from ethicagent.utils.helpers import now_iso
@@ -32,8 +32,8 @@ class ReproducibilityBenchmark:
 
     def __init__(
         self,
-        orchestrator: Optional[Any] = None,
-        config: Optional[Dict[str, Any]] = None,
+        orchestrator: Any | None = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.config = config or {}
@@ -42,7 +42,7 @@ class ReproducibilityBenchmark:
         self.eds_tolerance: float = self.config.get("eds_tolerance", 0.01)
 
     # ── public API ──────────────────────────────────────────────
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> dict[str, Any]:
         """Execute the reproducibility benchmark.
 
         Returns dict with per-case consistency, aggregate stats,
@@ -54,14 +54,15 @@ class ReproducibilityBenchmark:
         cases = self._gather_cases()
         logger.info(
             "Reproducibility benchmark: %d cases × %d repeats",
-            len(cases), self.n_repeats,
+            len(cases),
+            self.n_repeats,
         )
 
-        case_results: List[Dict[str, Any]] = []
+        case_results: list[dict[str, Any]] = []
 
         for case in cases:
-            verdicts: List[str] = []
-            eds_scores: List[float] = []
+            verdicts: list[str] = []
+            eds_scores: list[float] = []
 
             for _ in range(self.n_repeats):
                 result = self._run_case(case)
@@ -73,15 +74,17 @@ class ReproducibilityBenchmark:
             eds_range = max(eds_scores) - min(eds_scores) if eds_scores else 0.0
             eds_consistent = eds_range <= self.eds_tolerance
 
-            case_results.append({
-                "case_id": getattr(case, "case_id", str(id(case))),
-                "domain": getattr(case, "domain", "general"),
-                "verdicts": verdicts,
-                "eds_scores": [round(s, 4) for s in eds_scores],
-                "verdict_consistent": verdict_consistent,
-                "eds_consistent": eds_consistent,
-                "eds_range": round(eds_range, 4),
-            })
+            case_results.append(
+                {
+                    "case_id": getattr(case, "case_id", str(id(case))),
+                    "domain": getattr(case, "domain", "general"),
+                    "verdicts": verdicts,
+                    "eds_scores": [round(s, 4) for s in eds_scores],
+                    "verdict_consistent": verdict_consistent,
+                    "eds_consistent": eds_consistent,
+                    "eds_range": round(eds_range, 4),
+                }
+            )
 
         total_time = time.perf_counter() - t0
 
@@ -90,21 +93,23 @@ class ReproducibilityBenchmark:
         n_eds_ok = sum(1 for r in case_results if r["eds_consistent"])
         n_total = len(case_results)
 
-        agg: Dict[str, Any] = {
+        agg: dict[str, Any] = {
             "total_cases": n_total,
             "n_repeats": self.n_repeats,
             "verdict_consistency_rate": round(n_verdict_ok / n_total, 4) if n_total else 0,
             "eds_consistency_rate": round(n_eds_ok / n_total, 4) if n_total else 0,
             "eds_tolerance": self.eds_tolerance,
-            "mean_eds_range": round(
-                statistics.mean(r["eds_range"] for r in case_results), 4
-            ) if case_results else 0,
+            "mean_eds_range": round(statistics.mean(r["eds_range"] for r in case_results), 4)
+            if case_results
+            else 0,
             "seconds": round(total_time, 3),
             "timestamp": now_iso(),
         }
 
         # show problematic cases (if any)
-        flagged = [r for r in case_results if not r["verdict_consistent"] or not r["eds_consistent"]]
+        flagged = [
+            r for r in case_results if not r["verdict_consistent"] or not r["eds_consistent"]
+        ]
         if flagged:
             agg["flagged_cases"] = flagged
 
@@ -117,8 +122,8 @@ class ReproducibilityBenchmark:
         return agg
 
     # ── internals ───────────────────────────────────────────────
-    def _gather_cases(self) -> List[Any]:
-        all_cases: List[Any] = []
+    def _gather_cases(self) -> list[Any]:
+        all_cases: list[Any] = []
         for domain_name, cls in SCENARIO_REGISTRY.items():
             scenario = cls()
             all_cases.extend(scenario.get_cases())
@@ -127,7 +132,7 @@ class ReproducibilityBenchmark:
             all_cases = rng.sample(all_cases, self.max_cases)
         return all_cases
 
-    def _run_case(self, case: Any) -> Dict[str, Any]:
+    def _run_case(self, case: Any) -> dict[str, Any]:
         """Run one case through orchestrator, or simulate."""
         if self.orchestrator:
             return self.orchestrator.run(
@@ -136,9 +141,7 @@ class ReproducibilityBenchmark:
             )
         # deterministic simulation — same case should always give
         # the same result (verifying our sim *is* reproducible).
-        h = int(hashlib.md5(
-            getattr(case, "case_id", str(id(case))).encode()
-        ).hexdigest(), 16)
+        h = int(hashlib.md5(getattr(case, "case_id", str(id(case))).encode()).hexdigest(), 16)
         eds = 0.40 + (h % 500) / 1000  # [0.40, 0.90)
         if eds >= 0.80:
             verdict = "AUTO_APPROVE"

@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 # ── Random Baseline ──────────────────────────────────────────
 
+
 class RandomBaseline:
     """Random baseline — assigns random verdicts and EDS scores.
 
@@ -37,7 +38,7 @@ class RandomBaseline:
         self.rng = random.Random(seed)
         self.name = "random"
 
-    def evaluate(self, case: Any, **kwargs: Any) -> Dict[str, Any]:
+    def evaluate(self, case: Any, **kwargs: Any) -> dict[str, Any]:
         """Evaluate a single case randomly.
 
         Args:
@@ -67,6 +68,7 @@ class RandomBaseline:
 
 # ── Rules-Only Baseline ─────────────────────────────────────
 
+
 class RulesOnlyBaseline:
     """Rules-only baseline — pure symbolic reasoning.
 
@@ -74,11 +76,11 @@ class RulesOnlyBaseline:
     reasoning by showing what rules alone can (and can't) do.
     """
 
-    def __init__(self, rules: Optional[Dict] = None) -> None:
+    def __init__(self, rules: dict | None = None) -> None:
         self.rules = rules or {}
         self.name = "rules_only"
 
-    def evaluate(self, case: Any, **kwargs: Any) -> Dict[str, Any]:
+    def evaluate(self, case: Any, **kwargs: Any) -> dict[str, Any]:
         task, domain = _extract_task_domain(case)
 
         try:
@@ -112,9 +114,7 @@ class RulesOnlyBaseline:
                     "virtue_ethics": 0.5,
                     "contextual": 0.5,
                 },
-                "rules_triggered": [
-                    r.get("rule_id", "") for r in result.get("matched_rules", [])
-                ],
+                "rules_triggered": [r.get("rule_id", "") for r in result.get("matched_rules", [])],
                 "reasoning": f"Rules-only: penalty={penalty:.2f}",
                 "baseline": self.name,
                 "timestamp": now_iso(),
@@ -126,6 +126,7 @@ class RulesOnlyBaseline:
 
 # ── LLM-Only Baseline ───────────────────────────────────────
 
+
 class LLMOnlyBaseline:
     """LLM-only baseline — pure neural reasoning.
 
@@ -133,11 +134,11 @@ class LLMOnlyBaseline:
     symbolic guardrails by showing LLM-alone failure modes.
     """
 
-    def __init__(self, config: Optional[Dict] = None) -> None:
+    def __init__(self, config: dict | None = None) -> None:
         self.config = config or {}
         self.name = "llm_only"
 
-    def evaluate(self, case: Any, **kwargs: Any) -> Dict[str, Any]:
+    def evaluate(self, case: Any, **kwargs: Any) -> dict[str, Any]:
         task, domain = _extract_task_domain(case)
 
         try:
@@ -181,6 +182,7 @@ class LLMOnlyBaseline:
 
 # ── Equal-Weight Baseline ────────────────────────────────────
 
+
 class EqualWeightBaseline:
     """Equal-weight baseline — all philosophies weighted 0.25.
 
@@ -188,11 +190,11 @@ class EqualWeightBaseline:
     weights in the EDS formula.
     """
 
-    def __init__(self, rules: Optional[Dict] = None) -> None:
+    def __init__(self, rules: dict | None = None) -> None:
         self.rules = rules or {}
         self.name = "equal_weight"
 
-    def evaluate(self, case: Any, **kwargs: Any) -> Dict[str, Any]:
+    def evaluate(self, case: Any, **kwargs: Any) -> dict[str, Any]:
         task, domain = _extract_task_domain(case)
 
         try:
@@ -222,7 +224,9 @@ class EqualWeightBaseline:
             return {
                 "action_id": decision.action_id,
                 "eds_score": round(decision.eds_score, 4),
-                "verdict": decision.verdict.value if hasattr(decision.verdict, "value") else str(decision.verdict),
+                "verdict": decision.verdict.value
+                if hasattr(decision.verdict, "value")
+                else str(decision.verdict),
                 "domain": domain,
                 "confidence": round(decision.confidence, 4),
                 "philosophy_scores": {
@@ -239,6 +243,7 @@ class EqualWeightBaseline:
 
 
 # ── Helpers ──────────────────────────────────────────────────
+
 
 def _extract_task_domain(case: Any) -> tuple[str, str]:
     """Pull task and domain from a ScenarioCase or dict."""
@@ -257,8 +262,11 @@ def _eds_to_verdict(eds: float) -> str:
 
 
 def _fallback_result(
-    task: str, domain: str, baseline_name: str, error: str,
-) -> Dict[str, Any]:
+    task: str,
+    domain: str,
+    baseline_name: str,
+    error: str,
+) -> dict[str, Any]:
     """Return a safe result dict when a baseline raises."""
     return {
         "action_id": f"ERR-{abs(hash(task)) % 99999:05d}",
@@ -274,9 +282,9 @@ def _fallback_result(
 
 
 def get_all_baselines(
-    rules: Optional[Dict] = None,
-    llm_config: Optional[Dict] = None,
-) -> Dict[str, Any]:
+    rules: dict | None = None,
+    llm_config: dict | None = None,
+) -> dict[str, Any]:
     """Get all baseline instances.
 
     Args:
