@@ -34,6 +34,17 @@ class PerformanceBenchmark:
         self.orchestrator = orchestrator
         self.config = config or {}
         self.max_cases = config.get("max_cases", 50) if config else 50
+        self._fallback_orch: Any | None = None
+
+    def _get_orchestrator(self) -> Any:
+        """Return user-supplied orchestrator or a real offline fallback."""
+        if self.orchestrator:
+            return self.orchestrator
+        if self._fallback_orch is None:
+            from ethicagent.orchestrator import EthicAgentOrchestrator
+
+            self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
+        return self._fallback_orch
 
     def run(self) -> dict[str, Any]:
         """Run the performance benchmark.
@@ -94,15 +105,12 @@ class PerformanceBenchmark:
         return result
 
     def _run_case(self, case: Any) -> None:
-        """Run a single case through the orchestrator (or simulate)."""
-        if self.orchestrator:
-            self.orchestrator.run(
-                task=case.task,
-                domain=getattr(case, "domain", None),
-            )
-        else:
-            # Simulate a ~5ms decision
-            time.sleep(0.005)
+        """Run a single case through the orchestrator."""
+        orch = self._get_orchestrator()
+        orch.run(
+            task=case.task,
+            domain=getattr(case, "domain", None),
+        )
 
     @staticmethod
     def _latency_stats(latencies: list[float]) -> dict[str, float]:

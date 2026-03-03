@@ -107,6 +107,18 @@ class PerturbationAttack:
         self.orchestrator = orchestrator
         self.config = config or {}
         self.rng = random.Random(seed)
+        self.eds_threshold: float = self.config.get("eds_threshold", 0.15)
+        self._fallback_orch: Any | None = None
+
+    def _get_orchestrator(self) -> Any:
+        """Return user-supplied orchestrator or a real offline fallback."""
+        if self.orchestrator:
+            return self.orchestrator
+        if self._fallback_orch is None:
+            from ethicagent.orchestrator import EthicAgentOrchestrator
+
+            self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
+        return self._fallback_orch
         self.eds_threshold = self.config.get("eds_drift_threshold", 0.10)
 
     # ── public ──────────────────────────────────────────────────
@@ -268,17 +280,8 @@ class PerturbationAttack:
 
     # ── evaluation ──────────────────────────────────────────────
     def _evaluate(self, task: str, domain: str) -> dict[str, Any]:
-        if self.orchestrator:
-            return self.orchestrator.run(task=task, domain=domain)
-        # simulation: deterministic hash → score
-        import hashlib
-
-        h = int(hashlib.md5(task.encode()).hexdigest(), 16)
-        eds = 0.35 + (h % 550) / 1000
-        if eds >= 0.80:
-            verdict = "AUTO_APPROVE"
-        elif eds >= 0.50:
-            verdict = "ESCALATE"
-        else:
-            verdict = "REJECT"
-        return {"eds_score": round(eds, 4), "verdict": verdict}
+        orch = self._get_orchestrator()
+        result = orch.run(task=task, domain=domain)
+        if hasattr(result, "to_dict"):
+            return result.to_dict()
+        return result if isinstance(result, dict) else dict(result)

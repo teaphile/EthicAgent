@@ -95,6 +95,22 @@ class AblationStudy:
         self.orchestrator_factory = orchestrator_factory
         self.variants = variants or ABLATION_VARIANTS
         self.results: dict[str, dict[str, Any]] = {}
+        self._fallback_orch: Any | None = None
+
+    def _get_orchestrator(self) -> Any:
+        """Return a real offline orchestrator for fallback evaluation."""
+        if self._fallback_orch is None:
+            from ethicagent.orchestrator import EthicAgentOrchestrator
+
+            self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
+        return self._fallback_orch
+
+    @staticmethod
+    def _to_dict(result: Any) -> dict[str, Any]:
+        """Convert PipelineResult (or dict) to a plain dict."""
+        if hasattr(result, "to_dict"):
+            return result.to_dict()
+        return result if isinstance(result, dict) else dict(result)
 
     # ── Public API ───────────────────────────────────────────
 
@@ -206,19 +222,21 @@ class AblationStudy:
         try:
             if self.orchestrator_factory:
                 orchestrator = self.orchestrator_factory(variant_config)
-                results = []
-                for case in test_cases:
-                    result = orchestrator.run(
-                        task=case.get("task", ""),
-                        domain=case.get("domain"),
-                        metadata=case.get("metadata"),
-                    )
-                    result["expected_verdict"] = case.get("expected_verdict", "")
-                    result["expected_eds_range"] = case.get("expected_eds_range")
-                    result["actual_verdict"] = result.get("verdict", "unknown")
-                    results.append(result)
             else:
-                results = self._simulate_variant(variant_name, variant_config, test_cases)
+                orchestrator = self._get_orchestrator()
+
+            results = []
+            for case in test_cases:
+                result = orchestrator.run(
+                    task=case.get("task", ""),
+                    domain=case.get("domain"),
+                    metadata=case.get("metadata"),
+                )
+                r = self._to_dict(result)
+                r["expected_verdict"] = case.get("expected_verdict", "")
+                r["expected_eds_range"] = case.get("expected_eds_range")
+                r["actual_verdict"] = r.get("verdict", "unknown")
+                results.append(r)
 
             elapsed = time.perf_counter() - t0
             metrics = compute_all_metrics(results)
@@ -240,58 +258,6 @@ class AblationStudy:
                 "error": str(exc),
                 "elapsed_seconds": round(time.perf_counter() - t0, 3),
             }
-
-    def _simulate_variant(
-        self,
-        variant_name: str,
-        variant_config: dict[str, Any],
-        test_cases: list[dict[str, Any]],
-    ) -> list[dict[str, Any]]:
-        """Simulate variant results when no orchestrator is available.
-
-        Useful for testing the ablation framework itself. The more
-        components you disable, the worse the simulated accuracy.
-        """
-        import random
-
-        rng = random.Random(hash(variant_name))
-
-        # Each disabled component degrades accuracy
-        penalty = len(variant_config["disable"]) * 0.05
-
-        results: list[dict[str, Any]] = []
-        for case in test_cases:
-            expected = case.get("expected_verdict", "escalate")
-            eds_range = case.get("expected_eds_range", (0.0, 1.0))
-
-            base_eds = rng.uniform(eds_range[0], eds_range[1])
-            eds = max(0.0, min(1.0, base_eds - penalty * rng.random()))
-
-            if rng.random() > penalty * 2:
-                verdict = expected or (
-                    "approve" if eds >= 0.8 else ("escalate" if eds >= 0.5 else "reject")
-                )
-            else:
-                verdict = rng.choice(["approve", "escalate", "reject"])
-
-            results.append(
-                {
-                    "eds_score": round(eds, 4),
-                    "verdict": verdict,
-                    "actual_verdict": verdict,
-                    "expected_verdict": expected,
-                    "expected_eds_range": eds_range,
-                    "domain": case.get("domain", "general"),
-                    "philosophy_scores": {
-                        "deontological": round(rng.random(), 4),
-                        "consequentialist": round(rng.random(), 4),
-                        "virtue_ethics": round(rng.random(), 4),
-                        "contextual": round(rng.random(), 4),
-                    },
-                }
-            )
-
-        return results
 
     def _compare_variants(self) -> dict[str, Any]:
         """Compare results across all variants."""

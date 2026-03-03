@@ -36,6 +36,17 @@ class CrossDomainBenchmark:
     ) -> None:
         self.orchestrator = orchestrator
         self.config = config or {}
+        self._fallback_orch: Any | None = None
+
+    def _get_orchestrator(self) -> Any:
+        """Return user-supplied orchestrator or a real offline fallback."""
+        if self.orchestrator:
+            return self.orchestrator
+        if self._fallback_orch is None:
+            from ethicagent.orchestrator import EthicAgentOrchestrator
+
+            self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
+        return self._fallback_orch
 
     def run(self) -> dict[str, Any]:
         """Run the cross-domain benchmark.
@@ -86,43 +97,16 @@ class CrossDomainBenchmark:
         domain_override: str,
     ) -> dict[str, Any]:
         """Evaluate cases, optionally overriding the domain parameter."""
-        import random
-
+        orch = self._get_orchestrator()
         case_results: list[dict[str, Any]] = []
 
         for case in cases:
-            if self.orchestrator:
-                r = self.orchestrator.run(
-                    task=case.task,
-                    domain=domain_override,
-                    metadata=getattr(case, "metadata", None),
-                )
-            else:
-                # Simulate — in-domain is ~85 % accurate, OOD is ~70 %
-                rng = random.Random(hash((case.case_id, domain_override)))
-                expected = getattr(case, "expected_verdict", "escalate")
-                eds_range = getattr(case, "expected_eds_range", (0.3, 0.9))
-                eds = rng.uniform(eds_range[0], eds_range[1])
-
-                own_domain = getattr(case, "domain", "general")
-                accuracy = 0.85 if domain_override == own_domain else 0.70
-                verdict = (
-                    expected
-                    if rng.random() < accuracy
-                    else rng.choice(["approve", "escalate", "reject"])
-                )
-
-                r = {
-                    "eds_score": round(eds, 4),
-                    "verdict": verdict,
-                    "domain": domain_override,
-                    "philosophy_scores": {
-                        "deontological": round(rng.random(), 4),
-                        "consequentialist": round(rng.random(), 4),
-                        "virtue_ethics": round(rng.random(), 4),
-                        "contextual": round(rng.random(), 4),
-                    },
-                }
+            result = orch.run(
+                task=case.task,
+                domain=domain_override,
+                metadata=getattr(case, "metadata", None),
+            )
+            r = result.to_dict() if hasattr(result, "to_dict") else result
 
             r["expected_verdict"] = getattr(case, "expected_verdict", "")
             r["actual_verdict"] = r.get("verdict", "unknown")

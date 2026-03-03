@@ -48,6 +48,7 @@ class BenchmarkRunner:
         self.config = config or {}
         self.results: dict[str, Any] = {}
         self._progress_cb: Callable | None = None
+        self._fallback_orch: Any | None = None
 
     def set_progress_callback(
         self,
@@ -186,15 +187,31 @@ class BenchmarkRunner:
             "elapsed_seconds": round(time.perf_counter() - t0, 3),
         }
 
-    def _evaluate_case(self, case: Any) -> dict[str, Any]:
+    def _get_orchestrator(self) -> Any:
+        """Return the user-supplied orchestrator, or create a real offline one."""
         if self.orchestrator:
-            r = self.orchestrator.run(
-                task=case.task,
-                domain=getattr(case, "domain", None),
-                metadata=getattr(case, "metadata", None),
-            )
-        else:
-            r = self._simulate_case(case)
+            return self.orchestrator
+        if self._fallback_orch is None:
+            from ethicagent.orchestrator import EthicAgentOrchestrator
+
+            self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
+        return self._fallback_orch
+
+    @staticmethod
+    def _to_dict(result: Any) -> dict[str, Any]:
+        """Convert PipelineResult (or dict) to a plain dict."""
+        if hasattr(result, "to_dict"):
+            return result.to_dict()
+        return result if isinstance(result, dict) else dict(result)
+
+    def _evaluate_case(self, case: Any) -> dict[str, Any]:
+        orch = self._get_orchestrator()
+        result = orch.run(
+            task=case.task,
+            domain=getattr(case, "domain", None),
+            metadata=getattr(case, "metadata", None),
+        )
+        r = self._to_dict(result)
 
         r["case_id"] = case.case_id
         r["expected_verdict"] = getattr(case, "expected_verdict", "")
@@ -202,34 +219,6 @@ class BenchmarkRunner:
         r["difficulty"] = getattr(case, "difficulty", "unknown")
         r["actual_verdict"] = r.get("verdict", "unknown")
         return r
-
-    def _simulate_case(self, case: Any) -> dict[str, Any]:
-        """Simulate evaluation at ~85 % accuracy when no orchestrator is set."""
-        import random
-
-        rng = random.Random(hash(case.case_id))
-
-        expected = getattr(case, "expected_verdict", "escalate")
-        eds_range = getattr(case, "expected_eds_range", (0.3, 0.9))
-        eds = rng.uniform(eds_range[0], eds_range[1])
-
-        # 85 % of the time we match the expected verdict
-        if rng.random() < 0.85:
-            verdict = expected
-        else:
-            verdict = "approve" if eds >= 0.8 else ("escalate" if eds >= 0.5 else "reject")
-
-        return {
-            "eds_score": round(eds, 4),
-            "verdict": verdict,
-            "domain": getattr(case, "domain", "general"),
-            "philosophy_scores": {
-                "deontological": round(rng.random(), 4),
-                "consequentialist": round(rng.random(), 4),
-                "virtue_ethics": round(rng.random(), 4),
-                "contextual": round(rng.random(), 4),
-            },
-        }
 
     # ─── Baseline Run ────────────────────────────────────────
 

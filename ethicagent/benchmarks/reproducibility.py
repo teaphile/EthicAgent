@@ -3,14 +3,10 @@
 Runs identical cases multiple times under the same config and
 measures how stable the outputs are.  High reproducibility is
 critical for auditable AI systems.
-
-FIXME: currently uses simulation fallback — plug in the real
-       orchestrator once integration tests pass.
 """
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import random
 import statistics
@@ -40,6 +36,17 @@ class ReproducibilityBenchmark:
         self.n_repeats: int = self.config.get("n_repeats", 3)
         self.max_cases: int = self.config.get("max_cases", 30)
         self.eds_tolerance: float = self.config.get("eds_tolerance", 0.01)
+        self._fallback_orch: Any | None = None
+
+    def _get_orchestrator(self) -> Any:
+        """Return user-supplied orchestrator or a real offline fallback."""
+        if self.orchestrator:
+            return self.orchestrator
+        if self._fallback_orch is None:
+            from ethicagent.orchestrator import EthicAgentOrchestrator
+
+            self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
+        return self._fallback_orch
 
     # ── public API ──────────────────────────────────────────────
     def run(self) -> dict[str, Any]:
@@ -133,20 +140,12 @@ class ReproducibilityBenchmark:
         return all_cases
 
     def _run_case(self, case: Any) -> dict[str, Any]:
-        """Run one case through orchestrator, or simulate."""
-        if self.orchestrator:
-            return self.orchestrator.run(
-                task=case.task,
-                domain=getattr(case, "domain", None),
-            )
-        # deterministic simulation — same case should always give
-        # the same result (verifying our sim *is* reproducible).
-        h = int(hashlib.md5(getattr(case, "case_id", str(id(case))).encode()).hexdigest(), 16)
-        eds = 0.40 + (h % 500) / 1000  # [0.40, 0.90)
-        if eds >= 0.80:
-            verdict = "AUTO_APPROVE"
-        elif eds >= 0.50:
-            verdict = "ESCALATE"
-        else:
-            verdict = "REJECT"
-        return {"eds_score": round(eds, 4), "verdict": verdict}
+        """Run one case through the orchestrator."""
+        orch = self._get_orchestrator()
+        result = orch.run(
+            task=case.task,
+            domain=getattr(case, "domain", None),
+        )
+        if hasattr(result, "to_dict"):
+            return result.to_dict()
+        return result if isinstance(result, dict) else dict(result)
