@@ -324,7 +324,7 @@ def sensitivity_analysis(
     For each philosophy, we perturb its weight by ±perturbation and
     measure the EDS change.  Larger changes = more sensitive.
     """
-    base_eds = compute_eds(philosophy_scores, domain=domain)
+    compute_eds(philosophy_scores, domain=domain)
     weights = DOMAIN_WEIGHTS.get(domain, DOMAIN_WEIGHTS["general"])
     sensitivities: dict[str, float] = {}
 

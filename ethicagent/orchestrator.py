@@ -541,7 +541,6 @@ class EthicAgentOrchestrator:
         """
         state.update_stage(PipelineStage.NEURAL_REASONING, {"status": "running"})
 
-        last_err: Exception | None = None
         for attempt in range(_MAX_LLM_RETRIES):
             try:
                 result = self.neural_reasoner.reason(ctx, domain)
@@ -555,7 +554,6 @@ class EthicAgentOrchestrator:
                 )
                 return result
             except Exception as exc:
-                last_err = exc
                 wait = _BACKOFF_BASE**attempt + random.uniform(-_BACKOFF_JITTER, _BACKOFF_JITTER)
                 logger.warning(
                     f"Neural reasoning attempt {attempt + 1}/{_MAX_LLM_RETRIES} "

@@ -168,7 +168,7 @@ class TestPhilosophyContributionAnalysis:
         analysis = philosophy_contribution_analysis(sample_results)
         assert isinstance(analysis, dict)
         if analysis:
-            for phil, stats in analysis.items():
+            for _phil, stats in analysis.items():
                 assert "mean" in stats
                 assert "std" in stats
 

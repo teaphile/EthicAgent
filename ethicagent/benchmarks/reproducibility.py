@@ -124,7 +124,7 @@ class ReproducibilityBenchmark:
     # ── internals ───────────────────────────────────────────────
     def _gather_cases(self) -> list[Any]:
         all_cases: list[Any] = []
-        for domain_name, cls in SCENARIO_REGISTRY.items():
+        for _domain_name, cls in SCENARIO_REGISTRY.items():
             scenario = cls()
             all_cases.extend(scenario.get_cases())
         rng = random.Random(1337)

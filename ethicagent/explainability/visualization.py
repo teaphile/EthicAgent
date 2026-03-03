@@ -218,8 +218,8 @@ def confidence_interval_chart(
             error_y=dict(
                 type="data",
                 symmetric=False,
-                array=[u - e for u, e in zip(ci_upper, eds_scores)],
-                arrayminus=[e - l for e, l in zip(eds_scores, ci_lower)],
+                array=[u - e for u, e in zip(ci_upper, eds_scores, strict=False)],
+                arrayminus=[e - lo for e, lo in zip(eds_scores, ci_lower, strict=False)],
             ),
             name="EDS ± CI",
         )

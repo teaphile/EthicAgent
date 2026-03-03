@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import math
 from collections import Counter
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ def eds_score_metrics(
     # Histogram bins for quick dashboard rendering
     bins = [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.01]
     histogram: dict[str, int] = {}
-    for lo, hi in zip(bins, bins[1:]):
+    for lo, hi in zip(bins, bins[1:], strict=False):
         label = f"{lo:.1f}-{hi:.2f}"
         histogram[label] = sum(1 for s in scores if lo <= s < hi)
 

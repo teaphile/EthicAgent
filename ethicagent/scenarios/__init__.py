@@ -16,8 +16,6 @@ Quick-start
 
 from __future__ import annotations
 
-from typing import Dict, List, Type
-
 from ethicagent.scenarios.base_scenario import BaseScenario, ScenarioCase, ScenarioResult
 from ethicagent.scenarios.disaster_response import DisasterResponseScenario
 from ethicagent.scenarios.healthcare_triage import HealthcareTriageScenario

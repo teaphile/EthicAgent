@@ -245,7 +245,9 @@ class BaseScenario(ABC):
         difficulty_stats: dict[str, dict[str, Any]] = {}
         for diff in ("easy", "medium", "hard"):
             diff_results = [
-                r for r, c in zip(self.results, self.cases) if c.difficulty == diff and not r.error
+                r
+                for r, c in zip(self.results, self.cases, strict=False)
+                if c.difficulty == diff and not r.error
             ]
             if diff_results:
                 difficulty_stats[diff] = {

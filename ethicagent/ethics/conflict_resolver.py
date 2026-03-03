@@ -227,10 +227,7 @@ class ConflictResolver:
         severity = self._classify_severity(positions)
 
         # Select resolution strategy
-        if force_strategy:
-            strategy = force_strategy
-        else:
-            strategy = self._select_strategy(severity, positions)
+        strategy = force_strategy or self._select_strategy(severity, positions)
 
         # Execute strategy
         if strategy == ResolutionStrategy.PRIORITY_OVERRIDE:

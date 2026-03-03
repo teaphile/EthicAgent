@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.utils.helpers import clamp, now_iso
 

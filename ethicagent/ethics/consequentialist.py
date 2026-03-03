@@ -249,10 +249,7 @@ class ConsequentialistEvaluator:
         text_lower = action_text.lower()
 
         # Build stakeholder impacts from structured data or heuristics
-        if stakeholder_impacts:
-            impacts = stakeholder_impacts
-        else:
-            impacts = self._infer_impacts(text_lower, context)
+        impacts = stakeholder_impacts or self._infer_impacts(text_lower, context)
 
         # Compute sub-scores
         net_utility = self._compute_net_utility(impacts)
@@ -359,10 +356,7 @@ class ConsequentialistEvaluator:
             if h.reversible:
                 weighted_reversible += h.magnitude
 
-        if total_magnitude > 0:
-            weighted_frac = weighted_reversible / total_magnitude
-        else:
-            weighted_frac = 1.0
+        weighted_frac = weighted_reversible / total_magnitude if total_magnitude > 0 else 1.0
 
         return 0.5 * frac + 0.5 * weighted_frac
 
@@ -486,7 +480,7 @@ class ConsequentialistEvaluator:
 
         total_pop = sum(i.population_size for i in impacts)
         benefit_pop = sum(i.population_size for i in impacts if i.impact_type == ImpactType.BENEFIT)
-        harm_pop = sum(i.population_size for i in impacts if i.impact_type == ImpactType.HARM)
+        sum(i.population_size for i in impacts if i.impact_type == ImpactType.HARM)
 
         if total_pop == 0:
             return 0.5

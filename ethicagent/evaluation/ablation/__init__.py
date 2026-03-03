@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ethicagent.evaluation.metrics import compute_all_metrics
 from ethicagent.utils.helpers import now_iso

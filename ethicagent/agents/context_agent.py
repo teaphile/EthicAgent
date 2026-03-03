@@ -619,7 +619,7 @@ class ContextAgent:
                 result.append(v)
         # If no regex entities, return domain keywords found as pseudo-entities
         if not result:
-            for dom, kws in self.DOMAIN_KEYWORDS.items():
+            for _dom, kws in self.DOMAIN_KEYWORDS.items():
                 for kw in kws:
                     if kw in text.lower():
                         result.append(kw)

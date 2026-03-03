@@ -47,7 +47,7 @@ class PerformanceBenchmark:
 
         # Collect cases (sample across domains)
         all_cases: list[Any] = []
-        for domain_name, cls in SCENARIO_REGISTRY.items():
+        for _domain_name, cls in SCENARIO_REGISTRY.items():
             scenario = cls()
             cases = scenario.get_cases()
             all_cases.extend(cases)

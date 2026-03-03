@@ -77,19 +77,15 @@ def validate_weights(weights: dict[str, float]) -> bool:
             return False
 
     total = sum(weights.values())
-    if abs(total - 1.0) > 0.01:
-        return False
-
-    return True
+    return not abs(total - 1.0) > 0.01
 
 
 def validate_context(context: dict[str, Any]) -> dict[str, Any]:
     """Basic validation of pipeline context dict."""
     if not isinstance(context, dict):
         raise ValidationError("Context must be a dict")
-    if "domain" in context:
-        if not validate_domain(context["domain"]):
-            raise ValidationError(f"Invalid domain: {context['domain']}")
+    if "domain" in context and not validate_domain(context["domain"]):
+        raise ValidationError(f"Invalid domain: {context['domain']}")
     return context
 
 
@@ -129,7 +125,7 @@ def validate_scores(scores: dict[str, float]) -> bool:
     """Validate that all philosophy scores are in [0, 1]."""
     if not isinstance(scores, dict):
         return False
-    for key, val in scores.items():
+    for _key, val in scores.items():
         if not isinstance(val, (int, float)):
             return False
         if val < 0.0 or val > 1.0:

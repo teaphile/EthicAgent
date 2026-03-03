@@ -342,8 +342,8 @@ class EthicsDatasetAdapter:
         """Attempt to load full ETHICS dataset from HuggingFace."""
         try:
             from datasets import load_dataset  # type: ignore
-        except ImportError:
-            raise ImportError("HuggingFace `datasets` package not installed")
+        except ImportError as err:
+            raise ImportError("HuggingFace `datasets` package not installed") from err
 
         # NOTE: The ETHICS dataset on HuggingFace is "hendrycks/ethics"
         # but the exact split/config names may vary. We grab commonsense

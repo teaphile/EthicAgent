@@ -530,9 +530,10 @@ class DeontologicalEvaluator:
                 continue
 
             # Skip EU AI Act conditions if not applicable
-            if duty.get("domain_condition") == "eu_ai_act_high_risk":
-                if not context.get("eu_ai_act_high_risk", False):
-                    continue
+            if duty.get("domain_condition") == "eu_ai_act_high_risk" and not context.get(
+                "eu_ai_act_high_risk", False
+            ):
+                continue
 
             check_name = duty["check"]
             weight = duty["weight"]
@@ -542,12 +543,8 @@ class DeontologicalEvaluator:
             weighted_sum += score * weight
             total_weight += weight
 
-        # Compute weighted average
-        if total_weight > 0:
-            d_score = weighted_sum / total_weight
-        else:
-            # No applicable duties → assume compliant
-            d_score = 0.85
+        # Compute weighted average (no applicable duties → assume compliant)
+        d_score = weighted_sum / total_weight if total_weight > 0 else 0.85
 
         # Mild penalties can still produce soft violations
         soft_violations = self._check_soft_violations(action_text, context)

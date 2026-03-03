@@ -341,10 +341,12 @@ class ContextualEthicsEvaluator:
         if domain == "healthcare":
             if not context.get("metadata", {}).get("patient_consent"):
                 gaps.append("Patient consent not confirmed (HIPAA)")
-        elif domain == "finance":
-            if not context.get("metadata", {}).get("adverse_notice"):
-                if any(w in text_lower for w in ["deny", "reject", "decline"]):
-                    gaps.append("Adverse action notice not provided (ECOA)")
+        elif (
+            domain == "finance"
+            and not context.get("metadata", {}).get("adverse_notice")
+            and any(w in text_lower for w in ["deny", "reject", "decline"])
+        ):
+            gaps.append("Adverse action notice not provided (ECOA)")
 
         # Score based on gaps
         if not gaps:

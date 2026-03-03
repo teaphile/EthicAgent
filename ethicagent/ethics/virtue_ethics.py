@@ -494,11 +494,10 @@ class VirtueEthicsEvaluator:
             if Virtue.COMPASSION in scores:
                 scores[Virtue.COMPASSION] = scores[Virtue.COMPASSION] * 1.15
                 scores[Virtue.COMPASSION] = min(1.0, scores[Virtue.COMPASSION])
-        elif domain == "finance":
+        elif domain == "finance" and Virtue.JUSTICE in scores:
             # Justice/fairness matters more in finance
-            if Virtue.JUSTICE in scores:
-                scores[Virtue.JUSTICE] = scores[Virtue.JUSTICE] * 1.15
-                scores[Virtue.JUSTICE] = min(1.0, scores[Virtue.JUSTICE])
+            scores[Virtue.JUSTICE] = scores[Virtue.JUSTICE] * 1.15
+            scores[Virtue.JUSTICE] = min(1.0, scores[Virtue.JUSTICE])
 
         return scores
 

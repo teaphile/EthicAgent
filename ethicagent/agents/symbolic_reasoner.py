@@ -322,7 +322,7 @@ class SymbolicReasoner:
         for pw in p_words:
             if any(
                 abs(len(pw) - len(tw)) <= threshold
-                and sum(a != b for a, b in zip(pw, tw)) <= threshold
+                and sum(a != b for a, b in zip(pw, tw, strict=False)) <= threshold
                 for tw in t_words
             ):
                 return True

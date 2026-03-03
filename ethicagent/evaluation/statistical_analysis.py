@@ -162,7 +162,7 @@ class StatisticalAnalyzer:
                 "n": n,
             }
 
-        diffs = [x - y for x, y in zip(a, b)]
+        diffs = [x - y for x, y in zip(a, b, strict=False)]
         return {
             name_a: _stats(a),
             name_b: _stats(b),
@@ -188,7 +188,7 @@ class StatisticalAnalyzer:
 
     def _manual_paired_t(self, a: list[float], b: list[float]) -> dict[str, Any]:
         n = len(a)
-        d = [x - y for x, y in zip(a, b)]
+        d = [x - y for x, y in zip(a, b, strict=False)]
         md = sum(d) / n
         vd = sum((x - md) ** 2 for x in d) / max(n - 1, 1)
         se = math.sqrt(vd / n) if vd > 0 else 1e-10
@@ -208,7 +208,7 @@ class StatisticalAnalyzer:
         try:
             from scipy import stats as sp
 
-            nz = sum(1 for x, y in zip(a, b) if x != y)
+            nz = sum(1 for x, y in zip(a, b, strict=False) if x != y)
             if nz < 10:
                 return {"warning": "Too few non-zero differences", "n_non_zero": nz}
             stat, p = sp.wilcoxon(a, b)
@@ -274,7 +274,7 @@ class StatisticalAnalyzer:
         confidence: float = 0.95,
     ) -> dict[str, Any]:
         n = len(a)
-        diffs = [x - y for x, y in zip(a, b)]
+        diffs = [x - y for x, y in zip(a, b, strict=False)]
         rng = random.Random(42)
 
         means: list[float] = []
@@ -326,10 +326,10 @@ class StatisticalAnalyzer:
         if len(correct_a) != len(correct_b):
             raise ValueError("Lists must have same length")
 
-        n_both = sum(a and b for a, b in zip(correct_a, correct_b))
-        n_a_only = sum(a and not b for a, b in zip(correct_a, correct_b))
-        n_b_only = sum(not a and b for a, b in zip(correct_a, correct_b))
-        n_neither = sum(not a and not b for a, b in zip(correct_a, correct_b))
+        n_both = sum(a and b for a, b in zip(correct_a, correct_b, strict=False))
+        n_a_only = sum(a and not b for a, b in zip(correct_a, correct_b, strict=False))
+        n_b_only = sum(not a and b for a, b in zip(correct_a, correct_b, strict=False))
+        n_neither = sum(not a and not b for a, b in zip(correct_a, correct_b, strict=False))
 
         disc = n_a_only + n_b_only
         if disc == 0:
