@@ -37,6 +37,36 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+class _FallbackGraphView:
+    """Minimal graph-like view when NetworkX is unavailable.
+
+    This preserves backward compatibility for callers that expect
+    ``kg.graph.has_node(...)``, ``kg.graph.has_edge(...)``, and
+    ``len(kg.graph.nodes)`` to work even in fallback mode.
+    """
+
+    def __init__(
+        self,
+        nodes: dict[str, dict[str, Any]],
+        edges: list[dict[str, Any]],
+    ) -> None:
+        self._nodes = nodes
+        self._edges = edges
+
+    @property
+    def nodes(self) -> list[str]:
+        return list(self._nodes.keys())
+
+    def has_node(self, node_id: str) -> bool:
+        return node_id in self._nodes
+
+    def has_edge(self, source: str, target: str) -> bool:
+        return any(
+            e.get("source") == source and e.get("target") == target
+            for e in self._edges
+        )
+
+
 # ---------------------------------------------------------------------------
 # Seed graph data
 # ---------------------------------------------------------------------------
@@ -153,10 +183,12 @@ class KnowledgeGraph:
             self._graph = None
             self._nodes: dict[str, dict] = {}
             self._edges: list[dict] = []
+            self._fallback_graph = _FallbackGraphView(self._nodes, self._edges)
         else:
             self._graph = nx.DiGraph()
             self._nodes = {}
             self._edges = []
+            self._fallback_graph = None
 
         # Load seed data
         self._load_seed_data()
@@ -175,7 +207,9 @@ class KnowledgeGraph:
     @property
     def graph(self):
         """Public access to the underlying NetworkX graph (backward-compat)."""
-        return self._graph
+        if self._graph is not None:
+            return self._graph
+        return self._fallback_graph
 
     @property
     def node_count(self) -> int:

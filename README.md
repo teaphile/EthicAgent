@@ -66,7 +66,7 @@ $$EDS(a) = w_1 \cdot D(a) + w_2 \cdot C(a) + w_3 \cdot V(a) + w_4 \cdot Ctx(a)$$
 ```bash
 # Clone
 git clone https://github.com/radhahai/agent.git
-cd agent/EthicAgent
+cd agent
 
 # Install (core only)
 pip install -e .
@@ -184,7 +184,7 @@ Each case specifies: task description, expected verdict, expected EDS range, dif
 
 > All experiments seeded (`seed=42`, 425 cases). Run `python scripts/generate_results.py` to reproduce.
 
-![Comparison](data/results/charts/comparison_bar_chart.png)
+[Comparison chart (PDF)](data/results/charts/comparison_bar_chart.pdf)
 
 ### Ablation Study — Top Component Impact
 
@@ -196,17 +196,17 @@ Each case specifies: task description, expected verdict, expected EDS range, dif
 | Fusion Agent | −14% | +0.061 |
 | Domain Weights | −10% | +0.045 |
 
-![Ablation](data/results/charts/ablation_impact.png)
+[Ablation chart (PDF)](data/results/charts/ablation_impact.pdf)
 
 ### Additional Charts
 
 <details>
 <summary>EDS Distribution · Verdict Distribution · Philosophy Radar · Fairness Heatmap</summary>
 
-![EDS Distribution](data/results/charts/eds_distribution.png)
-![Verdict Distribution](data/results/charts/verdict_distribution.png)
-![Philosophy Radar](data/results/charts/philosophy_radar.png)
-![Fairness Heatmap](data/results/charts/fairness_heatmap.png)
+[EDS Distribution (PDF)](data/results/charts/eds_distribution.pdf)
+[Verdict Distribution (PDF)](data/results/charts/verdict_distribution.pdf)
+[Philosophy Radar (PDF)](data/results/charts/philosophy_radar.pdf)
+[Fairness Heatmap (PDF)](data/results/charts/fairness_heatmap.pdf)
 
 </details>
 
