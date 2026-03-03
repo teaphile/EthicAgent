@@ -1,6 +1,6 @@
 FROM python:3.11-slim AS base
 
-LABEL maintainer="radhahai"
+LABEL maintainer="teaphile"
 LABEL description="EthicAgent — Neuro-Symbolic Ethical Reasoning"
 
 WORKDIR /app

@@ -725,18 +725,39 @@ class EthicAgentOrchestrator:
 
         Falls back to uniform weights (0.25 each) when a domain
         isn't explicitly configured.
+
+        Supports two YAML formats:
+          - Named keys: ``weights: {deontological: 0.35, ...}``
+          - Short keys: ``w1: 0.35, w2: 0.25, w3: 0.20, w4: 0.20``
         """
         weights: Dict[str, Dict[str, float]] = {}
         domains_cfg = self.domain_weights_cfg.get("domains", {})
+        if not isinstance(domains_cfg, dict):
+            domains_cfg = {}
 
         for dom_name, dom_cfg in domains_cfg.items():
+            if not isinstance(dom_cfg, dict):
+                # Skip non-dict entries (e.g. "default": "general")
+                continue
+
+            # Support both formats: nested "weights" dict or flat w1/w2/w3/w4
             w = dom_cfg.get("weights", {})
-            weights[dom_name] = {
-                "deontological": w.get("deontological", 0.25),
-                "consequentialist": w.get("consequentialist", 0.25),
-                "virtue_ethics": w.get("virtue_ethics", w.get("virtue", 0.25)),
-                "contextual": w.get("contextual", 0.25),
-            }
+            if w and isinstance(w, dict):
+                weights[dom_name] = {
+                    "deontological": w.get("deontological", 0.25),
+                    "consequentialist": w.get("consequentialist", 0.25),
+                    "virtue_ethics": w.get("virtue_ethics", w.get("virtue", 0.25)),
+                    "contextual": w.get("contextual", 0.25),
+                }
+            elif "w1" in dom_cfg:
+                # Short-form keys from domain_weights.yaml
+                weights[dom_name] = {
+                    "deontological": float(dom_cfg.get("w1", 0.25)),
+                    "consequentialist": float(dom_cfg.get("w2", 0.25)),
+                    "virtue_ethics": float(dom_cfg.get("w3", 0.25)),
+                    "contextual": float(dom_cfg.get("w4", 0.25)),
+                }
+            # else: no recognisable weight keys → skip, general fallback applies
 
         # always have a general fallback
         if "general" not in weights:

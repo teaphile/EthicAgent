@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "radhahai"},
+    {name = "teaphile"},
 ]
 keywords = ["ethics", "AI", "neuro-symbolic", "autonomous-agents", "decision-making"]
 classifiers = [
@@ -57,10 +57,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/radhahai/agent"
-Repository = "https://github.com/radhahai/agent"
-Issues = "https://github.com/radhahai/agent/issues"
-Documentation = "https://github.com/radhahai/agent/tree/main/docs"
+Homepage = "https://github.com/teaphile/EthicAgent"
+Repository = "https://github.com/teaphile/EthicAgent"
+Issues = "https://github.com/teaphile/EthicAgent/issues"
+Documentation = "https://github.com/teaphile/EthicAgent/tree/main/docs"
 
 [tool.setuptools.packages.find]
 include = ["ethicagent*"]

@@ -15,20 +15,20 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="ethicagent",
     version="1.0.0",
-    author="EthicAgent Research Team",
-    author_email="ethicagent@research.org",
+    author="teaphile",
+    author_email="",
     description=(
         "A Context-Aware Neuro-Symbolic Framework for Ethical "
         "Autonomous Decision-Making in Agentic AI Systems"
     ),
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/radhahai/agent",
+    url="https://github.com/teaphile/EthicAgent",
     project_urls={
-        "Homepage": "https://github.com/radhahai/agent",
-        "Repository": "https://github.com/radhahai/agent",
-        "Issues": "https://github.com/radhahai/agent/issues",
-        "Documentation": "https://github.com/radhahai/agent/tree/main/docs",
+        "Homepage": "https://github.com/teaphile/EthicAgent",
+        "Repository": "https://github.com/teaphile/EthicAgent",
+        "Issues": "https://github.com/teaphile/EthicAgent/issues",
+        "Documentation": "https://github.com/teaphile/EthicAgent/tree/main/docs",
     },
     packages=find_packages(),
     classifiers=[

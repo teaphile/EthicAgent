@@ -2,7 +2,7 @@
 
 **A Context-Aware Neuro-Symbolic Framework for Ethical Autonomous Decision-Making**
 
-[![CI](https://github.com/radhahai/agent/actions/workflows/ci.yml/badge.svg)](https://github.com/radhahai/agent/actions/workflows/ci.yml)
+[![CI](https://github.com/teaphile/EthicAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/teaphile/EthicAgent/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Ethical AI](https://img.shields.io/badge/Ethical_AI-blueviolet)
@@ -65,8 +65,8 @@ $$EDS(a) = w_1 \cdot D(a) + w_2 \cdot C(a) + w_3 \cdot V(a) + w_4 \cdot Ctx(a)$$
 
 ```bash
 # Clone
-git clone https://github.com/radhahai/agent.git
-cd agent
+git clone https://github.com/teaphile/EthicAgent.git
+cd EthicAgent
 
 # Install (core only)
 pip install -e .
