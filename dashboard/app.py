@@ -252,7 +252,7 @@ def _page_philosophy_comparison(domain: str) -> None:
 
     st.header("Domain Weight Configuration")
     cols = st.columns(4)
-    for col, label, val in zip(cols, labels, w):
+    for col, label, val in zip(cols, labels, w, strict=False):
         with col:
             st.metric(label, f"{val:.2f}")
 
@@ -284,6 +284,7 @@ def _page_philosophy_comparison(domain: str) -> None:
                     zip(
                         ["deontological", "consequentialist", "virtue_ethics", "contextual"],
                         DOMAIN_WEIGHTS[d],
+                        strict=False,
                     )
                 )
                 for d in DOMAINS
@@ -342,7 +343,7 @@ def _page_audit_trail() -> None:
             ["All", "approve", "escalate", "reject", "hard_block"],
         )
     with col3:
-        date_range = st.date_input("Date range", [])
+        st.date_input("Date range", [])
 
     st.header("Decision Log")
 
@@ -540,24 +541,46 @@ def _load_scenario_cases(scenario_type: str) -> list[dict[str, Any]]:
 
 
 def _show_batch_placeholder() -> None:
-    """Show a placeholder for batch results (demo mode)."""
-    import random as _rng
+    """Run a real batch evaluation on all scenarios and show results."""
+    from ethicagent.scenarios import get_all_cases
 
-    _rng.seed(42)  # reproducible placeholders
+    cases = get_all_cases()
     progress = st.progress(0)
-    import time as _time
+    total = len(cases)
+    results: list[dict[str, Any]] = []
 
-    for i in range(100):
-        progress.progress(i + 1)
-        _time.sleep(0.01)  # brief pause for visual feedback
+    try:
+        from ethicagent.orchestrator import EthicAgentOrchestrator
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Accuracy", f"{_rng.uniform(0.80, 0.95):.1%}")
-    with c2:
-        st.metric("Mean EDS", f"{_rng.uniform(0.60, 0.85):.3f}")
-    with c3:
-        st.metric("Consistency", f"{_rng.uniform(0.85, 0.95):.3f}")
+        orch = EthicAgentOrchestrator(use_llm=False)
+        for i, case in enumerate(cases):
+            r = orch.run(task=case.task, domain=case.domain)
+            d = r.to_dict() if hasattr(r, "to_dict") else dict(r)
+            verdict = d.get("verdict", "unknown").lower().replace("auto_", "")
+            results.append(
+                {
+                    "verdict_match": verdict == case.expected_verdict,
+                    "eds_score": float(d.get("eds_score", 0.0)),
+                }
+            )
+            progress.progress((i + 1) / total)
+
+        n = len(results)
+        accuracy = sum(1 for r in results if r["verdict_match"]) / n if n else 0
+        eds_values = [r["eds_score"] for r in results]
+        mean_eds = sum(eds_values) / n if n else 0
+        eds_std = (sum((e - mean_eds) ** 2 for e in eds_values) / n) ** 0.5 if n else 0
+        consistency = max(1.0 - (eds_std / mean_eds), 0.0) if mean_eds > 0 else 0
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Accuracy", f"{accuracy:.1%}")
+        with c2:
+            st.metric("Mean EDS", f"{mean_eds:.3f}")
+        with c3:
+            st.metric("Consistency", f"{consistency:.3f}")
+    except Exception as e:
+        st.error(f"Batch evaluation failed: {e}")
 
 
 if __name__ == "__main__":
