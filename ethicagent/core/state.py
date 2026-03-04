@@ -87,8 +87,8 @@ class PipelineState:
         Original inputs.
     context … ethical_decision : dict / Any
         Intermediate outputs — populated lazily as stages complete.
-    stage_results : list[StageResult]
-        Append-only trace used for audit & explainability.
+    stage_results : dict[PipelineStage, StageResult]
+        Dict keyed by stage for O(1) lookup; used for audit & explainability.
     """
 
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -181,10 +181,11 @@ class StateManager:
     query either set without locking contention.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, max_history: int = 5000) -> None:
         self._states: dict[str, PipelineState] = {}
         self._lock = threading.Lock()
         self._history: list[PipelineState] = []
+        self._max_history = max_history
 
     def create_state(self, task: str = "", domain: str | None = None) -> PipelineState:
         """Spin up a fresh PipelineState and register it."""
@@ -203,6 +204,8 @@ class StateManager:
             st = self._states.pop(run_id, None)
             if st:
                 self._history.append(st)
+                if len(self._history) > self._max_history:
+                    self._history = self._history[-self._max_history :]
 
     # ------------------------------------------------------------------
     # Backward-compat helpers used by tests

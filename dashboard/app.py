@@ -9,6 +9,7 @@ Launch with:
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import sys
@@ -25,13 +26,34 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # ═══════════════════════════════════════════════════════════════
 
 DOMAINS = ["General", "Healthcare", "Finance", "Hiring", "Disaster"]
-DOMAIN_WEIGHTS: dict[str, tuple] = {
-    "Healthcare": (0.35, 0.25, 0.20, 0.20),
-    "Finance": (0.20, 0.25, 0.35, 0.20),
-    "Hiring": (0.15, 0.20, 0.40, 0.25),
-    "Disaster": (0.20, 0.35, 0.15, 0.30),
-    "General": (0.25, 0.25, 0.25, 0.25),
-}
+
+# Import canonical weights & thresholds — single source of truth.
+try:
+    from ethicagent.ethics.ethical_score import (
+        APPROVAL_THRESHOLD as _APPROVE,
+        DOMAIN_WEIGHTS as _CANONICAL_W,
+        ESCALATION_THRESHOLD as _ESCALATE,
+    )
+
+    DOMAIN_WEIGHTS: dict[str, tuple] = {
+        d.title(): (
+            w["deontological"],
+            w["consequentialist"],
+            w["virtue_ethics"],
+            w["contextual"],
+        )
+        for d, w in _CANONICAL_W.items()
+    }
+except Exception:  # graceful fallback if ethicagent not installed
+    _APPROVE = 0.75
+    _ESCALATE = 0.50
+    DOMAIN_WEIGHTS = {
+        "Healthcare": (0.30, 0.30, 0.20, 0.20),
+        "Finance": (0.25, 0.25, 0.30, 0.20),
+        "Hiring": (0.20, 0.20, 0.35, 0.25),
+        "Disaster": (0.20, 0.30, 0.15, 0.35),
+        "General": (0.25, 0.25, 0.25, 0.25),
+    }
 
 VERDICT_COLORS = {
     "approve": "🟢",
@@ -70,7 +92,7 @@ def _check_auth() -> bool:
     st.markdown("Access to the dashboard requires authentication.")
     password = st.text_input("Password", type="password", key="login_password")
     if st.button("Login", type="primary"):
-        if password == _DASHBOARD_PASSWORD:
+        if hmac.compare_digest(password, _DASHBOARD_PASSWORD):
             st.session_state["authenticated"] = True
             st.rerun()
         else:
@@ -194,9 +216,9 @@ def _page_overview(domain: str) -> None:
     st.header("Decision Thresholds")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.success("**AUTO_APPROVE**\nEDS ≥ 0.80")
+        st.success(f"**AUTO_APPROVE**\nEDS ≥ {_APPROVE:.2f}")
     with c2:
-        st.warning("**ESCALATE**\n0.50 ≤ EDS < 0.80")
+        st.warning(f"**ESCALATE**\n{_ESCALATE:.2f} ≤ EDS < {_APPROVE:.2f}")
     with c3:
         st.error("**REJECT**\nEDS < 0.50")
     with c4:

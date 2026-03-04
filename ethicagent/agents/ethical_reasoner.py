@@ -12,47 +12,28 @@ where:
   w₁…w₄ = domain-specific weights (sum to 1.0)
 
 Decision thresholds (calibrated against 150 expert-labeled cases):
-  EDS >= 0.80 → AUTO_APPROVE
-  0.50 <= EDS < 0.80 → ESCALATE (human review)
+  EDS >= 0.75 → AUTO_APPROVE
+  0.50 <= EDS < 0.75 → ESCALATE (human review)
   EDS < 0.50 → REJECT
   D(a) == 0.0 → HARD_BLOCK (overrides everything)
-
-# NOTE: the 0.80 threshold was chosen after experimenting with 0.70
-#       and 0.85 — 0.80 gave the best balance of precision vs recall
-#       on our expert-labeled test set (n=150).
-# TODO: consider adding Rawlsian justice as a 5th philosophy lens
 """
 
 from __future__ import annotations
 
 import logging
 import math
-from dataclasses import dataclass, field
 from typing import Any
 
-from ethicagent.ethics.ethical_score import EthicalVerdict, PhilosophyResult  # canonical defs
+from ethicagent.ethics.ethical_score import (  # canonical defs
+    APPROVAL_THRESHOLD,
+    DOMAIN_WEIGHTS,
+    ESCALATION_THRESHOLD,
+    EthicalDecision,
+    EthicalVerdict,
+    PhilosophyResult,
+)
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class EthicalDecision:
-    """Full output of the ethical evaluation.
-
-    Carries the EDS score, verdict, per-philosophy breakdown,
-    confidence interval, and the reasoning text.
-    """
-
-    eds_score: float
-    verdict: EthicalVerdict
-    confidence: float
-    philosophy_results: list[PhilosophyResult]
-    weights_used: dict[str, float]
-    reasoning: str
-    rules_triggered: list[str] = field(default_factory=list)
-    conflict_analysis: dict[str, Any] = field(default_factory=dict)
-    confidence_interval: tuple[float, float] = (0.0, 1.0)
-    sensitivity: dict[str, float] = field(default_factory=dict)
 
 
 class EthicalReasonerAgent:
@@ -68,55 +49,12 @@ class EthicalReasonerAgent:
         decision = era.evaluate(context, fusion_result, "healthcare")
     """
 
-    # Default domain weights — recalibrated v2 (March 2026).
-    #
-    # The v1 weights gave only 56% accuracy — *worse* than the equal-weight
-    # baseline (59%).  Root cause: healthcare over-weighted deontological
-    # at the expense of consequentialist, disaster over-weighted
-    # consequentialist, and hiring/finance weights were inverted.
-    #
-    # v2 weights were re-derived via grid-search over 200 expert-labeled
-    # cases per domain, selecting the weight vector that maximizes
-    # concordance with expert verdicts.  Equal-weight remains the
-    # "general" fallback so baseline parity is guaranteed.
-    DEFAULT_WEIGHTS: dict[str, dict[str, float]] = {
-        "healthcare": {
-            "deontological": 0.30,
-            "consequentialist": 0.30,
-            "virtue_ethics": 0.20,
-            "contextual": 0.20,
-        },
-        "finance": {
-            "deontological": 0.25,
-            "consequentialist": 0.25,
-            "virtue_ethics": 0.30,
-            "contextual": 0.20,
-        },
-        "hiring": {
-            "deontological": 0.20,
-            "consequentialist": 0.20,
-            "virtue_ethics": 0.35,
-            "contextual": 0.25,
-        },
-        "disaster": {
-            "deontological": 0.20,
-            "consequentialist": 0.30,
-            "virtue_ethics": 0.15,
-            "contextual": 0.35,
-        },
-        "general": {
-            "deontological": 0.25,
-            "consequentialist": 0.25,
-            "virtue_ethics": 0.25,
-            "contextual": 0.25,
-        },
-    }
+    # Default domain weights — imported from the canonical source.
+    DEFAULT_WEIGHTS = DOMAIN_WEIGHTS
 
-    # Thresholds — recalibrated v2.
-    # Lowered APPROVE from 0.80 → 0.75 based on ROC analysis
-    # (precision-recall sweet spot at 0.75 on expert-labeled set).
-    APPROVE_THRESHOLD = 0.75
-    ESCALATE_THRESHOLD = 0.50
+    # Thresholds — imported from the canonical source.
+    APPROVE_THRESHOLD = APPROVAL_THRESHOLD
+    ESCALATE_THRESHOLD = ESCALATION_THRESHOLD
 
     def __init__(
         self,
@@ -201,14 +139,16 @@ class EthicalReasonerAgent:
         decision = EthicalDecision(
             eds_score=round(eds, 4),
             verdict=verdict,
-            confidence=round(conf, 3),
-            philosophy_results=results,
+            philosophy_scores={r.name: r.score for r in results},
+            domain=domain,
             weights_used=weights,
             reasoning=reasoning,
-            rules_triggered=rules_triggered,
-            conflict_analysis=conflict,
+            confidence=round(conf, 3),
             confidence_interval=ci,
             sensitivity=sens,
+            philosophy_results=results,
+            rules_triggered=rules_triggered,
+            conflict_analysis=conflict,
         )
 
         logger.info(f"Ethical evaluation: EDS={eds:.4f}, verdict={verdict.value}, conf={conf:.3f}")
@@ -245,6 +185,14 @@ class EthicalReasonerAgent:
         c = float(c_score_or_weights) if c_score_or_weights is not None else 0.0
         v = v_score if v_score is not None else 0.0
         ctx = ctx_score if ctx_score is not None else 0.0
+        # NaN / Infinity guard — clamp each score to [0, 1]
+        for label, val in [("d", d), ("c", c), ("v", v), ("ctx", ctx)]:
+            if not math.isfinite(val):
+                logger.warning("Non-finite %s score (%s) — clamping to 0.5", label, val)
+        d = max(0.0, min(1.0, d)) if math.isfinite(d) else 0.5
+        c = max(0.0, min(1.0, c)) if math.isfinite(c) else 0.5
+        v = max(0.0, min(1.0, v)) if math.isfinite(v) else 0.5
+        ctx = max(0.0, min(1.0, ctx)) if math.isfinite(ctx) else 0.5
         w = weights or self.DEFAULT_WEIGHTS["general"]
         eds = (
             w["deontological"] * d
@@ -252,6 +200,9 @@ class EthicalReasonerAgent:
             + w["virtue_ethics"] * v
             + w["contextual"] * ctx
         )
+        if not math.isfinite(eds):
+            logger.warning("EDS computation produced non-finite result — defaulting to 0.0")
+            return 0.0
         return max(0.0, min(1.0, eds))
 
     def _compute_eds_from_dicts(
@@ -264,6 +215,11 @@ class EthicalReasonerAgent:
         c = scores.get("consequentialist", 0.0)
         v = scores.get("virtue_ethics", scores.get("virtue", 0.0))
         ctx = scores.get("contextual", 0.0)
+        # NaN / Infinity guard
+        d = max(0.0, min(1.0, d)) if math.isfinite(d) else 0.5
+        c = max(0.0, min(1.0, c)) if math.isfinite(c) else 0.5
+        v = max(0.0, min(1.0, v)) if math.isfinite(v) else 0.5
+        ctx = max(0.0, min(1.0, ctx)) if math.isfinite(ctx) else 0.5
         w_d = weights.get("deontological", 0.25)
         w_c = weights.get("consequentialist", 0.25)
         w_v = weights.get("virtue_ethics", weights.get("virtue", 0.25))

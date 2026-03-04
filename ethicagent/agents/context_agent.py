@@ -360,24 +360,35 @@ class ContextAgent:
     # Classification helpers
     # ------------------------------------------------------------------
 
+    # Keywords that appear in multiple domains get reduced weight
+    # to avoid mis-classification on ambiguous tasks.
+    _CROSS_DOMAIN_KEYWORDS: set[str] = {"triage", "emergency", "risk"}
+
     def _classify_domain(self, task: str) -> tuple[str, float]:
         """Classify domain by keyword overlap, returning (domain, confidence).
 
-        Confidence = proportion of max-score domain keywords matched
-        relative to total words checked.  Rough, but surprisingly
-        effective on our test suites.
+        Cross-domain keywords (e.g. "triage") score 0.5 instead of 1.0
+        so domain-unique keywords dominate the classification.  Ties are
+        broken by domain priority (healthcare > disaster > finance > hiring).
         """
         task_lower = task.lower()
-        scores: dict[str, int] = {}
+        scores: dict[str, float] = {}
 
         for dom, kws in self.DOMAIN_KEYWORDS.items():
-            scores[dom] = sum(1 for kw in kws if kw in task_lower)
+            score = 0.0
+            for kw in kws:
+                if kw in task_lower:
+                    # Cross-domain keywords get half weight
+                    score += 0.5 if kw in self._CROSS_DOMAIN_KEYWORDS else 1.0
+            scores[dom] = score
 
         best = max(scores.values()) if scores else 0
         if best == 0:
             return "general", 0.5  # uncertain fallback
 
-        winner = max(scores, key=lambda d: scores[d])
+        # Stable tie-breaking: prefer healthcare > disaster > finance > hiring
+        _priority = {"healthcare": 0, "disaster": 1, "finance": 2, "hiring": 3}
+        winner = max(scores, key=lambda d: (scores[d], -_priority.get(d, 99)))
         # confidence: fraction of that domain's keywords matched, capped at 1
         conf = min(scores[winner] / max(len(self.DOMAIN_KEYWORDS[winner]) * 0.3, 1), 1.0)
         return winner, round(conf, 3)

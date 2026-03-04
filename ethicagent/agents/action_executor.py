@@ -17,6 +17,7 @@ import logging
 from typing import Any
 
 from ethicagent.core.logger import AuditLogger
+from ethicagent.ethics.ethical_score import APPROVAL_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +170,7 @@ class ActionExecutor:
     def _extract_warnings(self, decision: Any, ctx: dict[str, Any]) -> list[str]:
         warnings = []
         eds = getattr(decision, "eds_score", 1.0)
-        if 0.80 <= eds < 0.85:
+        if APPROVAL_THRESHOLD <= eds < APPROVAL_THRESHOLD + 0.05:
             warnings.append("EDS is just above the approval threshold.")
         conflict = getattr(decision, "conflict_analysis", {})
         if conflict.get("severity") in ("moderate", "severe"):

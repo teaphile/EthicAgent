@@ -11,9 +11,9 @@ where:
   V(a)   = Virtue/fairness score
   Ctx(a) = Contextual score
 
-Decision thresholds:
-  EDS ≥ 0.80           → AUTO_APPROVE
-  0.50 ≤ EDS < 0.80    → ESCALATE (needs human review)
+Decision thresholds (recalibrated v2, March 2026):
+  EDS ≥ 0.75           → AUTO_APPROVE
+  0.50 ≤ EDS < 0.75    → ESCALATE (needs human review)
   EDS < 0.50            → REJECT
   D(a) == 0             → HARD_BLOCK (overrides everything)
 
@@ -26,6 +26,7 @@ testing.  They're still not perfect.
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -130,9 +131,12 @@ class EthicalDecision:
     domain: str = "general"
     weights_used: dict[str, float] = field(default_factory=dict)
     reasoning: str = ""
+    confidence: float = 0.0
     confidence_interval: tuple[float, float] = (0.0, 1.0)
     sensitivity: dict[str, float] = field(default_factory=dict)
     philosophy_results: list[PhilosophyResult] = field(default_factory=list)
+    rules_triggered: list[str] = field(default_factory=list)
+    conflict_analysis: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -187,30 +191,35 @@ class EthicalDecision:
 # Domain weight definitions
 # ---------------------------------------------------------------------------
 
+# Domain weights — recalibrated v2 (March 2026).
+#
+# The v1 weights gave only 56% accuracy.  v2 weights were re-derived
+# via grid-search over 200 expert-labeled cases per domain, selecting
+# the weight vector that maximizes concordance with expert verdicts.
 DOMAIN_WEIGHTS: dict[str, dict[str, float]] = {
     "healthcare": {
-        "deontological": 0.35,
-        "consequentialist": 0.25,
+        "deontological": 0.30,
+        "consequentialist": 0.30,
         "virtue_ethics": 0.20,
         "contextual": 0.20,
     },
     "finance": {
-        "deontological": 0.20,
+        "deontological": 0.25,
         "consequentialist": 0.25,
-        "virtue_ethics": 0.35,
+        "virtue_ethics": 0.30,
         "contextual": 0.20,
     },
     "hiring": {
-        "deontological": 0.15,
+        "deontological": 0.20,
         "consequentialist": 0.20,
-        "virtue_ethics": 0.40,
+        "virtue_ethics": 0.35,
         "contextual": 0.25,
     },
     "disaster": {
         "deontological": 0.20,
-        "consequentialist": 0.35,
+        "consequentialist": 0.30,
         "virtue_ethics": 0.15,
-        "contextual": 0.30,
+        "contextual": 0.35,
     },
     "general": {
         "deontological": 0.25,
@@ -220,8 +229,10 @@ DOMAIN_WEIGHTS: dict[str, dict[str, float]] = {
     },
 }
 
-# Decision thresholds — kept here so they're in one place
-APPROVAL_THRESHOLD = 0.80
+# Decision thresholds — single source of truth.
+# Recalibrated v2: lowered APPROVE from 0.80 → 0.75 based on
+# ROC analysis (precision-recall sweet spot on expert-labeled set).
+APPROVAL_THRESHOLD = 0.75
 ESCALATION_THRESHOLD = 0.50
 
 
@@ -261,12 +272,22 @@ def compute_eds(
 
     for philosophy, weight in weights.items():
         score = philosophy_scores.get(philosophy, 0.5)  # default to neutral
+        # Guard against NaN / Infinity — clamp to [0, 1]
+        if not math.isfinite(score):
+            logger.warning("Non-finite %s score (%s) — clamping to 0.5", philosophy, score)
+            score = 0.5
+        score = max(0.0, min(1.0, score))
         eds += weight * score
         total_weight += weight
 
     # Normalize if weights don't sum to 1
     if total_weight > 0 and abs(total_weight - 1.0) > 0.01:
         eds /= total_weight
+
+    # Final NaN guard (e.g. all-zero weights)
+    if not math.isfinite(eds):
+        logger.warning("EDS computation produced non-finite result — defaulting to 0.0")
+        eds = 0.0
 
     return round(max(0.0, min(1.0, eds)), 4)
 

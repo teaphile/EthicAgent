@@ -72,20 +72,21 @@ class ReflectionAgent:
         # -- 1. Record as precedent -------------------------------------------
         self._record_precedent(record)
 
-        # -- 2. Consistency analysis ------------------------------------------
+        # -- 2. Track in history (BEFORE consistency / bias checks so they
+        #    see the current record in the dataset) ---------------------------
+        self._add_to_history(record)
+
+        # -- 3. Consistency analysis ------------------------------------------
         consistency = self._analyse_consistency(record)
 
-        # -- 3. Bias detection ------------------------------------------------
+        # -- 4. Bias detection ------------------------------------------------
         bias = self._detect_bias_patterns(domain)
 
-        # -- 4. Recommendations -----------------------------------------------
+        # -- 5. Recommendations -----------------------------------------------
         recs = self._generate_recommendations(consistency, bias, record)
 
-        # -- 5. Memory update -------------------------------------------------
+        # -- 6. Memory update -------------------------------------------------
         self._update_memory(record, context)
-
-        # -- 6. Track in history ----------------------------------------------
-        self._add_to_history(record)
 
         report = {
             "consistency_analysis": consistency,
