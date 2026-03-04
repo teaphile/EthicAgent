@@ -107,7 +107,10 @@ class PerturbationAttack:
         self.orchestrator = orchestrator
         self.config = config or {}
         self.rng = random.Random(seed)
-        self.eds_threshold: float = self.config.get("eds_threshold", 0.15)
+        self.eds_threshold: float = self.config.get(
+            "eds_drift_threshold",
+            self.config.get("eds_threshold", 0.15),
+        )
         self._fallback_orch: Any | None = None
 
     def _get_orchestrator(self) -> Any:
@@ -119,7 +122,6 @@ class PerturbationAttack:
 
             self._fallback_orch = EthicAgentOrchestrator(use_llm=False)
         return self._fallback_orch
-        self.eds_threshold = self.config.get("eds_drift_threshold", 0.10)
 
     # ── public ──────────────────────────────────────────────────
     def generate(self, task: str, n: int = 5) -> list[PerturbedCase]:

@@ -28,30 +28,11 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any
 
+from ethicagent.ethics.ethical_score import EthicalVerdict, PhilosophyResult  # canonical defs
+
 logger = logging.getLogger(__name__)
-
-
-# -- re-export from ethical_score (canonical location) -------------------------
-# We define them here too for historical reasons; the canonical defs are
-# in ethics/ethical_score.py.  Import whichever is more convenient.
-class EthicalVerdict(Enum):
-    AUTO_APPROVE = "auto_approve"
-    ESCALATE = "escalate"
-    REJECT = "reject"
-    HARD_BLOCK = "hard_block"
-
-
-@dataclass
-class PhilosophyResult:
-    """Score + reasoning from one philosophical lens."""
-
-    name: str
-    score: float
-    reasoning: str = ""
-    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -327,14 +308,22 @@ class EthicalReasonerAgent:
         domain: str,
         override_weights: dict[str, float] | None = None,
     ) -> EthicalDecision:
-        """Re-evaluate with alternative weights (what-if analysis)."""
-        original_weights = self._weights.copy()
+        """Re-evaluate with alternative weights (what-if analysis).
+
+        Thread-safe: operates on a deep copy of the weights rather than
+        mutating instance state.
+        """
+        import copy
+
+        local_weights = copy.deepcopy(self._weights)
         if override_weights:
-            self._weights[domain] = override_weights
-        try:
-            return self.evaluate(context, fusion_result, domain)
-        finally:
-            self._weights = original_weights
+            local_weights[domain] = override_weights
+        # Create a temporary evaluator with the overridden weights
+        tmp = EthicalReasonerAgent(
+            rules=self._rules,
+            domain_weights=local_weights,
+        )
+        return tmp.evaluate(context, fusion_result, domain)
 
     # ------------------------------------------------------------------
     # Philosophy evaluations

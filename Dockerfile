@@ -12,10 +12,11 @@ RUN apt-get update && \
 
 COPY pyproject.toml setup.py requirements.txt README.md ./
 COPY ethicagent/ ./ethicagent/
+COPY config/ ./config/
+COPY data/ ./data/
+COPY dashboard/ ./dashboard/
 RUN pip install --no-cache-dir . && \
     apt-get purge -y --auto-remove gcc || true
-
-COPY . .
 
 # ── test stage ──────────────────────────────────────────────
 FROM base AS test

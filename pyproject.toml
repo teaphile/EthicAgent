@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 llm = [
-    "langchain>=0.1",
+    "langchain>=0.3,<0.5",
     "openai>=1.0",
 ]
 dashboard = [
@@ -97,4 +97,4 @@ omit = ["*/tests/*", "*/dashboard/*"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 55
+fail_under = 80

@@ -168,6 +168,7 @@ Output the same JSON format as the standard analysis.
         self._cache = _ResponseCache()
         self._total_tokens = 0
         self._total_cost = 0.0
+        self._oai_client: Any | None = None  # reuse OpenAI client
 
         if use_llm:
             logger.info(f"NeuralReasoner: using {provider} ({self._oai_model})")
@@ -265,7 +266,9 @@ Output the same JSON format as the standard analysis.
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY not set")
 
-        client = openai.OpenAI(api_key=api_key)
+        if self._oai_client is None:
+            self._oai_client = openai.OpenAI(api_key=api_key)
+        client = self._oai_client
         resp = client.chat.completions.create(
             model=self._oai_model,
             messages=[
@@ -280,9 +283,10 @@ Output the same JSON format as the standard analysis.
         usage = resp.usage
         if usage:
             self._total_tokens += usage.total_tokens
-            # rough cost estimate (GPT-4 pricing as of 2024)
+            # rough cost estimate (GPT-4o pricing as of 2025-Q4)
             self._total_cost += (
-                usage.prompt_tokens * 0.03 / 1000 + usage.completion_tokens * 0.06 / 1000
+                usage.prompt_tokens * 0.0025 / 1000
+                + usage.completion_tokens * 0.01 / 1000
             )
 
         return resp.choices[0].message.content or ""
@@ -306,19 +310,18 @@ Output the same JSON format as the standard analysis.
 
     def _parse_response(self, raw: str) -> dict[str, Any]:
         """Extract structured data from the LLM's text response."""
-        # try to find a JSON block
-        json_match = re.search(r"\{[^{}]*\}", raw, re.DOTALL)
-        if json_match:
+        # try to find a JSON block (supports nested objects)
+        data = self._extract_json(raw)
+        if data is not None:
             try:
-                data = json.loads(json_match.group())
                 return {
                     "recommendation": data.get("recommendation", "escalate"),
                     "confidence": float(data.get("confidence", 0.5)),
                     "scores": data.get("scores", {}),
                     "reasoning": data.get("reasoning", raw[:500]),
                 }
-            except json.JSONDecodeError as exc:
-                logger.debug("Failed to parse JSON from LLM response: %s", exc)
+            except (ValueError, AttributeError) as exc:
+                logger.debug("Failed to process JSON from LLM response: %s", exc)
 
         # fallback: keyword extraction from raw text
         rec = "escalate"
@@ -384,8 +387,28 @@ Output the same JSON format as the standard analysis.
             "accommodate",
             "assist",
         }
-        neg_count = sum(1 for w in negative_words if w in task)
-        pos_count = sum(1 for w in positive_words if w in task)
+        # Tokenize for word-boundary matching and negation handling
+        words = task.split()
+        negation_cues = {"not", "no", "don't", "dont", "never", "cannot", "shouldn't", "shouldnt", "won't", "wont", "isn't", "isnt", "aren't", "arent", "neither", "nor"}
+        neg_count = 0
+        pos_count = 0
+        negate_next = False
+        for w in words:
+            clean = w.strip(".,!?;:").lower()
+            if clean in negation_cues:
+                negate_next = True
+                continue
+            if clean in negative_words:
+                if negate_next:
+                    pos_count += 1  # "not deny" → positive
+                else:
+                    neg_count += 1
+            elif clean in positive_words:
+                if negate_next:
+                    neg_count += 1  # "not help" → negative
+                else:
+                    pos_count += 1
+            negate_next = False  # reset after consuming one word
 
         # sentiment-adjusted scores
         sentiment = (pos_count - neg_count) / max(pos_count + neg_count, 1)
@@ -395,18 +418,30 @@ Output the same JSON format as the standard analysis.
         v_score = max(0.0, min(1.0, 0.5 + sentiment * 0.3))
         ctx_score = max(0.0, min(1.0, 0.5 + (0.1 if urgency in ("emergency", "critical") else 0)))
 
-        # hard-block detection
+        # hard-block detection — expanded pattern set with regex support
         hard_block_patterns = [
-            "deny life",
-            "withhold treatment",
-            "discriminate based on race",
-            "deny based on gender",
-            "ignore safety",
-            "falsify",
-            "deny insulin",
-            "refuse emergency",
+            r"deny\s+life",
+            r"withhold\s+(treatment|medication|care|medicine)",
+            r"discriminate\s+based\s+on\s+(race|gender|religion|age|disability|ethnicity|orientation)",
+            r"deny\s+based\s+on\s+(race|gender|religion|age|disability|ethnicity|orientation)",
+            r"ignore\s+safety",
+            r"falsif(y|ied|ication)",
+            r"deny\s+insulin",
+            r"refuse\s+(emergency|treatment|care|medication|medicine|surgery|aid)",
+            r"stop\s+life\s+support",
+            r"terminate\s+(treatment|care|life\s+support)",
+            r"deny\s+(treatment|medication|care|medicine|surgery|aid)",
+            r"abandon\s+(patient|victim|person)",
+            r"force\s+(steriliz|euthan|experiment)",
+            r"coerce\s+(patient|individual|person)",
+            r"fabricat(e|ed|ing)\s+(data|results|evidence|records)",
+            r"suppress\s+(evidence|data|findings)",
+            r"conceal\s+(risk|harm|danger|side\s+effect)",
+            r"exploit\s+(vulnerab|child|elder|minor|patient)",
+            r"override\s+consent",
+            r"without\s+(informed\s+)?consent",
         ]
-        if any(p in task for p in hard_block_patterns):
+        if any(re.search(p, task) for p in hard_block_patterns):
             d_score = 0.0
 
         # irreversibility penalty
@@ -450,6 +485,54 @@ Output the same JSON format as the standard analysis.
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _extract_json(text: str) -> dict[str, Any] | None:
+        """Extract the first valid JSON object from *text*, handling nested braces.
+
+        Falls back to ``json.JSONDecodeError``-safe scanning so that
+        responses like ``{"scores": {"deontological": 0.8}}`` are parsed
+        correctly (the old regex ``\\{[^{}]*\\}`` would miss nested objects).
+        """
+        # Fast path: try the whole string
+        text = text.strip()
+        if text.startswith("{"):
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                pass
+
+        # Scan for the first '{' and find matching '}' using bracket counting
+        start = text.find("{")
+        while start != -1:
+            depth = 0
+            in_string = False
+            escape = False
+            for i in range(start, len(text)):
+                ch = text[i]
+                if escape:
+                    escape = False
+                    continue
+                if ch == "\\":
+                    escape = True
+                    continue
+                if ch == '"':
+                    in_string = not in_string
+                    continue
+                if in_string:
+                    continue
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        candidate = text[start : i + 1]
+                        try:
+                            return json.loads(candidate)
+                        except json.JSONDecodeError:
+                            break  # malformed; try next '{'
+            start = text.find("{", start + 1)
+        return None
 
     @staticmethod
     def _summarize_context(ctx: dict[str, Any]) -> str:

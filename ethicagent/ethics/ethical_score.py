@@ -79,12 +79,35 @@ class PhilosophyResult:
     reasoning: str = ""  # backward-compat alias for key_argument
     details: dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        philosophy: str = "",
+        score: float = 0.0,
+        hard_block: bool = False,
+        confidence: float = 0.7,
+        key_argument: str = "",
+        reasoning: str = "",
+        details: dict[str, Any] | None = None,
+        *,
+        name: str = "",  # backward-compat alias for philosophy
+    ) -> None:
+        self.philosophy = philosophy or name
+        self.score = score
+        self.hard_block = hard_block
+        self.confidence = confidence
+        self.key_argument = key_argument
+        self.reasoning = reasoning
+        self.details = details if details is not None else {}
         # Sync reasoning ↔ key_argument
         if self.reasoning and not self.key_argument:
             self.key_argument = self.reasoning
         elif self.key_argument and not self.reasoning:
             self.reasoning = self.key_argument
+
+    @property
+    def name(self) -> str:
+        """Backward-compat alias for ``philosophy``."""
+        return self.philosophy
 
 
 # ---------------------------------------------------------------------------

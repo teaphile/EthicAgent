@@ -90,12 +90,42 @@ def validate_context(context: dict[str, Any]) -> dict[str, Any]:
 
 
 def sanitize_text(text: str) -> str:
-    """Remove potentially dangerous content from text input."""
+    """Remove potentially dangerous content from text input.
+
+    Strips control characters, excessive whitespace, and common
+    prompt-injection / jailbreak patterns that attempt to override
+    the system prompt or inject instructions into the LLM pipeline.
+    """
     # Strip control characters (except newline, tab)
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
     # Limit excessive whitespace
     text = re.sub(r"\n{3,}", "\n\n", text)
     text = re.sub(r" {5,}", "    ", text)
+
+    # --- Prompt injection / jailbreak mitigation ---
+    # Remove common system-prompt override attempts (case-insensitive)
+    _INJECTION_PATTERNS = [
+        r"(?i)ignore\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)",
+        r"(?i)disregard\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)",
+        r"(?i)forget\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|rules?)",
+        r"(?i)you\s+are\s+now\s+(a|an|in)\b",
+        r"(?i)new\s+system\s+prompt",
+        r"(?i)system\s*:\s*",
+        r"(?i)\bDAN\b.*\bjailbreak\b",
+        r"(?i)do\s+anything\s+now",
+        r"(?i)act\s+as\s+(if\s+)?(you|there)\s+(are|were|have)\s+no\s+(rules|restrictions|limits)",
+        r"(?i)pretend\s+(you\s+are|there\s+are)\s+no\s+(rules|restrictions)",
+    ]
+    for pat in _INJECTION_PATTERNS:
+        text = re.sub(pat, "[FILTERED]", text)
+
+    # Strip HTML/script tags that could indicate XSS payloads
+    text = re.sub(r"<\s*script[^>]*>.*?</\s*script\s*>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+
+    # Remove null bytes and unicode replacement characters
+    text = text.replace("\x00", "").replace("\ufffd", "")
+
     return text.strip()
 
 

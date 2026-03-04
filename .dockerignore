@@ -1,0 +1,47 @@
+# Version control
+.git
+.gitignore
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.venv
+venv
+.mypy_cache
+.ruff_cache
+.pytest_cache
+htmlcov
+.coverage
+*.egg
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs / CI
+docs/
+notebooks/
+scripts/
+tests/
+results/
+logs/
+*.md
+!README.md
+.github/
+Makefile
