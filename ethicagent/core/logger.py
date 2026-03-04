@@ -85,12 +85,17 @@ class AuditLogger:
         self,
         log_dir: str = "logs",
         log_level: int = logging.INFO,
+        structured_audit: bool = True,
     ) -> None:
         self._entries: list[AuditEntry] = []
         self._lock = threading.Lock()
         self._log_dir = Path(log_dir)
         self._log_dir.mkdir(parents=True, exist_ok=True)
         self._counter = 0
+        self._structured_audit = structured_audit
+
+        # -- Structured JSONL audit file (append-only, one JSON object per line) --
+        self._jsonl_path = self._log_dir / "audit_structured.jsonl"
 
         # -- Python logger setup --------------------------------------------------
         self._logger = logging.getLogger("ethicagent.audit")
@@ -117,6 +122,56 @@ class AuditLogger:
     def _next_id(self) -> str:
         self._counter += 1
         return f"AE-{self._counter:06d}"
+
+    def _write_structured_record(self, entry: AuditEntry) -> None:
+        """Append a single structured JSON record to the JSONL audit file.
+
+        Each line is a self-contained JSON object with a consistent
+        schema suitable for compliance tooling and log aggregators.
+        Includes an integrity hash so downstream systems can detect
+        tampering.
+
+        Schema::
+
+            {
+              "entry_id": "AE-000001",
+              "run_id": "...",
+              "timestamp": "ISO-8601",
+              "event_type": "decision|conflict|error|stage",
+              "stage": "...",
+              "domain": "...",
+              "action_hash": "sha256 of action text",
+              "ethical_scores": { ... },
+              "verdict": "...",
+              "details": { ... },
+              "user": "system",
+              "integrity_hash": "sha256 of record sans this field"
+            }
+        """
+        import hashlib as _hl
+
+        record: dict[str, Any] = {
+            "entry_id": entry.entry_id,
+            "run_id": entry.run_id,
+            "timestamp": entry.timestamp,
+            "event_type": entry.event_type,
+            "stage": entry.stage,
+            "domain": entry.domain,
+            "action_hash": _hl.sha256(entry.action.encode()).hexdigest()[:16],
+            "ethical_scores": entry.ethical_scores,
+            "verdict": entry.verdict,
+            "details": entry.details,
+            "user": entry.user,
+        }
+        # Integrity hash (over the record content so far)
+        content = json.dumps(record, sort_keys=True, default=str)
+        record["integrity_hash"] = _hl.sha256(content.encode()).hexdigest()
+
+        try:
+            with open(self._jsonl_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, default=str) + "\n")
+        except OSError as exc:
+            self._logger.warning(f"Failed to write structured audit record: {exc}")
 
     @property
     def entries(self) -> list[AuditEntry]:
@@ -187,6 +242,9 @@ class AuditLogger:
 
         with self._lock:
             self._entries.append(entry)
+            # Append-only structured JSONL audit record
+            if self._structured_audit:
+                self._write_structured_record(entry)
 
         # route to the right log level
         msg = f"[{_event_type}] run={_run_id} stage={_stage} domain={_domain} verdict={verdict}"

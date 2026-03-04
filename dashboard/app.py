@@ -41,6 +41,42 @@ VERDICT_COLORS = {
     "hard_block": "⛔",
 }
 
+# ═══════════════════════════════════════════════════════════════
+# Authentication
+# ═══════════════════════════════════════════════════════════════
+
+# Set ETHICAGENT_DASHBOARD_PASSWORD env var to enable auth.
+# When unset the dashboard runs without a login gate (dev mode).
+_DASHBOARD_PASSWORD = os.environ.get("ETHICAGENT_DASHBOARD_PASSWORD", "")
+
+
+def _check_auth() -> bool:
+    """Simple password gate for the dashboard.
+
+    Guards sensitive ethical-decision data behind a login form
+    when ``ETHICAGENT_DASHBOARD_PASSWORD`` is configured.  In
+    production, prefer a reverse-proxy with OAuth2/OIDC instead.
+
+    Returns True if the user is authenticated (or auth is disabled).
+    """
+    if not _DASHBOARD_PASSWORD:
+        # Auth not configured — allow access (dev / local mode)
+        return True
+
+    if st.session_state.get("authenticated"):
+        return True
+
+    st.title("🔒 EthicAgent Dashboard — Login")
+    st.markdown("Access to the dashboard requires authentication.")
+    password = st.text_input("Password", type="password", key="login_password")
+    if st.button("Login", type="primary"):
+        if password == _DASHBOARD_PASSWORD:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Invalid password. Please try again.")
+    return False
+
 
 def main() -> None:
     """Main dashboard entry point."""
@@ -50,6 +86,10 @@ def main() -> None:
         layout="wide",
         initial_sidebar_state="expanded",
     )
+
+    # ── authentication gate ─────────────────────────────────
+    if not _check_auth():
+        return
 
     # Load custom CSS
     css_path = os.path.join(os.path.dirname(__file__), "assets", "style.css")

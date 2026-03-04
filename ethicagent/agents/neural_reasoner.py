@@ -170,6 +170,17 @@ Output the same JSON format as the standard analysis.
         self._total_cost = 0.0
         self._oai_client: Any | None = None  # reuse OpenAI client
 
+        # Resilience settings
+        resilience = cfg.get("resilience", {})
+        self._oai_timeout = oai.get("timeout", resilience.get("timeout", 60))
+        self._token_budget = resilience.get("daily_token_budget", 500_000)
+        self._max_retries = resilience.get("max_retries", 3)
+        # Circuit breaker: after N consecutive failures, stop for M seconds
+        self._cb_threshold = resilience.get("circuit_breaker_threshold", 5)
+        self._cb_cooldown = resilience.get("circuit_breaker_cooldown", 300)  # 5 min
+        self._consecutive_failures = 0
+        self._circuit_open_until: float = 0.0
+
         if use_llm:
             logger.info(f"NeuralReasoner: using {provider} ({self._oai_model})")
         else:
@@ -239,17 +250,52 @@ Output the same JSON format as the standard analysis.
     # ------------------------------------------------------------------
 
     def _call_llm(self, prompt: str) -> str:
-        """Try the configured provider, falling back to alternatives."""
+        """Try the configured provider with circuit-breaker protection."""
+        import time as _time
+
+        # Circuit breaker check
+        if self._consecutive_failures >= self._cb_threshold:
+            now = _time.time()
+            if now < self._circuit_open_until:
+                remaining = int(self._circuit_open_until - now)
+                raise RuntimeError(
+                    f"Circuit breaker OPEN — LLM backend unavailable. "
+                    f"Retry in {remaining}s."
+                )
+            # Cooldown elapsed → half-open: allow one attempt
+            logger.info("Circuit breaker half-open — attempting recovery")
+
+        # Token budget enforcement
+        if self._total_tokens >= self._token_budget:
+            raise RuntimeError(
+                f"Daily token budget exhausted ({self._total_tokens:,} / "
+                f"{self._token_budget:,} tokens)"
+            )
+
         providers = (
             [self._provider, "ollama"] if self._provider == "openai" else [self._provider, "openai"]
         )
         last_err = None
         for p in providers:
             try:
-                return self._try_backend(p, prompt)
+                result = self._try_backend(p, prompt)
+                # Success → reset circuit breaker
+                self._consecutive_failures = 0
+                return result
             except Exception as exc:
                 last_err = exc
                 logger.debug(f"Backend {p} failed: {exc}")
+
+        # All backends failed
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= self._cb_threshold:
+            import time as _time2
+
+            self._circuit_open_until = _time2.time() + self._cb_cooldown
+            logger.error(
+                f"Circuit breaker OPEN after {self._consecutive_failures} "
+                f"consecutive failures. Cooldown: {self._cb_cooldown}s"
+            )
         raise RuntimeError(f"All LLM backends failed. Last error: {last_err}")
 
     def _try_backend(self, backend: str, prompt: str) -> str:
@@ -267,29 +313,57 @@ Output the same JSON format as the standard analysis.
             raise RuntimeError("OPENAI_API_KEY not set")
 
         if self._oai_client is None:
-            self._oai_client = openai.OpenAI(api_key=api_key)
-        client = self._oai_client
-        resp = client.chat.completions.create(
-            model=self._oai_model,
-            messages=[
-                {"role": "system", "content": self._system_prompt},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=self._oai_temp,
-            max_tokens=self._oai_max_tokens,
-        )
-
-        # token accounting
-        usage = resp.usage
-        if usage:
-            self._total_tokens += usage.total_tokens
-            # rough cost estimate (GPT-4o pricing as of 2025-Q4)
-            self._total_cost += (
-                usage.prompt_tokens * 0.0025 / 1000
-                + usage.completion_tokens * 0.01 / 1000
+            self._oai_client = openai.OpenAI(
+                api_key=api_key,
+                timeout=self._oai_timeout,
             )
+        client = self._oai_client
 
-        return resp.choices[0].message.content or ""
+        # Retry with exponential backoff for transient errors
+        max_attempts = self._max_retries
+        last_exc: Exception | None = None
+        for attempt in range(max_attempts):
+            try:
+                resp = client.chat.completions.create(
+                    model=self._oai_model,
+                    messages=[
+                        {"role": "system", "content": self._system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=self._oai_temp,
+                    max_tokens=self._oai_max_tokens,
+                )
+
+                # token accounting
+                usage = resp.usage
+                if usage:
+                    self._total_tokens += usage.total_tokens
+                    # rough cost estimate (GPT-4o pricing as of 2025-Q4)
+                    self._total_cost += (
+                        usage.prompt_tokens * 0.0025 / 1000
+                        + usage.completion_tokens * 0.01 / 1000
+                    )
+
+                return resp.choices[0].message.content or ""
+            except Exception as exc:
+                last_exc = exc
+                err_str = str(exc)
+                # Only retry on transient/rate-limit errors
+                retryable = any(
+                    s in err_str for s in ("429", "500", "502", "503", "timeout", "Timeout")
+                )
+                if not retryable or attempt == max_attempts - 1:
+                    raise
+                import time as _time
+
+                wait = min(2 ** (attempt + 1), 60)
+                logger.warning(
+                    f"OpenAI transient error (attempt {attempt + 1}/{max_attempts}): "
+                    f"{exc}. Retrying in {wait}s"
+                )
+                _time.sleep(wait)
+
+        raise last_exc  # type: ignore[misc]  # unreachable but keeps mypy happy
 
     def _call_ollama(self, prompt: str) -> str:
         import requests

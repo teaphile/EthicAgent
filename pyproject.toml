@@ -30,6 +30,8 @@ dependencies = [
     "scikit-learn>=1.2",
     "pandas>=2.0",
     "pyyaml>=6.0",
+    "rapidfuzz>=3.0",
+    "tenacity>=8.2",
 ]
 
 [project.optional-dependencies]

@@ -486,6 +486,149 @@ class EthicAgentOrchestrator:
         }
 
     # ╔══════════════════════════════════════════════════════════════╗
+    # ║  ASYNC PIPELINE                                              ║
+    # ╚══════════════════════════════════════════════════════════════╝
+
+    async def run_async(
+        self,
+        task: str,
+        domain: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> PipelineResult:
+        """Async version of ``run()`` that parallelizes independent stages.
+
+        Stages 3 (Neural Reasoning) and 4 (Symbolic Reasoning) are
+        logically independent — they only depend on the context from
+        Stage 1, not on each other.  Running them concurrently cuts
+        wall-clock time by up to ~50% when using LLM-backed neural
+        reasoning.
+
+        Usage::
+
+            result = await orch.run_async("Deny insulin to patient", domain="healthcare")
+        """
+        import asyncio
+
+        t_start = time.time()
+        action_id = f"ACT-{uuid.uuid4().hex[:8].upper()}"
+        self._total_runs += 1
+        stage_timings: dict[str, float] = {}
+        stage_outputs: dict[str, Any] = {}
+
+        validation = validate_task_input(task)
+        if not validation["valid"]:
+            return PipelineResult(
+                action_id=action_id,
+                status="validation_error",
+                error="; ".join(validation.get("errors", ["invalid input"])),
+            )
+
+        state = self.state_manager.create_state(task=task, domain=domain or "general")
+        pipeline_input = {
+            "task": task,
+            "action_id": action_id,
+            "domain": domain,
+            "metadata": metadata or {},
+        }
+
+        try:
+            # Stage 1: Context Extraction (sequential — needed by stages 3+4)
+            ctx, dt = self._timed(self._stage_context, state, pipeline_input)
+            stage_timings["context_extraction"] = dt
+            stage_outputs["context"] = ctx
+            detected_domain = domain or ctx.get("domain", "general")
+
+            # Stage 2: Knowledge Retrieval (sequential)
+            kg_out, dt = self._timed(self._stage_knowledge, state, detected_domain)
+            stage_timings["knowledge_retrieval"] = dt
+            stage_outputs["knowledge"] = kg_out
+
+            # Stages 3+4: Neural + Symbolic reasoning IN PARALLEL
+            loop = asyncio.get_event_loop()
+            neural_future = loop.run_in_executor(
+                None, self._stage_neural, state, ctx, detected_domain
+            )
+            symbolic_future = loop.run_in_executor(
+                None, self._stage_symbolic, state, ctx, detected_domain
+            )
+            t3_start = time.time()
+            neural_out, sym_out = await asyncio.gather(neural_future, symbolic_future)
+            parallel_dt = time.time() - t3_start
+            stage_timings["neural_reasoning"] = parallel_dt
+            stage_timings["symbolic_reasoning"] = parallel_dt
+            stage_outputs["neural"] = neural_out
+            stage_outputs["symbolic"] = sym_out
+
+            # Stage 5: Fusion
+            fused, dt = self._timed(self._stage_fusion, state, neural_out, sym_out, detected_domain)
+            stage_timings["fusion"] = dt
+            stage_outputs["fusion"] = fused
+
+            # Stage 6: Ethical Evaluation
+            decision, dt = self._timed(self._stage_ethical_eval, state, ctx, fused, detected_domain)
+            stage_timings["ethical_evaluation"] = dt
+            stage_outputs["ethical_decision"] = {
+                "eds_score": decision.eds_score,
+                "verdict": decision.verdict.value,
+                "confidence": decision.confidence,
+                "philosophy_scores": {pr.name: pr.score for pr in decision.philosophy_results},
+            }
+
+            # Stage 7: Decision Gate
+            exec_result, dt = self._timed(self._stage_decision_gate, state, decision, ctx)
+            stage_timings["decision_gate"] = dt
+            stage_outputs["execution"] = exec_result
+
+            if exec_result.get("status") == "escalated":
+                review = self.human_gateway.escalate(
+                    decision, ctx, priority=exec_result.get("review_priority", "medium"),
+                )
+                exec_result["human_review"] = review
+
+            # Stage 8: Reflection
+            refl, dt = self._timed(self._stage_reflection, state, decision, ctx, exec_result)
+            stage_timings["reflection"] = dt
+            stage_outputs["reflection"] = refl
+
+            state.update_stage(PipelineStage.COMPLETED, {"status": "ok"})
+
+        except Exception as exc:
+            logger.error(f"Async pipeline failed: {exc}", exc_info=True)
+            elapsed = time.time() - t_start
+            return PipelineResult(
+                action_id=action_id,
+                status="pipeline_error",
+                error=str(exc),
+                total_elapsed_s=elapsed,
+                stage_timings=stage_timings,
+                stage_outputs=stage_outputs,
+            )
+
+        elapsed = time.time() - t_start
+        self._total_time += elapsed
+        verdict_str = decision.verdict.value
+        self._verdict_counts[verdict_str] = self._verdict_counts.get(verdict_str, 0) + 1
+
+        return PipelineResult(
+            action_id=action_id,
+            status="completed",
+            domain=detected_domain,
+            eds_score=decision.eds_score,
+            verdict=verdict_str,
+            confidence=decision.confidence,
+            philosophy_scores={pr.name: pr.score for pr in decision.philosophy_results},
+            weights_used=decision.weights_used,
+            reasoning=decision.reasoning,
+            rules_triggered=decision.rules_triggered,
+            conflict_analysis=decision.conflict_analysis,
+            execution_result=exec_result,
+            reflection=refl,
+            stage_outputs=stage_outputs,
+            stage_timings=stage_timings,
+            total_elapsed_s=elapsed,
+        )
+
+    # ╔══════════════════════════════════════════════════════════════╗
     # ║  STAGE IMPLEMENTATIONS                                       ║
     # ╚══════════════════════════════════════════════════════════════╝
 

@@ -226,13 +226,13 @@ class TestVerdictThresholds:
         assert verdict == "escalate"
 
     def test_just_below_080(self):
-        """EDS just below 0.80 should be ESCALATE."""
-        # 0.25*0.79 + 0.25*0.79 + 0.25*0.79 + 0.25*0.79 = 0.79
+        """EDS just below approve threshold (0.75) should be ESCALATE."""
+        # 0.25*0.74 + 0.25*0.74 + 0.25*0.74 + 0.25*0.74 = 0.74
         scores = {
-            "deontological": 0.79,
-            "consequentialist": 0.79,
-            "virtue_ethics": 0.79,
-            "contextual": 0.79,
+            "deontological": 0.74,
+            "consequentialist": 0.74,
+            "virtue_ethics": 0.74,
+            "contextual": 0.74,
         }
         verdict = self.agent.determine_verdict(scores, self.equal_weights)
         assert verdict == "escalate"

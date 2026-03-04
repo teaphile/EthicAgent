@@ -243,13 +243,22 @@ class SymbolicReasoner:
             hit = hit and cond_hit
 
         # also try pattern matching if rule has a 'pattern' field
+        # Pattern acts as an *additional* standalone check only when
+        # no keyword/condition gates were defined.  When keywords or
+        # conditions are present, the pattern is an extra required AND
+        # signal rather than an unconditional override.
         pattern = rule.get("pattern")
         if pattern:
             try:
-                if re.search(pattern, task, re.IGNORECASE):
-                    hit = True
+                pattern_hit = bool(re.search(pattern, task, re.IGNORECASE))
             except re.error:
-                pass  # skip bad patterns
+                pattern_hit = False
+            if not keywords and not conditions:
+                # No keyword/condition gates → pattern alone decides
+                hit = pattern_hit
+            else:
+                # Pattern is an extra AND requirement
+                hit = hit and pattern_hit
 
         explanation = ""
         if hit:
@@ -307,26 +316,44 @@ class SymbolicReasoner:
         return True
 
     @staticmethod
-    def _fuzzy_match(pattern: str, text: str, threshold: int = 2) -> bool:
-        """Cheap fuzzy matching: checks substring containment then
-        allows up to *threshold* character edits on individual words.
+    def _fuzzy_match(pattern: str, text: str, threshold: int = 80) -> bool:
+        """Fuzzy matching using proper Levenshtein distance via *rapidfuzz*.
 
-        Not real Levenshtein — just a quick approximation.
+        Uses token-level partial matching so multi-word patterns
+        (e.g. ``"deny treatment"``) are matched as phrases rather
+        than individual independent words.
+
+        Args:
+            pattern:   The keyword/phrase to search for.
+            text:      The text to search within.
+            threshold: Minimum similarity score (0-100) to count as a
+                       match.  Default 80 balances recall vs. precision.
+
+        Returns:
+            True if *pattern* appears in *text* with at least
+            *threshold* similarity.
         """
         if pattern in text:
             return True
 
-        # check each word in the pattern against text words
-        p_words = pattern.split()
-        t_words = text.split()
-        for pw in p_words:
-            if any(
-                abs(len(pw) - len(tw)) <= threshold
-                and sum(a != b for a, b in zip(pw, tw, strict=False)) <= threshold
-                for tw in t_words
-            ):
-                return True
-        return False
+        try:
+            from rapidfuzz import fuzz
+
+            # partial_ratio handles substring matching well
+            score = fuzz.partial_ratio(pattern, text)
+            return score >= threshold
+        except ImportError:
+            # Fallback: basic character-level comparison (original logic)
+            p_words = pattern.split()
+            t_words = text.split()
+            for pw in p_words:
+                if any(
+                    abs(len(pw) - len(tw)) <= 2
+                    and sum(a != b for a, b in zip(pw, tw, strict=False)) <= 2
+                    for tw in t_words
+                ):
+                    return True
+            return False
 
     def _apply_chains(
         self,
